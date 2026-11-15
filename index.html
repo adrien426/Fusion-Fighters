@@ -132,6 +132,12 @@ h2{font-size:30px;margin:6px 0 4px}
 #padR .b{min-height:40px;font-size:12px;min-width:0;overflow:hidden;white-space:normal;line-height:1.05;padding:0 2px;letter-spacing:0}
 #padR .b.spc{font-size:13px!important}
 .pad .r,.pad .l{min-width:0}
+.sel2{width:100%;background:var(--card);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:15px;margin-top:6px}
+#pad2{display:none;grid-template-columns:1fr 1fr;gap:8px;padding:6px;background:#0b0b0e;padding-bottom:max(6px,env(safe-area-inset-bottom))}
+#pad2 .half{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;border-radius:10px;padding:4px}
+#pad2 .half.p1{border:1px solid var(--red)}#pad2 .half.p2{border:1px solid var(--blue)}
+#pad2 .b{min-height:42px;font-size:12px;letter-spacing:0;min-width:0;overflow:hidden;white-space:normal;line-height:1.05;padding:0 2px}
+#pad2 .b.spc{grid-column:span 2;font-size:11px}
 .help{font-size:12px;color:var(--mute);line-height:1.6;background:var(--card);border-radius:12px;padding:12px;margin-top:12px}
 .help b{color:var(--txt)}
 </style>
@@ -147,6 +153,7 @@ h2{font-size:30px;margin:6px 0 4px}
   <button class="big alt" id="bMeAll" style="font-size:19px;border-color:var(--gold)"></button>
   <button class="big" id="bOpp">🏆 Classement : choisir un adversaire</button>
   <button class="big alt" id="bCreate">🛠 Créer mon propre adversaire</button>
+  <button class="big alt" id="b2P" style="border-color:var(--blue)">👥 Mode 2 joueurs</button>
   <div class="help">
     <b>Comment jouer</b><br>
     ◀ ▶ : se déplacer · <b>GARDE</b> (maintenir) : bloque les coups<br>
@@ -173,6 +180,13 @@ h2{font-size:30px;margin:6px 0 4px}
   <p class="sub">Choisis son physique et ses techniques. Chaque choix fait monter ou baisser ses stats et sa note.</p>
   <div id="myOpps"></div>
   <div class="presets"><button id="pWorst">😵 Créer le pire</button><button id="pAvg">😐 Créer le moyen</button><button id="pBest">🏆 Créer le meilleur</button></div>
+  <div class="fusionCard" style="border-color:var(--blue)">
+    <div class="tact"><b>👥 Fusionner des combattants</b> <span style="color:var(--mute)">(choisis-en au moins 2 : classement ou tes créations)</span></div>
+    <div class="pager"><input id="pq" placeholder="Rechercher un nom, un rang, un art…"></div>
+    <div id="persList" style="max-height:230px;overflow:auto"></div>
+    <div id="persSel" style="font-size:13px;margin:6px 0"></div>
+    <button class="big" id="bPersFuse" style="font-size:20px;background:var(--blue)">👥 FUSIONNER LES COMBATTANTS</button>
+  </div>
   <button class="big" id="pAll" style="font-size:22px;background:linear-gradient(90deg,#e63946,#f4b942)">🌍 TOUT METTRE : toutes les techniques du monde</button>
   <div class="presets" style="grid-template-columns:1fr 1fr"><button id="pGreen" style="border-color:var(--green)">🟢 Tout le vert<br><span style="font:12px Inter;color:var(--mute)">que des bonus</span></button><button id="pRed" style="border-color:var(--red)">🔴 Tout le rouge<br><span style="font:12px Inter;color:var(--mute)">qui ont un malus</span></button></div>
   <div class="fusionCard">
@@ -192,12 +206,23 @@ h2{font-size:30px;margin:6px 0 4px}
     <div class="tact"><b>Sa technique spéciale</b> <span style="color:var(--mute)">(touche ses techniques dans l'ordre, jusqu'à 15. La dernière devient le coup de grâce. Une projection se place toujours à la fin.)</span></div>
     <div id="cFuse"></div>
     <button class="big" id="bFuse" style="font-size:20px">⚡ FUSIONNER ET CRÉER SA TECHNIQUE</button>
-    <div class="tm" style="font-size:12px;color:var(--mute);margin:-4px 0 8px">Met toutes ses techniques de combat dans sa spéciale.</div>
+    <div class="tm" style="font-size:12px;color:var(--mute);margin:-4px 0 8px">Fond toutes ses techniques ensemble et invente SA technique à lui : 4 à 6 coups nouveaux, faisables, avec leurs propres noms.</div>
     <div class="pager"><input id="cTN" maxlength="32" placeholder="Nom de sa technique spéciale"></div>
     <div class="seq" id="cSeq"></div>
     <div class="artChips" id="cAdd"></div>
   </div>
   <button class="big" id="bSaveOpp">💾 Créer et combattre</button>
+  <button class="big alt" data-go="sMenu">← Retour</button>
+</section>
+
+<!-- TWO PLAYERS -->
+<section class="screen" id="s2P">
+  <h2>Mode 2 joueurs</h2>
+  <p class="sub">Sur le même téléphone, de préférence à l'horizontale : le joueur 1 joue à gauche de l'écran, le joueur 2 à droite. Chacun choisit son combattant.</p>
+  <div class="fusionCard"><div class="tact"><b style="color:var(--red)">Joueur 1</b></div><select id="j1" class="sel2"></select><div id="j1i" class="tm" style="font-size:12px;color:var(--mute);margin-top:4px"></div></div>
+  <div class="fusionCard" style="border-color:var(--blue)"><div class="tact"><b style="color:var(--blue)">Joueur 2</b></div><select id="j2" class="sel2"></select><div id="j2i" class="tm" style="font-size:12px;color:var(--mute);margin-top:4px"></div></div>
+  <button class="big" id="b2Go">🥊 COMBATTRE À 2</button>
+  <div class="help">Clavier : <b>J1</b> A/D bouger · S garde · W esquive · F G H J coups · R spéciale. <b>J2</b> ← → bouger · ↓ garde · ↑ esquive · 1 2 3 4 coups · 0 spéciale.</div>
   <button class="big alt" data-go="sMenu">← Retour</button>
 </section>
 
@@ -231,6 +256,7 @@ h2{font-size:30px;margin:6px 0 4px}
     <div class="lb"><button class="b" id="lPrev">◀</button><button class="b" id="lReplay">🔁 Revoir</button><button class="b" id="lNext">▶</button><button class="b spc" id="lFull">⚡ Vitesse réelle</button></div>
     <div class="lsafe">⚠️ Projections, sol et coudes : à apprendre seulement en club, avec un coach, sur tapis et avec un partenaire qui sait chuter.</div>
   </div>
+  <div id="pad2"></div>
   <div class="pad">
     <div class="l">
       <button class="b" data-k="left">◀</button><button class="b" data-k="right">▶</button>
@@ -411,14 +437,14 @@ const persist = () => { try { localStorage.setItem('ff2_save', JSON.stringify(sa
 // ===================== UI =====================
 const $ = id => document.getElementById(id);
 function go(id){ document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id===id)); window.scrollTo(0,0);
-  if (id==='sMenu') menu(); if (id==='sOpp') oppUI(); if (id==='sCreate') createUI(); }
+  if (id==='sMenu') menu(); if (id==='sOpp') oppUI(); if (id==='sCreate') createUI(); if (id==='s2P') twoPUI(); }
 document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
 function statsHTML(s){ return `<div class="stats">${STAT.map((n,i)=>`<span>${n}</span><div class="bar"><i style="width:${s[i]}%;background:${STC[i]}"></i></div><b style="color:var(--txt)">${s[i]}</b>`).join('')}</div>`; }
 
 // ---- Player "everything" mode ----
 function me(){
   if (!save.playerAll) return PLAYER;
-  if (!SPECIALS.ultP){ const g = giantSeq(TECHS.filter(t => t[3]).map(t => t[0])); SPECIALS.ultP = {name:'Technique Ultime', seq:g.seq, giant:1, desc:`${g.n} techniques enchaînées à toute vitesse, puis projection finale`}; }
+  if (!SPECIALS.ultP) SPECIALS.ultP = invSpecial(inventTechnique(TECHS.map(t => t[0]), 'Technique Ultime'));
   const variants = {}; TECHS.filter(t => t[3]).forEach(t => (variants[t[3]] = variants[t[3]] || []).push([t[8], t[6][0]]));
   return Object.assign({}, PLAYER, {s:[99,99,99,99,99], sps:['fusion','ultP'], variants, all:true, moves:['jab','cross','hook','palm','chain','kick','teep','high','spin','elbow','knee','grab','throw'], tmoves:PLAYER.moves});
 }
@@ -572,6 +598,40 @@ function giantSeq(ids){
   seq.push(ST('guard',120)); seq.push(ST('grab',140,{grab: proj && proj[3]==='grab' ? 'titan' : 'ipponS', range:1.6, force:1}));
   return {seq, n};
 }
+
+// ---- Invent an original technique by melting the chosen techniques together ----
+const INV_NOUN = {jab:'Éclair',chain:'Rafale',teep:'Bouclier',kick:'Hache',slip:'Ombre',cross:'Lance',hook:'Faucille',palm:'Paume',elbow:'Lame',knee:'Bélier',high:'Fouet',spin:'Tornade',grab:'Avalanche',throw:'Chute'};
+const INV_STEP = {jab:'jab',chain:'chain',teep:'teep',kick:'low',slip:'slip',cross:'cross',hook:'hook',palm:'palm',elbow:'elbow',knee:'knee',high:'high',spin:'spin'};
+const INV_KO = {cross:'kdCross',hook:'kdHook',palm:'kdPalm',elbow:'kdElbow',knee:'kdKnee',high:'kdHigh',grab:'titan',throw:'ippon'};
+const INV_TITLE = ['Le Dragon','La Tempête','Le Cyclone','Le Phénix','La Foudre','Le Séisme','Le Tonnerre',"L'Avalanche",'Le Typhon','La Comète'];
+function inventTechnique(ids, nameHint){
+  const fight = ids.map(TT).filter(t => t && t[3]);
+  if (!fight.length) return null;
+  const cnt = {}, arts = {};
+  fight.forEach(t => { cnt[t[3]] = (cnt[t[3]]||0) + 1; (arts[t[3]] = arts[t[3]] || {})[t[7]] = (arts[t[3]][t[7]]||0) + 1; });
+  const topArtsOf = a => [...new Set(Object.entries(arts[a]||{}).sort((x,y)=>y[1]-x[1]).map(e => e[0].split(' (')[0]))].slice(0,2);
+  const best = list => list.filter(a => cnt[a]).sort((x,y) => cnt[y]-cnt[x])[0];
+  const used = new Set(), steps = [];
+  const add = (a, key, ko) => { const again = used.has(a); used.add(a); const n = cnt[a];
+    steps.push({k:key, name: INV_NOUN[a] + (again ? ' Finale' : ' ' + topArtsOf(a).join('-')) + (ko ? ' K.O.' : ''), art: `fusion de ${n} technique${n>1?'s':''}`}); };
+  const op = best(['chain','jab','teep','kick','slip']); if (op) add(op, INV_STEP[op]);
+  const nPow = fight.length >= 60 ? 3 : 2;
+  ['cross','hook','palm','elbow','knee','high','spin','kick'].filter(a => cnt[a] && !used.has(a)).sort((x,y)=>cnt[y]-cnt[x]).slice(0,nPow).forEach(a => add(a, INV_STEP[a]));
+  const proj = (cnt.grab||0) + (cnt.throw||0);
+  const koFam = best(['elbow','knee','palm','high','cross','hook'].filter(a => !used.has(a))) || best(['elbow','knee','palm','high','cross','hook']);
+  if (proj && (proj/fight.length >= .3 || !koFam)){ if (koFam && fight.length >= 30) add(koFam, INV_STEP[koFam]); const p = (cnt.grab||0) >= (cnt.throw||0) ? 'grab' : 'throw'; add(p, INV_KO[p], true); }
+  else if (koFam) add(koFam, INV_KO[koFam], true);
+  else steps.push({k:'kdCross', name:'Lance K.O.', art:'coup de grâce'});
+  const h = ids.length * 7 + fight.length;
+  const name = nameHint || (INV_TITLE[h % INV_TITLE.length] + ' ' + topArts(ids,1).join(''));
+  return {name, steps, n: ids.length};
+}
+function invSpecial(inv){
+  const seq = inv.steps.flatMap(st => STEPS[st.k].seq()); const tail = seq[seq.length-1];
+  if (!(tail.ev && tail.ev.grab)) seq.push(ST('guard',300));
+  return {name: inv.name, seq, evade: inv.steps.some(st => STEPS[st.k].evade) ? .35 : 0,
+    desc: `Technique inventée en fusionnant ${inv.n} techniques : ` + inv.steps.map(st => st.name).join(' → '), steps: inv.steps};
+}
 function specialSeq(c){
   const ids = c.spec.filter(id => c.techs.includes(id) && TT(id) && TT(id)[3]);
   const steps = ids.map((id,i) => { const t = TT(id); const last = i===ids.length-1;
@@ -583,9 +643,10 @@ function specialSeq(c){
 function buildCustom(c){
   const s = customStats(c);
   const key = 'cust'+c.id;
-  if (c.spec.length > 15){
-    const g = giantSeq(c.spec.filter(id => c.techs.includes(id)));
-    SPECIALS[key] = {name: c.tn || 'Technique Ultime', seq: g.seq, giant:1, desc: `${g.n} techniques enchaînées à toute vitesse, puis projection finale`, steps: c.spec.slice(0,12).map(id => ({k: (TT(id)[5]||TT(id)[4]||'cross'), name: TT(id)[8], art: TT(id)[7]})).filter(x => STEPS[x.k])};
+  if (!c.inv && c.spec.length > 15) c.inv = inventTechnique(c.techs, c.tn);
+  if (c.inv){
+    if (c.tn) c.inv.name = c.tn;
+    SPECIALS[key] = invSpecial(c.inv);
     const moves = fuseActives(c.techs).map(t => t[3]);
     const variants = {}; c.techs.map(TT).filter(t => t && t[3]).forEach(t => (variants[t[3]] = variants[t[3]] || []).push([t[8], t[6][0]]));
     return {rank:null, custom:c.id, variants, level:overall(s), s, moves: moves.length ? moves : ['jab','cross'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]), h:c.h, w:c.w, title:'Créé par toi', person:c.name, idleP:'guard'};
@@ -601,10 +662,11 @@ function buildCustom(c){
   return {rank:null, custom:c.id, variants, level:overall(s), s, moves: moves.length ? moves : ['jab','cross'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]), h:c.h, w:c.w, title:'Créé par toi', person:c.name, idleP:'guard'};
 }
 const byName = n => TECHS.find(t => t[8]===n)[0];
+let cInv = null, cPers = [], pq = '';
 let cT = ['Jab','Direct','Low kick','Double-leg'].map(byName), cSp = ['Jab','Direct','Double-leg'].map(byName), showAll = false, tq = '', tcat = 'Tout';
 function readCustom(){
   return {id: Date.now(), name: ($('cName').value.trim() || 'Adversaire mystère'), h:+$('cH').value/100, w:+$('cW').value, m:+$('cM').value, level:+$('cL').value,
-    techs:[...cT], spec:[...cSp], tn:$('cTN').value.trim()};
+    techs:[...cT], spec:[...cSp], tn:$('cTN').value.trim(), inv: cInv ? JSON.parse(JSON.stringify(cInv)) : null};
 }
 const MUSC = m => m < 20 ? 'Mince' : m < 45 ? 'Normal' : m < 70 ? 'Musclé' : m < 90 ? 'Très musclé' : 'Colosse';
 const modTxt = mods => mods.map((v,i) => v ? `<span class="${v>0?'up':'dn'}">${STAT[i]} ${v>0?'+':''}${v}</span>` : '').filter(Boolean).join(' · ');
@@ -628,7 +690,7 @@ function createUI(){
   $('cTechs').querySelectorAll('[data-c]').forEach(b => b.onclick = () => { tcat = b.dataset.c; createUI(); });
   const fightT = cT.filter(id => TT(id)[3]);
   $('cAdd').innerHTML = fightT.map(id => `<button data-s="${id}">＋ ${TT(id)[8]}</button>`).join('');
-  $('cAdd').querySelectorAll('button').forEach(b => b.onclick = () => { if (cSp.length >= 15) return; const id = b.dataset.s;
+  $('cAdd').querySelectorAll('button').forEach(b => b.onclick = () => { cInv = null; if (cSp.length >= 15) return; const id = b.dataset.s;
     const isProj = x => TT(x)[4] === null;
     if (isProj(id)){ cSp = cSp.filter(x => !isProj(x)); cSp.push(id); }
     else if (cSp.length && isProj(cSp[cSp.length-1])) cSp.splice(cSp.length-1, 0, id); else cSp.push(id);
@@ -637,7 +699,7 @@ function createUI(){
   $('cFuse').innerHTML = `<div class="tact" style="background:#0b0b0e;border-radius:10px;padding:10px;margin:6px 0"><b style="color:var(--gold)">Style fusionné</b> : ${cT.length} techniques, <b>toutes utilisées en combat</b>. ${cT.filter(id=>TT(id)[3]).length} techniques de combat réparties en ${act.length} familles : à chaque coup, une autre variante sort. Les ${cT.filter(id=>!TT(id)[3]).length} entraînements donnent des bonus.<br><span style="color:var(--mute)">${act.map(t => MOVE_FR[t[3]] + ' ×' + cT.filter(id=>TT(id)[3]===t[3]).length).join(' · ') || '—'}</span>
     <details style="margin-top:6px"><summary style="cursor:pointer;color:var(--gold)">Voir les ${cT.length} techniques de son style</summary>
     ${[...new Set(cT.map(id=>TT(id)[2]))].map(g => `<div class="tg">${g} (${cT.filter(id=>TT(id)[2]===g).length})</div><div style="font-size:12px;color:var(--txt);line-height:1.5">${cT.filter(id=>TT(id)[2]===g).map(id=>TT(id)[8]).join(' · ')}</div>`).join('')}</details></div>`;
-  seqUI(); myOppsUI();
+  seqUI(); myOppsUI(); persUI();
 }
 // Presets: worst, average, best
 function preset(kind){
@@ -649,7 +711,7 @@ function preset(kind){
     c = {...base, name:'Le Meilleur', level:99, techs: TECHS.map(t => t[0]), tn:'La Technique Ultime'};
     let bestS = -1, bp = null;
     for (let h=160; h<=215; h+=5) for (let w=60; w<=130; w+=5) for (let m=40; m<=100; m+=10){ const t = {...c, h:h/100, w, m}; const sc = scoreOf(t) - (Math.abs(h-188)+Math.abs(w-95)+Math.abs(m-85))/1000; if (sc > bestS){ bestS = sc; bp = t; } }
-    c = bp; c.spec = ultimateSpecial(c.techs);
+    c = bp; c.spec = []; c.inv = inventTechnique(c.techs, 'La Technique Ultime');
   } else if (kind==='worst'){
     c = {...base, name:'Le Pire', level:30, techs:['Coup de pied 540','Tomoe-nage'].map(byName), tn:'La Catastrophe'};
     c.spec = ['Coup de pied 540'].map(byName);
@@ -661,9 +723,11 @@ function preset(kind){
     c.spec = ['Jab','Direct','Crochet'].map(byName);
   }
   $('cName').value = c.name; $('cH').value = Math.round(c.h*100); $('cW').value = c.w; $('cM').value = c.m; $('cL').value = c.level; $('cTN').value = c.tn;
-  cT = [...c.techs]; cSp = [...c.spec]; createUI(); window.scrollTo({top:0,behavior:'smooth'});
+  cT = [...c.techs]; cSp = [...c.spec]; cInv = c.inv || null; createUI(); window.scrollTo({top:0,behavior:'smooth'});
 }
 function seqUI(){
+  if (cInv){ $('cSeq').innerHTML = cInv.steps.map((st,i) => `<span class="st2 ${i===cInv.steps.length-1?'kd':''}">${st.name}<br><span style="font-size:10px;color:var(--mute)">${st.art}</span></span>`).join('<span class="ar">→</span>') + ` <span class="st2" id="spClear">✕ vider</span>`;
+    $('spClear').onclick = () => { cInv = null; cSp = []; seqUI(); }; preview(); return; }
   if (cSp.length > 15){ $('cSeq').innerHTML = `<span class="st2 kd">🌪 ${cSp.length} techniques enchaînées à toute vitesse, puis projection finale</span> <span class="st2" id="spClear">✕ vider</span>`; $('spClear').onclick = () => { cSp = []; seqUI(); }; preview(); return; }
   const c = readCustom(), steps = specialSeq(c);
   $('cSeq').innerHTML = cSp.length ? cSp.map((id,i) => { const last = i===cSp.length-1, t = TT(id);
@@ -688,19 +752,53 @@ function myOppsUI(){
   $('myOpps').querySelectorAll('[data-l]').forEach(b => b.onclick = () => startLesson(buildCustom(list[+b.dataset.l])));
   $('myOpps').querySelectorAll('[data-d]').forEach(b => b.onclick = () => { list.splice(+b.dataset.d,1); save.customs = list; persist(); myOppsUI(); });
 }
+
+// ---- Fuse several fighters into one ----
+function candidates(){
+  const list = [];
+  (save.customs || []).filter(c => c.techs && c.techs.every(id => TT(id))).forEach((c,i) => list.push({id:'c'+c.id, label:c.name, sub:`créé · ${c.techs.length} techniques`, c}));
+  for (let r=1; r<=NOPP; r++){ const o = opponent(r); list.push({id:'r'+r, label:`#${r} ${o.person}`, sub:o.arts.join(' + '), o}); }
+  return list;
+}
+const artTechs = art => { const k = art.toLowerCase().split(' ')[0]; return TECHS.filter(t => t[7].toLowerCase().includes(k)).map(t => t[0]); };
+function persUI(){
+  const all = candidates(), q = pq.toLowerCase();
+  const shown = all.filter(x => !q || (x.label+' '+x.sub).toLowerCase().includes(q)).slice(0,60);
+  $('persList').innerHTML = shown.map(x => `<div class="tc ${cPers.includes(x.id)?'on':''}" data-p="${x.id}"><div class="ck">${cPers.includes(x.id)?'✓':''}</div><div><div class="tn">${x.label}</div><div class="tm">${x.sub}</div></div></div>`).join('');
+  $('persList').querySelectorAll('.tc').forEach(el => el.onclick = () => { const id = el.dataset.p; cPers = cPers.includes(id) ? cPers.filter(x=>x!==id) : cPers.concat([id]); persUI(); });
+  $('persSel').innerHTML = cPers.length ? `<b>${cPers.length} choisi(s) :</b> ` + cPers.map(id => all.find(x=>x.id===id)).filter(Boolean).map(x=>x.label).join(' + ') : '<span style="color:var(--mute)">Aucun combattant choisi.</span>';
+  $('bPersFuse').disabled = cPers.length < 2;
+  $('bPersFuse').textContent = cPers.length < 2 ? '👥 Choisis au moins 2 combattants' : `👥 FUSIONNER LES ${cPers.length} COMBATTANTS`;
+}
+function fusePersons(){
+  const all = candidates(), sel = cPers.map(id => all.find(x=>x.id===id)).filter(Boolean);
+  if (sel.length < 2) return;
+  const techs = new Set(); let h = 0, w = 0, lv = 0;
+  const names = [];
+  sel.forEach(x => {
+    if (x.c){ x.c.techs.forEach(id => techs.add(id)); h += x.c.h; w += x.c.w; lv = Math.max(lv, x.c.level); names.push(x.c.name.split(' ')[0]); }
+    else { x.o.arts.forEach(a => artTechs(a).forEach(id => techs.add(id))); h += x.o.h; w += x.o.w; lv = Math.max(lv, x.o.level); names.push(x.o.person.split(' ')[0]); }
+  });
+  h /= sel.length; w /= sel.length;
+  cT = [...techs]; cSp = [];
+  $('cName').value = names.slice(0,4).join('-') + (names.length > 4 ? '…' : '');
+  $('cH').value = Math.round(h*100); $('cW').value = Math.round(w); $('cM').value = Math.max(20, Math.min(95, Math.round(50 + (w-80)*.6)));
+  $('cL').value = Math.min(99, lv + (sel.length-1)*2);
+  $('cTN').value = '';
+  cInv = inventTechnique(cT, ''); if (cInv) $('cTN').value = cInv.name;
+  createUI(); window.scrollTo({top:0,behavior:'smooth'});
+}
+$('pq').oninput = e => { pq = e.target.value; persUI(); };
+$('bPersFuse').onclick = fusePersons;
 $('bCreate').onclick = () => go('sCreate');
-$('bFuse').onclick = () => {
-  const fam = ['jab','chain','cross','hook','palm','elbow','knee','kick','teep','high','spin','slip','grab','throw'];
-  const fight = fam.flatMap(a => cT.filter(id => TT(id)[3]===a));
-  const proj = fight.filter(id => TT(id)[4] === null), rest = fight.filter(id => TT(id)[4] !== null);
-  cSp = fight.length > 15 ? fight : rest.concat(proj.slice(-1)); if (!$('cTN').value.trim()) $('cTN').value = 'La Fusion ' + topArts(cT,2).join('-'); seqUI(); };
-function fillAll(ids, tn, nm){ cT = ids; cSp = ids.filter(id => TT(id)[3]); $('cTN').value = tn; if (!$('cName').value.trim() || ["L'Ultime","Le Vert","Le Rouge"].includes($('cName').value)) $('cName').value = nm; createUI(); }
+$('bFuse').onclick = () => { cInv = inventTechnique(cT, $('cTN').value.trim()); cSp = []; if (cInv && !$('cTN').value.trim()) $('cTN').value = cInv.name; seqUI(); };
+function fillAll(ids, tn, nm){ cT = ids; cSp = []; cInv = inventTechnique(ids, tn); $('cTN').value = tn; if (!$('cName').value.trim() || ["L'Ultime","Le Vert","Le Rouge"].includes($('cName').value)) $('cName').value = nm; createUI(); }
 $('pGreen').onclick = () => fillAll(TECHS.filter(t => t[6].every(v => v >= 0)).map(t => t[0]), 'Technique Verte', 'Le Vert');
 $('pRed').onclick = () => fillAll(TECHS.filter(t => t[6].some(v => v < 0)).map(t => t[0]), 'Technique Rouge', 'Le Rouge');
-$('pAll').onclick = () => { cT = TECHS.map(t => t[0]); cSp = cT.filter(id => TT(id)[3]); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); createUI(); };
+$('pAll').onclick = () => { cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); createUI(); };
 $('pWorst').onclick = () => preset('worst'); $('pAvg').onclick = () => preset('avg'); $('pBest').onclick = () => preset('best');
 $('bSaveOpp').onclick = () => { if (!cT.length) return;
-  if (!cSp.length) $('bFuse').onclick();
+  if (!cSp.length && !cInv) $('bFuse').onclick();
   const c = readCustom(); save.customs = (save.customs||[]).filter(x=>x.techs).concat([c]); persist(); showVs(buildCustom(c)); };
 
 
@@ -777,7 +875,7 @@ const TOURB_MOVES = [['tjab','JAB'],['vrille','🌀 VRILLE'],['fouet','FOUET'],[
 function startFight(test){
   if (!renderer) init3D();
   if (L) endLesson();
-  lastTest = !!test;
+  lastTest = !!test; twoSel = null; $('pad2').style.display = 'none'; document.querySelector('.pad').style.display = ''; $('ctl').style.display = '';
   $('fight').classList.add('on'); resize();
   const M = me();
   A = makeFighter(M, -1.4, 1, false); B = makeFighter(curOpp, 1.4, -1, true);
@@ -920,6 +1018,7 @@ function timeUp(){
 function endMatch(){
   F.phase = 'over';
   const win = A.wins > B.wins;
+  if (F.twoP){ const w = A.wins > B.wins ? 'JOUEUR 1' : 'JOUEUR 2'; $('endT').textContent = w + ' GAGNE !'; $('endT').style.color = A.wins > B.wins ? 'var(--red)' : 'var(--blue)'; $('endP').innerHTML = `${A.wins} - ${B.wins}`; $('endBox').classList.add('on'); F.phase = 'over'; return; }
   if (P === B){ $('endT').textContent = B.wins > A.wins ? 'VICTOIRE DE ' + curOpp.person.toUpperCase() : 'LE TOURBILLON GAGNE'; $('endT').style.color = 'var(--gold)'; $('endP').innerHTML = `${B.wins} - ${A.wins}. Tu contrôlais ${curOpp.person}, donc le classement ne change pas.`; $('endBox').classList.add('on'); F.phase='over'; return; }
   $('endT').textContent = win ? 'VICTOIRE !' : 'DÉFAITE';
   $('endT').style.color = win ? 'var(--gold)' : 'var(--red)';
@@ -931,6 +1030,62 @@ function endMatch(){
 }
 
 
+
+// ===================== TWO PLAYERS =====================
+function fighterOptions(){
+  const o = [['tourb','🌀 Le Tourbillon']];
+  (save.customs || []).filter(c => c.techs && c.techs.every(id => TT(id))).forEach(c => o.push(['c'+c.id, '🛠 ' + c.name]));
+  for (let r=1; r<=NOPP; r++) o.push(['r'+r, `#${r} ${opponent(r).person}`]);
+  return o;
+}
+function fighterData(id){
+  if (id==='tourb') return me();
+  if (id[0]==='c'){ const c = (save.customs||[]).find(x => 'c'+x.id===id); return buildCustom(c); }
+  return opponent(+id.slice(1));
+}
+const isTourb = d => d.name === PLAYER.name && !d.person;
+const nameOf = d => isTourb(d) ? '🌀 Le Tourbillon' : d.person;
+function twoPUI(){
+  const opts = fighterOptions().map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+  ['j1','j2'].forEach((id,i) => { const v = $(id).value; $(id).innerHTML = opts; $(id).value = v || (i ? 'r50' : 'tourb'); });
+  const info = id => { const d = fighterData($(id).value); $(id+'i').textContent = `Note ${overall(d.s)} · spéciale : ` + d.sps.map(k => SPECIALS[k].name).join(' + '); };
+  info('j1'); info('j2'); $('j1').onchange = () => info('j1'); $('j2').onchange = () => info('j2');
+}
+$('b2P').onclick = () => go('s2P');
+const k1 = {}, k2 = {};
+let twoSel = null;
+function movesOf(d){
+  if (isTourb(d)) return TOURB_MOVES;
+  return [...new Set((d.moves||[]).filter(m => m!=='slip'))].slice(0,4).map(m => { const n = d.variants && d.variants[m] ? d.variants[m].length : 0; return [m, MOVE_FR[m].toUpperCase() + (n>1 ? ' ×'+n : '')]; });
+}
+function start2P(id1, id2){
+  twoSel = [id1, id2];
+  const d1 = fighterData(id1), d2 = fighterData(id2);
+  curOpp = Object.assign({}, d2, {person: nameOf(d2)});
+  startFight(false);
+  A = makeFighter(d1, -1.4, 1, false); B = makeFighter(d2, 1.4, -1, false);
+  if (isTourb(d1)) A.aiMoves = ['tjab','vrille','fouet','faux','vent'];
+  A.keys = k1; B.keys = k2; P = null; F.twoP = true;
+  $('ctl').style.display = 'none'; document.querySelector('.pad').style.display = 'none'; $('pad2').style.display = 'grid';
+  $('nA').textContent = 'J1 · ' + nameOf(d1); $('nB').textContent = 'J2 · ' + nameOf(d2);
+  $('spA').textContent = '⚡ ' + SPECIALS[d1.sps[0]].name; $('spB').textContent = '⚡ ' + SPECIALS[d2.sps[0]].name;
+  const half = (f, p) => { const mv = movesOf(f.data);
+    return `<div class="half p${p}"><button class="b" data-p="${p}" data-k="left">◀</button><button class="b" data-p="${p}" data-k="right">▶</button><button class="b g" data-p="${p}" data-k="guard">🛡</button><button class="b g" data-p="${p}" data-k="dodge">↯</button>`
+      + mv.map(([k,l]) => `<button class="b" data-p="${p}" data-k="${k}">${l}</button>`).join('')
+      + f.data.sps.slice(0,2).map((k,i) => `<button class="b spc" data-p="${p}" data-sp="${i}">⚡ ${SPECIALS[k].name.toUpperCase()}</button>`).join('') + `</div>`; };
+  $('pad2').innerHTML = half(A,1) + half(B,2);
+  $('pad2').querySelectorAll('[data-k]').forEach(b => { const f = b.dataset.p==='1' ? A : B, k = b.dataset.k;
+    b.onpointerdown = e => { e.preventDefault(); f.keys[k] = true; b.classList.add('on'); press2(f,k); };
+    b.onpointerup = b.onpointerleave = b.onpointercancel = () => { f.keys[k] = false; b.classList.remove('on'); }; });
+  $('pad2').querySelectorAll('[data-sp]').forEach(b => { const f = b.dataset.p==='1' ? A : B; b.onpointerdown = e => { e.preventDefault(); special(f, +b.dataset.sp); }; });
+  resize(); banner('JOUEUR 1 CONTRE JOUEUR 2', 1300);
+}
+function press2(f, k){
+  if (k==='dodge'){ act(f, isTourb(f.data) ? 'vent' : 'slip'); return; }
+  if (MOVES[k] && !['left','right','guard'].includes(k)) act(f,k);
+}
+$('b2Go').onclick = () => start2P($('j1').value, $('j2').value);
+const KB1 = {a:'left',q:'left',d:'right',s:'guard',w:'dodge',z:'dodge'}, KB2 = {ArrowLeft:'left',ArrowRight:'right',ArrowDown:'guard',ArrowUp:'dodge'};
 // ===================== LESSON: learn the technique for real =====================
 const FAM = {jab:'jab',cross:'cross',kdCross:'cross',hook:'hook',kdHook:'hook',chain:'chain',palm:'palm',kdPalm:'palm',low:'kick',teep:'teep',high:'high',kdHigh:'high',
   spin:'spin',elbow:'elbow',kdElbow:'elbow',knee:'knee',kdKnee:'knee',titan:'grab',loup:'grab',ippon:'throw',ipponS:'throw',slip:'slip'};
@@ -1025,14 +1180,18 @@ function press(k){
 }
 const KB = {ArrowLeft:'left',ArrowRight:'right',a:'left',d:'right',q:'left',s:'guard',ArrowDown:'guard',w:'dodge',z:'dodge',ArrowUp:'dodge'};
 const KEYMOVE = ['j','k','l','u','h','g'];
-addEventListener('keydown', e => { if (!$('fight').classList.contains('on')) return; const k = KB[e.key];
+addEventListener('keydown', e => { if (!$('fight').classList.contains('on')) return;
+  if (F && F.twoP){ const r = (f, map, mk, spk) => { const k = map[e.key]; if (k && !f.keys[k]){ f.keys[k] = true; press2(f,k); }
+      const mi = mk.indexOf(e.key); if (mi >= 0){ const m = movesOf(f.data)[mi]; if (m) press2(f, m[0]); } if (spk.includes(e.key)) special(f,0); };
+    r(A, KB1, ['f','g','h','j'], ['r']); r(B, KB2, ['1','2','3','4'], ['0','Enter']); return; }
+  const k = KB[e.key];
   if (e.key==='i') special(P,0); if (e.key==='o') special(P,1);
   const mi = KEYMOVE.indexOf(e.key); if (mi >= 0){ const btn = document.querySelectorAll('#padR [data-k]')[mi]; if (btn) press(btn.dataset.k); }
   if (k && !keys[k]){ keys[k] = true; press(k); } });
-addEventListener('keyup', e => { const k = KB[e.key]; if (k) keys[k] = false; });
-$('pause').onclick = () => { const wasL = F && F.lesson; $('fight').classList.remove('on'); F = null; if (wasL){ endLesson(); go(curOpp && !curOpp.rank ? 'sCreate' : 'sVs'); } else go('sOpp'); };
-$('bAgain').onclick = () => startFight(lastTest);
-$('bBack').onclick = () => { $('fight').classList.remove('on'); F = null; go(curOpp && !curOpp.rank ? 'sCreate' : 'sOpp'); };
+addEventListener('keyup', e => { if (F && F.twoP){ const a = KB1[e.key], b = KB2[e.key]; if (a) A.keys[a] = false; if (b) B.keys[b] = false; return; } const k = KB[e.key]; if (k) keys[k] = false; });
+$('pause').onclick = () => { if (F && F.twoP){ $('fight').classList.remove('on'); F = null; go('s2P'); return; } const wasL = F && F.lesson; $('fight').classList.remove('on'); F = null; if (wasL){ endLesson(); go(curOpp && !curOpp.rank ? 'sCreate' : 'sVs'); } else go('sOpp'); };
+$('bAgain').onclick = () => { if (twoSel) start2P(twoSel[0], twoSel[1]); else startFight(lastTest); };
+$('bBack').onclick = () => { const t = twoSel; $('fight').classList.remove('on'); F = null; go(t ? 's2P' : curOpp && !curOpp.rank ? 'sCreate' : 'sOpp'); };
 
 // Update
 function updateFighter(f, dt){
@@ -1059,7 +1218,8 @@ function updateFighter(f, dt){
   }
   // movement
   let mv = 0;
-  if (!f.isAI && !F.lesson){ if (canAct(f)){ f.state = keys.guard ? 'guard' : 'idle'; mv = (keys.right?1:0) - (keys.left?1:0); } }
+  const K = f.keys || keys;
+  if (!f.isAI && !F.lesson){ if (canAct(f)){ f.state = K.guard ? 'guard' : 'idle'; mv = (K.right?1:0) - (K.left?1:0); } }
   else if (canAct(f) && f.state!=='guard') mv = f.move===-1 ? f.face : f.move===1 ? -f.face : 0;
   if (mv && canAct(f) && f.state!=='guard'){ f.x += mv * f.walk * dt; f.state = 'walk'; }
 }
