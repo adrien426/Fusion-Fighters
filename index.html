@@ -599,6 +599,7 @@ function menu(){
   document.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => { save.mood = b.dataset.mm; persist(); menu(); });
   document.querySelectorAll('[data-mb]').forEach(b => b.onclick = () => setL('bare', b.dataset.mb==='1'));
   document.querySelectorAll('[data-mn]').forEach(b => b.onclick = () => { setL('nails', b.dataset.mn); setL('bare', true); });
+  $('meCard').insertAdjacentHTML('afterbegin', mySwitchHTML()); bindMySwitch(menu);
   $('bMeAll').textContent = M.all ? '↩ Revenir au Tourbillon normal' : `🌍 TOUT METTRE à mon Tourbillon (${TECHS.length} techniques)`;
 }
 $('bOpp').onclick = () => go('sOpp');
@@ -621,9 +622,19 @@ $('pNext').onclick = () => { page = Math.min(Math.ceil(NOPP/50)-1,page+1); oppUI
 $('bGo').onclick = () => { const r = Math.max(1,Math.min(NOPP,+$('goRank').value||1)); page = Math.floor((r-1)/50); oppUI(); };
 let curOpp = null;
 const lookBadge = L => L ? `<span style="font-size:11px"><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.skin};vertical-align:-1px"></i> peau · ${L.bare ? `<i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.nails};vertical-align:-1px"></i> mains nues` : '🥊 gants'}</span>` : '';
+const myId = () => save.myChar || 'tourb';
+const myData = () => myId() === 'tourb' ? me() : fighterData(myId());
+function mySwitchHTML(){
+  return `<div class="fusionCard" style="margin:8px 0"><div class="tact"><b style="color:var(--red)">🎮 Ton combattant pour ce combat</b></div><select class="sel2 mySel">${fighterOptions().map(([v,l]) => `<option value="${v}" ${v===myId()?'selected':''}>${l}</option>`).join('')}</select>${myId()!=='tourb' ? '<button class="big alt myBack" style="font-size:16px;margin-top:6px">↩ Reprendre mon Tourbillon</button>' : '<div class="tm" style="font-size:12px;color:var(--mute);margin-top:4px">Si tu ne changes rien, tu gardes ton Tourbillon.</div>'}</div>`;
+}
+function bindMySwitch(after){
+  document.querySelectorAll('.mySel').forEach(el => el.onchange = () => { save.myChar = el.value === 'tourb' ? null : el.value; persist(); after(); });
+  document.querySelectorAll('.myBack').forEach(el => el.onclick = () => { save.myChar = null; persist(); after(); });
+}
 function versus(r){ showVs(opponent(r)); }
 function showVs(o){
   curOpp = o; const r = o.rank;
+  if (myId() !== 'tourb'){ const D = myData(); $('vsA').innerHTML = `<b style="color:var(--red)">🎮 ${nameOf(D)}</b>Toi (combattant choisi) · <b style="display:inline;font-size:16px;color:var(--gold)">NOTE ${overall(D.s)}</b><br>${D.h ? D.h.toFixed(2).replace('.',',') + ' m · ' + D.w + ' kg' : ''}`; } else
   $('vsA').innerHTML = `<b style="color:var(--red)">🌀 ${PLAYER.name}</b>Toi · ${save.rank>NOPP?'non classé':'#'+save.rank} · <b style="display:inline;font-size:16px;color:var(--gold)">NOTE ${overall(me().s)}</b><br>Physique : sans importance, sa force vient de tout ce qu'il sait${sheetHTML(me())}`;
   $('vsB').innerHTML = `<b style="color:var(--blue)">${curOpp.person}</b>${r?'#'+r+' · ':''}${curOpp.title} · <b style="display:inline;font-size:16px;color:var(--gold)">NOTE ${overall(curOpp.s)}</b><br>${curOpp.h.toFixed(2).replace('.',',')} m · ${curOpp.w} kg · ❤ ${curOpp.life||100} · 🛡 ${Math.round((curOpp.resist||0)*100)} % · ${curOpp.health||'En forme'}<br>${lookBadge(curOpp.look)}${sheetHTML(curOpp)}`;
   $('vsTact').innerHTML = `<div class="tact"><b>${curOpp.custom ? 'Ses techniques choisies' : 'Ses arts fusionnés'} :</b> ${curOpp.custom && curOpp.arts.length > 12 ? curOpp.arts.length + ' techniques (' + curOpp.arts.slice(0,8).join(', ') + '…)' : curOpp.arts.join(' + ')}<br><b>Ses techniques de combat :</b> ${curOpp.moves.map(m => curOpp.pmoves && curOpp.pmoves[m] ? `${curOpp.pmoves[m].name} (${curOpp.pmoves[m].n})` : (MOVE_FR[m]||m)).join(' · ')}</div>
@@ -631,6 +642,7 @@ function showVs(o){
     <button class="big alt" id="bLearn" style="font-size:20px;margin-top:10px">📹 Apprendre sa technique en vrai</button>
     <div class="tact" style="margin-top:8px"><b style="color:var(--red)">⚡ Ta technique : Technique Fusion</b><br>${SPECIALS.fusion.desc}</div>
     <div class="tact" style="margin-top:8px;color:var(--mute)">Astuce : contre les lutteurs, garde tes distances et frappe en Vrille. Contre les frappeurs, Pas du Vent, puis Faux.</div>`;
+  $('vsTact').insertAdjacentHTML('afterbegin', mySwitchHTML()); bindMySwitch(() => showVs(curOpp));
   go('sVs'); $('bLearn').onclick = () => startLesson(curOpp);
 }
 $('bFight').onclick = () => startFight(false);
@@ -1236,14 +1248,14 @@ function startFight(test){
   if (L) endLesson();
   lastTest = !!test; twoSel = null; $('pad2').style.display = 'none'; document.querySelector('.pad').style.display = ''; $('ctl').style.display = '';
   $('fight').classList.add('on'); resize();
-  const M = me();
+  const M = myData();
   A = makeFighter(M, -1.4, 1, false); B = makeFighter(curOpp, 1.4, -1, true);
-  A.aiMoves = ['tjab','vrille','fouet','faux','vent'].concat(M.all ? ['fused'] : []);
+  if (isTourb(M)) A.aiMoves = ['tjab','vrille','fouet','faux','vent'].concat(M.all ? ['fused'] : []);
   paint(MA, A.data.look, true); paint(MB, B.data.look, false);
   F = {round:1, time:60, phase:'intro', phaseT:1.6, test:!!test};
   $('testTag').style.display = test ? 'block' : 'none';
   P = A; setControl(A);
-  $('spB').textContent = '⚠ ' + SPECIALS[curOpp.sps[0]].name; $('nA').textContent = PLAYER.name; $('nB').textContent = (curOpp.rank?`#${curOpp.rank} `:'') + curOpp.person;
+  $('spB').textContent = '⚠ ' + SPECIALS[curOpp.sps[0]].name; $('nA').textContent = nameOf(A.data); $('spA').textContent = '⚡ ' + SPECIALS[A.data.sps[0]].name; $('nB').textContent = (curOpp.rank?`#${curOpp.rank} `:'') + curOpp.person;
   resize();
   $('endBox').classList.remove('on'); banner(test ? 'TEST' : 'ROUND 1');
   if (!running){ running = true; last = performance.now(); requestAnimationFrame(loop); }
@@ -1254,16 +1266,16 @@ function setControl(f){
   for (const k in keys) keys[k] = false;
   $('sw').classList.toggle('me', P===A);
   $('ctlR').classList.toggle('on', P===A); $('ctlL').classList.toggle('on', P===B);
-  $('nA').innerHTML = (P===A?'🎮 ':'') + PLAYER.name; $('nB').innerHTML = (P===B?'🎮 ':'') + (curOpp.rank?`#${curOpp.rank} `:'') + curOpp.person;
+  $('nA').innerHTML = (P===A?'🎮 ':'') + nameOf(A.data); $('nB').innerHTML = (P===B?'🎮 ':'') + (curOpp.rank?`#${curOpp.rank} `:'') + curOpp.person;
   const famBtns = f => [...new Set(f.data.moves ? f.data.moves.filter(m => m!=='slip') : [])].slice(0,13).map(m => { return [m, m==='fused' ? '🥊 ' + f.data.fusedMove.name.toUpperCase() : MOVE_FR[m].toUpperCase()]; });
-  const moves = (P===A ? TOURB_MOVES.concat(A.data.all ? famBtns(A) : []) : [...new Set(B.data.moves.filter(m => m!=='slip'))].slice(0,7).map(m => { return [m, B.data.pmoves && B.data.pmoves[m] ? B.data.pmoves[m].short + ' (' + B.data.pmoves[m].n + ')' : m==='fused' ? '🥊 ' + B.data.fusedMove.name.toUpperCase() : (MOVE_FR[m]||m).toUpperCase()]; })).concat([['acro','🤸 ACRO']]);
+  const moves = (P===A && isTourb(A.data) ? TOURB_MOVES.concat(A.data.all ? famBtns(A) : []) : P===A ? movesOf(A.data) : [...new Set(B.data.moves.filter(m => m!=='slip'))].slice(0,7).map(m => { return [m, B.data.pmoves && B.data.pmoves[m] ? B.data.pmoves[m].short + ' (' + B.data.pmoves[m].n + ')' : m==='fused' ? '🥊 ' + B.data.fusedMove.name.toUpperCase() : (MOVE_FR[m]||m).toUpperCase()]; })).concat([['acro','🤸 ACRO']]);
   const spName = SPECIALS[P.data.sps[0]].name;
   $('padR').style.gridTemplateColumns = `repeat(${moves.length > 12 ? 5 : moves.length > 9 ? 4 : moves.length > 4 ? 3 : Math.max(2, moves.length)},minmax(0,1fr))`;
   $('padR').innerHTML = moves.map(([k,l]) => `<button class="b" data-k="${k}">${l}</button>`).join('') + `<div class="spRow">${P.data.sps.map((k,i) => `<button class="b spc" data-sp="${i}" style="font-size:14px">${i?'🌍':'⚡'} ${SPECIALS[k].name.toUpperCase()}</button>`).join('')}</div>`;
-  $('dodgeBtn').textContent = P===A ? '🌬 PAS DU VENT' : '↯ ESQUIVE';
+  $('dodgeBtn').textContent = P===A && isTourb(A.data) ? '🌬 PAS DU VENT' : '↯ ESQUIVE';
   bindPad();
 }
-$('ctl').onclick = () => { if (F && !F.lesson) { setControl(P===A ? B : A); banner(P===A ? 'TU CONTRÔLES LE TOURBILLON' : 'TU CONTRÔLES ' + curOpp.person.toUpperCase(), 1000); } };
+$('ctl').onclick = () => { if (F && !F.lesson) { setControl(P===A ? B : A); banner(P===A ? 'TU CONTRÔLES ' + nameOf(A.data).toUpperCase() : 'TU CONTRÔLES ' + curOpp.person.toUpperCase(), 1000); } };
 function newRound(){
   A.x=-1.4; B.x=1.4; for (const f of [A,B]){ f.hp=Math.round(f.hpMax*healthOf(f.data.health)[2]); f.st=100; f.zone={head:100, body:100, leg:100}; f.bal=100; f.dazed=0; f.kds=0; f.ribs=false; f.handHurt=false; f.acro=null; f.lift=0; f.q=[]; f.cur=null; f.state='idle'; f.pose={...G}; f.from={...G}; f.armor=0; f.invuln=0; }
   F.time = 60; F.phase='intro'; F.phaseT=1.4; banner('ROUND '+F.round);
@@ -1727,7 +1739,7 @@ function bindPad(){
 function press(k){
   if (!P) return;
   if (k==='acro'){ startAcro(P); return; }
-  if (k==='dodge') { act(P, P===A ? 'vent' : 'slip'); return; }
+  if (k==='dodge') { act(P, isTourb(P.data) ? 'vent' : 'slip'); return; }
   if ((MOVES[k] || k==='fused' || (P.data.pmoves && P.data.pmoves[k])) && !['left','right','guard'].includes(k)) act(P,k);
 }
 const KB = {ArrowLeft:'left',ArrowRight:'right',a:'left',d:'right',q:'left',s:'guard',ArrowDown:'guard',w:'dodge',z:'dodge',ArrowUp:'dodge'};
