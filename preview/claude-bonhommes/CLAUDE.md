@@ -9,6 +9,7 @@
 ## Merging to main (rule set by the repo owner)
 - The game is mostly used by the owner's son. He often forgets to confirm.
 - After a change has been offered for `main` 4 to 5 times without an answer, merge it into `main` anyway and say so.
+- Count every preview offered since the last merge to `main` (each push + "On met dans main ?" counts as one). At the 4th unanswered offer, merge straight away instead of asking again.
 - If he explicitly says no, do not merge.
 
 ## Code
