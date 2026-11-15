@@ -238,6 +238,7 @@ h2{font-size:30px;margin:6px 0 4px}
     <div class="artChips" id="cAdd" style="display:none"></div>
   </div>
   <button class="big" id="bSaveOpp">💾 Créer et combattre</button>
+  <button class="big alt" id="bSaveMe">🎮 Créer et le jouer moi-même</button>
   <button class="big alt" data-go="sMenu">← Retour</button>
 </section>
 
@@ -1054,8 +1055,9 @@ $('cName').oninput = preview;
 $('cTN').oninput = seqUI;
 function myOppsUI(){
   const list = (save.customs || []).filter(c => c.techs && c.techs.every(id => TT(id)));
-  $('myOpps').innerHTML = list.length ? '<div class="tact" style="margin-bottom:6px"><b>Mes adversaires créés</b> <span style="color:var(--mute)">(🧪 tester · 📹 apprendre · 🥊 combattre)</span></div>' + list.map((c,i) => { const o = buildCustom(c);
-    return `<div class="myo"><div><b>${c.name}</b> · note ${o.level}<br><span>${c.h.toFixed(2).replace('.',',')} m · ${c.w} kg · ${MUSC(c.m)} · ❤ ${vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life} · 🛡 ${Math.round(vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).res*100)} % · ${c.health||'En forme'} · ${c.techs.length} techniques</span></div><button data-l="${i}" style="background:#2b2b35">📹</button><button data-t="${i}" style="background:#2b2b35">🧪</button><button data-f="${i}">🥊</button><button class="del" data-d="${i}">✕</button></div>`; }).join('') : '';
+  $('myOpps').innerHTML = list.length ? '<div class="tact" style="margin-bottom:6px"><b>Mes adversaires créés</b> <span style="color:var(--mute)">(🧪 tester · 📹 apprendre · 🥊 combattre · 🎮 le jouer moi)</span></div>' + list.map((c,i) => { const o = buildCustom(c);
+    return `<div class="myo"><div><b>${c.name}</b> · note ${o.level}<br><span>${c.h.toFixed(2).replace('.',',')} m · ${c.w} kg · ${MUSC(c.m)} · ❤ ${vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life} · 🛡 ${Math.round(vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).res*100)} % · ${c.health||'En forme'} · ${c.techs.length} techniques</span></div><button data-l="${i}" style="background:#2b2b35">📹</button><button data-t="${i}" style="background:#2b2b35">🧪</button><button data-f="${i}">🥊</button><button data-me="${i}" title="Le jouer moi">🎮</button><button class="del" data-d="${i}">✕</button></div>`; }).join('') : '';
+  $('myOpps').querySelectorAll('[data-me]').forEach(b => b.onclick = () => { const c = list[+b.dataset.me]; save.myChar = 'c'+c.id; persist(); menu(); go('sOpp'); bannerLocal('TU JOUES ' + c.name.toUpperCase(), 2000); });
   $('myOpps').querySelectorAll('[data-f]').forEach(b => b.onclick = () => showVs(buildCustom(list[+b.dataset.f])));
   $('myOpps').querySelectorAll('[data-t]').forEach(b => b.onclick = () => { curOpp = buildCustom(list[+b.dataset.t]); startFight(true); });
   $('myOpps').querySelectorAll('[data-l]').forEach(b => b.onclick = () => startLesson(buildCustom(list[+b.dataset.l])));
@@ -1098,6 +1100,8 @@ function candidates(){
   const list = [];
   (save.customs || []).filter(c => c.techs && c.techs.every(id => TT(id))).forEach((c,i) => list.push({id:'c'+c.id, label:c.name, sub:`créé · ${c.techs.length} techniques`, c}));
   for (let r=1; r<=NOPP; r++){ const o = opponent(r); list.push({id:'r'+r, label:`#${r} ${o.person}`, sub:o.arts.join(' + '), o}); }
+  const T = {person:'Le Tourbillon', arts: save.playerAll ? [...new Set(TECHS.map(t => t[7]))] : ['Boxe','Wing Chun','Capoeira','Judo','Muay Thai','Karaté','Aïkido'], h:1.80, w:PLAYER.w, level:86, body:PLAYER.body, traits:PLAYER.traits, m:PLAYER.m};
+  list.push({id:'tourb', label:'🌀 Moi (Le Tourbillon)', sub:'ton style à toi', o:T});
   return list;
 }
 function persUI(){
@@ -1137,7 +1141,10 @@ $('bFuse').onclick = () => { const rc = readCustom(); const f = fusedMove(cT, ''
 function fillAll(ids, tn, nm){ cT = ids; cSp = []; cInv = inventTechnique(ids, tn); $('cTN').value = tn; if (!$('cName').value.trim() || ["L'Ultime","Le Vert","Le Rouge"].includes($('cName').value)) $('cName').value = nm; createUI(); }
 $('pGreen').onclick = () => fillAll(TECHS.filter(t => t[6].every(v => v >= 0)).map(t => t[0]), 'Technique Verte', 'Le Vert');
 $('pRed').onclick = () => fillAll(TECHS.filter(t => t[6].some(v => v < 0)).map(t => t[0]), 'Technique Rouge', 'Le Rouge');
-$('pAll').onclick = () => { cGear = ['mma','dents','tibias','coquille','chaussures','kimono']; cMood = 'Confiant'; cBody = {age:28, os:99, mains:99, poumons:99}; cTr = {agr:99, iq:99, calme:99, patience:99, ruse:99, courage:99}; $('cLife').value = 1000; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); createUI(); };
+$('pAll').onclick = () => { cGear = ['mma','dents','tibias','coquille','chaussures','kimono']; cMood = 'Confiant'; cBody = {age:28, os:99, mains:99, poumons:99}; cTr = {agr:99, iq:99, calme:99, patience:99, ruse:99, courage:99}; $('cLife').value = 1000; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); cPers = candidates().map(x => x.id); if (typeof persUI === 'function') persUI(); if ($('cName').value === "L'Ultime") $('cName').value = 'La Fusion de Tous'; createUI(); };
+$('bSaveMe').onclick = () => { if (!cT.length) return;
+  if (!cSp.length && !cInv) $('bFuse').onclick();
+  const c = readCustom(); save.customs = (save.customs||[]).filter(x=>x.techs).concat([c]); save.myChar = 'c'+c.id; persist(); menu(); go('sOpp'); bannerLocal('TU JOUES ' + c.name.toUpperCase() + ' · CHOISIS TON ADVERSAIRE', 2500); };
 $('pWorst').onclick = () => preset('worst'); $('pAvg').onclick = () => preset('avg'); $('pBest').onclick = () => preset('best');
 $('bSaveOpp').onclick = () => { if (!cT.length) return;
   if (!cSp.length && !cInv) $('bFuse').onclick();
