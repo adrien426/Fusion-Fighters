@@ -248,7 +248,11 @@ h2{font-size:30px;margin:6px 0 4px}
   <p class="sub">Chacun sur son téléphone. Un joueur crée la partie et donne le code à l'autre. L'autre entre le code. Chacun choisit son personnage.</p>
   <div class="fusionCard"><div class="tact"><b>Ton personnage</b></div><select id="mpSel" class="sel2"></select><div id="mpInfo" class="tm" style="font-size:12px;color:var(--mute);margin-top:4px"></div></div>
   <div class="artChips" style="margin:6px 0"><button data-arena="cage">🔷 Cage MMA</button><button data-arena="ring">🥊 Ring à 3 cordes</button></div>
+  <button class="big" id="mpAuto" style="background:#f4b942;color:#111">⚡ COMBAT AUTOMATIQUE</button>
+  <div class="tm" style="font-size:12px;color:var(--mute);margin:-4px 0 8px;text-align:center">Pas de code : dès que quelqu'un d'autre appuie aussi, vous êtes mis ensemble.</div>
+  <div class="tg" style="margin-top:10px">Ou avec un code (pour jouer avec un ami précis)</div>
   <button class="big" id="mpHost">➕ Créer une partie</button>
+  <button class="big" id="mpInviteTop" style="background:#2fa36b">📨 Inviter des gens</button>
   <div class="fusionCard" style="border-color:var(--blue)"><div class="tact"><b>Rejoindre une partie</b></div>
     <div class="pager"><input id="mpCode" maxlength="6" inputmode="numeric" placeholder="Code à 6 chiffres"><button id="mpJoin">Rejoindre</button></div></div>
   <div class="fusionCard" id="mpStatus" style="text-align:center;font-size:15px">Pas encore connecté.</div>
@@ -479,6 +483,23 @@ function pickStyle(arts, s, w, traits, R){
   };
   const bias = {combo:-.6, throw:-.9, ground:-.5, kick:.4, clinch:1.3, power:.6, counter:.7, acro:1.0};
   for (const k in sc) sc[k] += bias[k] + R()*2.6;
+  return Object.entries(sc).sort((a,b) => b[1]-a[1])[0][0];
+}
+// Style for a created fighter: from his body, stats, character and chosen techniques (no randomness)
+function customStyle(c, s){
+  const [pow, spd, def, , grap] = s, w = c.w || 78, h = (c.h || 1.78)*100, m = c.m || 50, tr = c.traits || T50;
+  const an = (c.techs || []).map(id => TT(id)).filter(Boolean), cnt = f => an.filter(f).length, N = Math.max(1, an.length);
+  const share = f => cnt(f) / N;
+  const sc = {
+    combo:  spd/30 + share(t => ['jab','cross','hook','chain','palm'].includes(t[3]))*4 - Math.max(0, w-90)/25,
+    throw:  grap/30 + share(t => t[3] && t[4] === null)*5 + share(t => t[3]==='grab')*3,
+    ground: grap/35 + Math.max(0, w-85)/20 + (m-50)/40 + share(t => /lutte|jiu|sambo|double|plaqu/i.test(t[7]+' '+t[8]))*4,
+    kick:   spd/45 + Math.max(0, h-178)/9 + share(t => ['kick','teep','high','spin','low'].includes(t[3]))*5,
+    clinch: (m-50)/25 + pow/60 + share(t => ['elbow','knee'].includes(t[3]))*5,
+    power:  pow/28 + Math.max(0, w-90)/18,
+    counter:(tr.patience + tr.iq + tr.calme)/110 + def/45,
+    acro:   spd/40 + Math.max(0, 80-w)/12 - Math.max(0, w-90)/10 + share(t => /capoeira|lucha|parkour|gymn|wushu|540|tornado|saut|volant/i.test(t[7]+' '+t[8]))*6,
+  };
   return Object.entries(sc).sort((a,b) => b[1]-a[1])[0][0];
 }
 function styleSpecial(style, fmv){
@@ -942,7 +963,7 @@ function fusedMove(ids, nameHint, prof){
   if (grp==='punch') why.push(spd >= 75 ? `Rapide (vitesse ${spd}) : un coup de poing part plus vite que tout le reste` : `Le coup le plus sûr : il garde l'équilibre et peut enchaîner`);
   if (grp==='elbow') why.push(`Puissant de près (puissance ${pow}) : le coude est l'os le plus dur, il ne lui faut presque pas d'élan`);
   if (grp==='knee') why.push(`Endurant et musclé : au corps-à-corps, le genou use l'adversaire et le plie en deux`);
-  if (grp==='proj') why.push(`${w >= 95 ? `Lourd (${w} kg)` : 'Bon lutteur'}${m >= 70 ? ' et musclé' : ''} (lutte ${grap}) : il écrase l'adversaire au sol avec tout son poids`);
+  if (grp==='proj') why.push(w >= 95 || grap >= 60 ? `${w >= 95 ? `Lourd (${w} kg)` : 'Bon lutteur'}${m >= 70 ? ' et musclé' : ''} (lutte ${grap}) : il écrase l'adversaire au sol avec tout son poids` : `Léger (${w} kg, lutte ${grap}) : il ne force pas, il utilise l'élan de l'adversaire pour le faire tomber`);
   if (hl==='Fatigué' || hl==='Malade') why.push(`Santé « ${hl} » : un coup court qui économise son énergie`);
   if (hl==='Blessé') why.push(`Blessé : rien de risqué sur une jambe`);
   if (hl==='Pleine forme') why.push(`Pleine forme : il peut la lancer à pleine vitesse`);
@@ -1011,10 +1032,11 @@ function buildCustom(c){
   const key = 'cust'+c.id;
   const prof = {body: bodyOf(c), h:c.h, w:c.w, m:c.m, s, life: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life, health:c.health||'En forme', traits:c.traits};
   const fmv = fusedMove(c.techs, c.tn, prof) || fusedMove([byName('Direct')], c.tn, prof);
-  SPECIALS[key] = fusedSpecial(fmv);
+  const style = customStyle(c, s);
+  SPECIALS[key] = styleSpecial(style, fmv);
   const pmv = personalMoves(c.techs);
   if (!/^technique ultime/i.test(fmv.name)) SPECIALS[key].name = 'Technique ultime : ' + fmv.name;
-  return {rank:null, custom:c.id, gear: c.gear || ['nues'], mood: c.mood || 'Calme', body: bodyOf(c), traits: c.traits, techIds: c.techs, fusedMove: fmv, pmoves: pmv, level:overall(s), s, moves: Object.keys(pmv).filter(k => k!=='pm_dodge').length ? Object.keys(pmv).filter(k => k!=='pm_dodge') : ['fused'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]),
+  return {rank:null, custom:c.id, style, gear: c.gear || ['nues'], mood: c.mood || 'Calme', body: bodyOf(c), traits: c.traits, techIds: c.techs, fusedMove: fmv, pmoves: pmv, level:overall(s), s, moves: Object.keys(pmv).filter(k => k!=='pm_dodge').length ? Object.keys(pmv).filter(k => k!=='pm_dodge') : ['fused'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]),
     h:c.h, w:c.w, title:'Créé par toi', person:c.name, idleP:'guard', life: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life, resist: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).res, healBonus: bonusOf(c.techs).heal, health: c.health || 'En forme', look: lookOf(c), m: c.m};
 }
 const byName = n => TECHS.find(t => t[8]===n)[0];
@@ -1069,7 +1091,7 @@ function preset(kind){
     for (let h=160; h<=215; h+=5) for (let w=60; w<=130; w+=5) for (let m=40; m<=100; m+=10){ const t = {...c, h:h/100, w, m}; const sc = scoreOf(t) - (Math.abs(h-188)+Math.abs(w-95)+Math.abs(m-85))/1000; if (sc > bestS){ bestS = sc; bp = t; } }
     c = bp; c.spec = []; c.inv = inventTechnique(c.techs, 'La Technique Ultime');
   } else if (kind==='worst'){
-    c = {...base, name:'Le Pire', level:30, techs:['Coup de pied 540','Tomoe-nage'].map(byName), tn:'La Catastrophe'};
+    c = {...base, name:'Le Pire', level:30, techs:['Coup de pied 540','Tomoe-nage'].map(byName), tn:''};
     c.spec = ['Coup de pied 540'].map(byName);
     let worstS = 999, wp = null;
     for (let h=150; h<=220; h+=10) for (let w=50; w<=160; w+=10) for (let m=0; m<=100; m+=25){ const t = {...c, h:h/100, w, m}; const sc = scoreOf(t); if (sc < worstS){ worstS = sc; wp = t; } }
@@ -1087,7 +1109,7 @@ function preset(kind){
 }
 function seqUI(){
   { const rc = readCustom(); const f = fusedMove(cT, $('cTN').value.trim(), {h:rc.h, w:rc.w, m:rc.m, s:customStats(rc), life:vitals(rc.life, rc.techs, rc.health, rc.w, rc.m, rc.traits, customStats(rc), rc.body).life, health:rc.health, traits:rc.traits, body:rc.body});
-    $('cTop').innerHTML = f ? `<div class="tact" style="font-size:12px;color:var(--gold);letter-spacing:1px">⚡ SA TECHNIQUE PARFAITE (créée pour lui, se met à jour toute seule)</div><div class="fn" style="font-size:30px">🥊 ${f.name}</div><div class="tact">${f.desc} · puissance ×${f.mul.toFixed(2)}</div><ul class="tact">${f.why.slice(0,5).map(x=>`<li>${x}</li>`).join('')}</ul><div class="tm" style="font-size:12px;color:var(--mute)">Toutes les raisons sont plus bas, dans « Sa technique parfaite ».</div>` : '<span style="color:var(--mute)">Choisis des techniques pour créer sa technique parfaite.</span>';
+    $('cTop').innerHTML = f ? `<div class="tact" style="font-size:12px;color:var(--gold);letter-spacing:1px">⚡ SA TECHNIQUE PARFAITE (créée pour lui, se met à jour toute seule)</div><div class="fn" style="font-size:30px">🥊 ${f.name}</div>${(() => { const st = STY[customStyle(rc, customStats(rc))]; return `<div class="tact" style="font-size:15px"><b>${st[0]} Son style : ${st[1]}</b> · ${st[2]}</div>`; })()}<div class="tact">${f.desc} · puissance ×${f.mul.toFixed(2)}</div><ul class="tact">${f.why.slice(0,5).map(x=>`<li>${x}</li>`).join('')}</ul><div class="tm" style="font-size:12px;color:var(--mute)">Toutes les raisons sont plus bas, dans « Sa technique parfaite ».</div>` : '<span style="color:var(--mute)">Choisis des techniques pour créer sa technique parfaite.</span>';
     $('cSeq').innerHTML = f ? `<span class="st2 kd" style="font-size:15px">🥊 ${f.name}<br><span style="font-size:11px;color:var(--mute)">${f.desc} · puissance ×${f.mul.toFixed(2)}</span></span><div class="tact" style="width:100%;margin-top:6px"><b>Pourquoi c'est la meilleure pour lui :</b><ul>${f.why.map(x=>`<li>${x}</li>`).join('')}</ul></div>` : '<span style="color:var(--mute);font-size:13px">Choisis au moins une technique de combat.</span>';
     preview(); return; }
   if (cInv){ $('cSeq').innerHTML = cInv.steps.map((st,i) => `<span class="st2 ${i===cInv.steps.length-1?'kd':''}">${st.name}<br><span style="font-size:10px;color:var(--mute)">${st.art}</span></span>`).join('<span class="ar">→</span>') + ` <span class="st2" id="spClear">✕ vider</span>`;
@@ -1622,7 +1644,7 @@ function mpData(p){
   return opponent(+p.id.slice(1));
 }
 function mpPeerOpts(){ return window.FF_PEER_OPTS || {}; }
-function mpClose(){ if (MP){ try { MP.conn && MP.conn.close(); } catch(e){} try { MP.peer && MP.peer.destroy(); } catch(e){} } MP = null; }
+function mpClose(){ if (MP){ clearInterval(MP.scan); clearTimeout(MP.pt); try { MP.host && MP.host.destroy(); } catch(e){} try { MP.probe && MP.probe.destroy(); } catch(e){} try { MP.conn && MP.conn.close(); } catch(e){} try { MP.peer && MP.peer.destroy(); } catch(e){} } MP = null; }
 function mpWire(conn, role){
   MP.conn = conn;
   conn.on('data', m => mpOnData(m));
@@ -1634,7 +1656,7 @@ $('mpHost').onclick = () => {
   loadPeer(() => {
     const peer = new Peer('fusionff-' + code, mpPeerOpts());
     MP = {peer, role:'host', mine: mpPayload($('mpSel').value), last: 0};
-    peer.on('open', () => mpStatus(`Ton code : <b style="font-size:32px;letter-spacing:4px;color:var(--gold)">${code}</b><br>Donne-le à l'autre joueur, puis attends…`));
+    peer.on('open', () => { MP.code = code; mpStatus(`Ton code : <b style="font-size:32px;letter-spacing:4px;color:var(--gold)">${code}</b><br>Donne-le à l'autre joueur, ou invite-le avec un lien :` + inviteHTML(code) + `<div style="margin-top:6px">En attente d'un joueur…</div>`); bindInvite(code); });
     peer.on('error', e => mpStatus('❌ Erreur : ' + (e.type || e)));
     peer.on('connection', conn => { mpWire(conn, 'host'); mpStatus('✅ Joueur connecté, on attend son personnage…'); });
   });
@@ -1650,6 +1672,118 @@ $('mpJoin').onclick = () => {
       conn.on('open', () => { conn.send({t:'hello', p: MP.mine}); mpStatus('✅ Connecté ! La partie commence…'); }); });
   });
 };
+// ---- Invite: share a link that opens the game and fills the code ----
+const inviteLink = code => location.origin + location.pathname + '?join=' + code;
+const inviteText = code => `🥊 Viens te battre contre moi sur Fusion Fighters ! Code : ${code}`;
+function inviteHTML(code){
+  const t = encodeURIComponent(inviteText(code) + ' ' + inviteLink(code));
+  return `<div class="artChips" style="justify-content:center;margin-top:8px">
+    <button id="invShare" style="background:#2fa36b;color:#fff">📨 Inviter</button>
+    <a href="https://wa.me/?text=${t}" target="_blank" rel="noopener"><button>💬 WhatsApp</button></a>
+    <a href="sms:?&body=${t}"><button>✉️ SMS</button></a>
+    <button id="invCopy">📋 Copier le lien</button></div>`;
+}
+function bindInvite(code){
+  const copy = () => { const l = inviteText(code) + ' ' + inviteLink(code);
+    (navigator.clipboard ? navigator.clipboard.writeText(l) : Promise.reject()).then(() => { $('invCopy').textContent = '✅ Lien copié !'; }).catch(() => prompt('Copie ce lien :', l)); };
+  if ($('invCopy')) $('invCopy').onclick = copy;
+  if ($('invShare')) $('invShare').onclick = () => { if (navigator.share) navigator.share({title:'Fusion Fighters', text: inviteText(code), url: inviteLink(code)}).catch(() => {}); else copy(); };
+}
+$('mpInviteTop').onclick = () => { if (MP && MP.role === 'host' && MP.code && !(MP.conn && MP.conn.open)){ const b = $('invShare'); if (b) b.click(); return; } $('mpHost').onclick(); };
+// Opened from an invite link: go to multiplayer with the code ready
+(() => { const j = new URLSearchParams(location.search).get('join'); if (!j || !/^\d{6}$/.test(j)) return;
+  setTimeout(() => { go('sMP'); $('mpCode').value = j; mpStatus(`📨 Tu es invité à la partie <b style="color:var(--gold)">${j}</b> !<br>Choisis ton personnage, puis appuie sur <b>Rejoindre</b>.`); $('mpJoin').style.background = '#2fa36b'; }, 50); })();
+// ---- Automatic matchmaking (no code): shared lobby slots on the PeerJS server ----
+// For slot k: try to take the id 'fusionff-lobby-k'. Free -> wait there. Taken -> connect
+// to whoever holds it: a waiting player answers 'start' (match), a playing one 'busy' (next slot).
+// Waiting players keep trying lower slots, so two waiting players always meet.
+const LOBBY = 12, lobbyId = k => 'fusionff-lobby-' + k;
+const mpAlive = me => MP === me && !me.matched;
+function mpAuto(){
+  mpClose(); mpStatus('🔎 Je cherche un adversaire…<br><button id="mpCancel" style="margin-top:8px">Annuler</button>');
+  $('mpCancel').onclick = () => { mpClose(); mpStatus('Recherche annulée.'); };
+  loadPeer(() => {
+    const me = MP = {role:'guest', auto:true, mine: mpPayload($('mpSel').value), matched:false, slot:-1};
+    startProbe(me, 1);
+  });
+}
+// The probe peer (random id) is used to connect to waiting players. Retries if the server is slow.
+function startProbe(me, attempt){
+  if (MP !== me) return;
+  if (typeof Peer !== 'function'){ mpStatus('❌ Le multijoueur n\'a pas pu se charger. Ouvre le jeu sur le site, pas dans l\'appli Claude.'); return; }
+  let pr;
+  try { pr = new Peer(undefined, mpPeerOpts()); } catch(e){ mpStatus('❌ Ce navigateur ne permet pas le multijoueur (' + (e.message || e) + '). Essaie avec Chrome ou Safari.'); return; }
+  me.probe = me.peer = pr; let opened = false;
+  const retry = why => {
+    if (MP !== me || me.matched) return;
+    try { pr.destroy(); } catch(e){}
+    if (attempt < 4){ mpStatus(`🔄 Connexion au serveur difficile, j'essaie encore (${attempt}/3)…`); setTimeout(() => startProbe(me, attempt+1), 1200*attempt); }
+    else mpStatus(`❌ Le serveur du multijoueur ne répond pas (${why}).<br>Vérifie Internet (Wi-Fi ou 4G), ouvre le jeu dans Chrome ou Safari, puis réessaie.`);
+  };
+  const t = setTimeout(() => { if (!opened) retry('trop lent'); }, 10000);
+  pr.on('error', e => { if (MP !== me || me.probe !== pr) return;
+    if (e.type === 'peer-unavailable'){ const g = me.onGone; me.onGone = null; g && g(); return; }
+    if (e.type === 'browser-incompatible'){ clearTimeout(t); mpStatus('❌ Ce navigateur ne permet pas le multijoueur. Ouvre le jeu dans Chrome ou Safari.'); return; }
+    if (!opened){ clearTimeout(t); retry(e.type || 'erreur'); return; }
+    if (e.type === 'network' || e.type === 'socket-closed' || e.type === 'disconnected'){ try { pr.reconnect(); } catch(err){} } });
+  pr.on('disconnected', () => { if (MP === me && me.probe === pr && !pr.destroyed){ try { pr.reconnect(); } catch(e){} } });
+  pr.on('open', () => { if (opened) return; opened = true; clearTimeout(t); if (me.slot < 0 && !me.matched) seek(me, 0, LOBBY, () => mpStatus('😕 Trop de monde en attente. Réessaie dans un moment.')); });
+}
+function seek(me, k, end, onEnd){
+  if (!mpAlive(me)) return;
+  if (k >= end){ onEnd && onEnd(); return; }
+  claim(me, k, hp => {
+    if (!mpAlive(me)){ hp && hp.destroy(); return; }
+    if (hp){ waitAt(me, k, hp); return; }
+    join(me, k, res => { if (res !== 'match') seek(me, k+1, end, onEnd); });
+  });
+}
+function claim(me, k, cb){
+  const hp = new Peer(lobbyId(k), mpPeerOpts()); let done = false;
+  const t = setTimeout(() => { if (!done){ done = true; try { hp.destroy(); } catch(e){} cb(null); } }, 8000);
+  hp.on('open', () => { if (done) return; done = true; clearTimeout(t); cb(hp); });
+  hp.on('error', e => { if (done) return; done = true; clearTimeout(t); try { hp.destroy(); } catch(err){} cb(null); });
+}
+function join(me, k, cb){
+  let done = false; const fin = r => { if (done) return; done = true; clearTimeout(me.pt); me.onGone = null; cb(r); };
+  const conn = me.probe.connect(lobbyId(k), {reliable:true});
+  me.onGone = () => fin('miss');
+  me.pt = setTimeout(() => { try { conn.close(); } catch(e){} fin('miss'); }, 7000);
+  conn.on('open', () => conn.send({t:'hello', p: me.mine}));
+  conn.on('data', m => {
+    if (me.conn === conn){ mpOnData(m); return; }
+    if (MP !== me){ conn.close(); return; }
+    if (m.t === 'busy'){ conn.close(); fin('busy'); return; }
+    if (m.t === 'start'){
+      if (me.matched || done){ conn.close(); fin('miss'); return; }
+      me.matched = true; clearInterval(me.scan); try { me.host && me.host.destroy(); } catch(e){} me.host = null;
+      me.role = 'guest'; me.conn = conn;
+      conn.on('close', () => { if (F && F.mp){ banner('ADVERSAIRE DÉCONNECTÉ', 2500); F.phase = 'over'; } mpStatus('Connexion terminée.'); });
+      mpStatus('✅ Adversaire trouvé ! Le combat commence…');
+      fin('match'); mpOnData(m);
+    }
+  });
+}
+function waitAt(me, k, hp){
+  const old = me.host; me.host = hp; me.slot = k; if (old) try { old.destroy(); } catch(e){}
+  hp.on('disconnected', () => { if (MP === me && me.host === hp && !hp.destroyed){ try { hp.reconnect(); } catch(e){} } });
+  hp.on('connection', conn => {
+    if (MP !== me || me.matched || me.host !== hp){ conn.on('open', () => { conn.send({t:'busy'}); setTimeout(() => conn.close(), 400); }); return; }
+    me.matched = true; clearInterval(me.scan); me.role = 'host';
+    mpWire(conn, 'host'); mpStatus('✅ Adversaire trouvé ! Le combat commence…');
+    conn.on('close', () => { if (MP === me && !(F && F.mp)){ me.matched = false; me.conn = null; me.role = 'guest'; waitUI(me); } });
+  });
+  waitUI(me);
+}
+function waitUI(me){
+  mpStatus('⏳ En attente d\'un adversaire…<br><span style="font-size:13px;color:var(--mute)">Dès que quelqu\'un d\'autre appuie sur « Combat automatique », le combat commence.</span><br><button id="mpCancel" style="margin-top:8px">Annuler</button>');
+  $('mpCancel').onclick = () => { mpClose(); mpStatus('Recherche annulée.'); };
+  clearInterval(me.scan);
+  me.scan = setInterval(() => { if (!mpAlive(me) || me.scanning || me.slot <= 0) return; me.scanning = true; seek(me, 0, me.slot, () => { me.scanning = false; }); }, 3000 + Math.random()*2000);
+  // after a scan moves us down (waitAt), allow scanning again
+  me.scanning = false;
+}
+$('mpAuto').onclick = mpAuto;
 $('mpBack').onclick = () => { mpClose(); go('sMenu'); };
 $('bMP').onclick = () => go('sMP');
 function mpOnData(m){
