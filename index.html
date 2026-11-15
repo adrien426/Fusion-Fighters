@@ -155,6 +155,7 @@ h2{font-size:30px;margin:6px 0 4px}
   <button class="big alt" id="bMeAll" style="font-size:19px;border-color:var(--gold)"></button>
   <button class="big" id="bOpp">🏆 Classement : choisir un adversaire</button>
   <button class="big alt" id="bCreate">🛠 Créer mon propre adversaire</button>
+  <button class="big alt" id="bReal" style="font-size:16px"></button>
   <button class="big" id="bMP" style="background:var(--blue)">🌐 Multijoueur (chacun son téléphone)</button>
   <button class="big alt" id="b2P" style="border-color:var(--blue)">👥 2 joueurs sur le même téléphone</button>
   <div class="help">
@@ -1323,6 +1324,99 @@ function paint(M, L, isA){
 const lerp2 = (a,b,t) => { const o={}; for (const k of KEYS) o[k] = [a[k][0]+(b[k][0]-a[k][0])*t, a[k][1]+(b[k][1]-a[k][1])*t]; return o; };
 const ease = t => t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
 
+
+// ===================== REALISTIC 3D FIGHTERS =====================
+// Mixamo-rigged character + Mixamo fight animations (models/fighter.glb).
+// The game logic still runs on the 2D pose library; each pose key is mapped to an animation clip.
+// If the model cannot load, the simple mannequins stay.
+const RIG = {gltf:null, failed:false, loading:false, cbs:[], baseH:1};
+const CLIP_OF = {};
+[['jab','jab bJab bJabUp palm chainL tjab'], ['cross','cross hook chainR elbow gpHit mount gpUp rnc rncSq'],
+ ['kick','lowWind lowHit teepCh teepHit highCh highHit fouet fauxW faux knee check'], ['spinKick','spin spinHit vrille pivot'],
+ ['block','block vGuard bodylock lift liftUp hipIn throwEnd osotoIn osotoReap over archMid bridge'], ['dodge','slip dodge sprawl grab level shoot dive'],
+ ['hitHead','rHead'], ['hitBody','rBody'], ['hitKidney','rLeg'], ['shoved','stumble pulled reaped'],
+ ['fall','rDown collapse flatOver downOut suplexed flatCover downCover lifted lifted2 liftedBack overHip tap choked fz1 fz2 fz3 fz4'],
+ ['getUp','rise'], ['taunt','feint bFeint'], ['walk','run run2']].forEach(([c, ks]) => ks.split(' ').forEach(k => CLIP_OF[k] = c));
+const LOOP_CLIPS = new Set(['idle','walk','back','block','climb']);
+const HOLD_CLIPS = new Set(['fall','defeat']);
+function loadScript(urls, done, fail){ const go = i => { if (i >= urls.length) return fail(); const sc = document.createElement('script'); sc.src = urls[i]; sc.onload = done; sc.onerror = () => go(i+1); document.head.appendChild(sc); }; go(0); }
+function loadRig(cb){
+  if (RIG.gltf) return cb(true);
+  if (RIG.failed) return cb(false);
+  RIG.cbs.push(cb); if (RIG.loading) return; RIG.loading = true;
+  const fin = ok => { RIG.loading = false; RIG.failed = !ok; const l = RIG.cbs; RIG.cbs = []; l.forEach(f => f(ok)); };
+  const ex = p => [`https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/${p}`, `https://unpkg.com/three@0.128.0/examples/js/${p}`];
+  const getModel = () => new THREE.GLTFLoader().load(window.FF_MODEL || 'models/fighter.glb', g => {
+    // keep animations in place: remove horizontal root motion of the hips
+    g.animations.forEach(c => c.tracks.forEach(t => { if (/Hips\.position$/.test(t.name)){ const v = t.values; for (let i = 3; i < v.length; i += 3){ v[i] = v[0]; v[i+2] = v[2]; } } }));
+    // measure model height (head top) in idle to match the game's scale
+    const m = THREE.SkeletonUtils.clone(g.scene), mx = new THREE.AnimationMixer(m);
+    mx.clipAction(g.animations.find(a => a.name === 'idle') || g.animations[0]).play(); mx.update(.01); m.updateMatrixWorld(true);
+    let top = 0; m.traverse(o => { if (o.isBone && /HeadTop_End$/.test(o.name)) top = new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).y; });
+    RIG.modelH = top || 1.75; RIG.gltf = g; fin(true);
+  }, undefined, () => fin(false));
+  if (THREE.GLTFLoader && THREE.SkeletonUtils) return getModel();
+  loadScript(ex('loaders/GLTFLoader.js'), () => loadScript(ex('utils/SkeletonUtils.js'), getModel, () => fin(false)), () => fin(false));
+}
+function makeRigChar(){
+  const g = RIG.gltf, root = THREE.SkeletonUtils.clone(g.scene), mats = {};
+  root.traverse(o => { if (o.isMesh){ o.castShadow = true; o.frustumCulled = false; o.material = o.material.clone(); mats[o.name] = o.material; } });
+  scene.add(root);
+  const mixer = new THREE.AnimationMixer(root), acts = {};
+  g.animations.forEach(c => { const a = mixer.clipAction(c); if (!LOOP_CLIPS.has(c.name)){ a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; } acts[c.name] = a; });
+  return {root, mixer, acts, mats, cur:null, curStep:null};
+}
+function rigPlay(R, name, speed){
+  const a = R.acts[name] || R.acts.idle; if (!a) return;
+  if (R.cur === a){ if (speed) a.timeScale = speed; return; }
+  a.reset(); a.timeScale = speed || 1; a.play();
+  if (R.cur) a.crossFadeFrom(R.cur, .12, false);
+  R.cur = a; R.curName = name;
+}
+const IN_STEP_HIT = .42;   // fraction of an attack clip where the blow lands
+function rigClip(f){
+  if (f.acro){ const t = f.acro.t; return t < .35 ? 'walk' : t < .6 ? 'climb' : 'jumpAttack'; }
+  if (f.state === 'ko' || ((f.state === 'down' || f.state === 'thrown') && !f.cur)) return 'fall';
+  const k = f.pk;
+  if (!k || k === 'idle') return f.mvDir > 0 ? 'walk' : f.mvDir < 0 ? 'back' : f.state === 'guard' ? 'blockHigh' : 'idle';
+  let c = CLIP_OF[k] || 'idle';
+  if (c === 'kick' && /highHit|highCh/.test(k) && f.data.style === 'kick') c = 'martelo';
+  if (c === 'kick' && f.data.style === 'acro') c = 'capoeira';
+  return c;
+}
+function rigUpdate(R, f, dt, isA){
+  const name = rigClip(f);
+  const stepMs = f.cur ? f.cur.ms * (f.tm || 1) : 300;
+  const a = R.acts[name];
+  let speed = 1;
+  if (a && !LOOP_CLIPS.has(name) && !HOLD_CLIPS.has(name)) speed = Math.max(.6, Math.min(3.5, a.getClip().duration * IN_STEP_HIT / Math.max(.08, stepMs/1000)));
+  if (name === 'walk' || name === 'back') speed = .8 + (f.walk || 1.4) * .35;
+  if (HOLD_CLIPS.has(name)) speed = 1.4;
+  // restart an attack clip when a new attack step begins
+  if (f.cur && f.cur !== R.curStep && R.curName === name && !LOOP_CLIPS.has(name) && R.cur && R.cur.time > R.cur.getClip().duration * .6){ R.cur.reset(); R.cur.play(); }
+  R.curStep = f.cur;
+  rigPlay(R, name, speed);
+  R.mixer.update(dt);
+  const s = RIG.baseH / RIG.modelH * (f.sc || 1), d = f.data, bulk = Math.max(.85, Math.min(1.3, 1 + ((d.w || 78) - 78)/220 + ((d.m || 50) - 50)/400));
+  R.root.scale.set(s * bulk, s, s * bulk);
+  R.root.position.set(f.x, f.lift || 0, 0);
+  R.root.rotation.y = f.face > 0 ? Math.PI/2 : -Math.PI/2;
+}
+function rigPaint(R, L, isA, f){
+  L = L || {};
+  const skin = new THREE.Color(L.skin || (isA ? '#c9a07f' : '#8d5b3c')), acc = new THREE.Color(isA ? '#e63946' : '#2f80c9');
+  for (const [n, m] of Object.entries(R.mats)){ if (/Joint/i.test(n)) m.color.copy(L.bare ? skin : acc); else m.color.copy(skin); m.roughness = .55; }
+}
+function setManVisible(M, v){ [...M.bones.map(b => b.mesh), ...M.joints.map(j => j.mesh), ...M.gloves.map(g => g.mesh), M.head, M.chest, M.belly, M.pelvis].forEach(m => m.visible = v); M.nails.forEach(n => n.mesh.visible = v && n.mesh.visible); }
+function rigSetup(){
+  if (!RIG.gltf || !renderer) return;
+  if (!RA){ RA = makeRigChar(); RB = makeRigChar(); RIG.baseH = to3(POSES.guard, 0, 1, 1).head.y + .13; }
+  const on = save.real3d !== false;
+  RA.root.visible = RB.root.visible = on; setManVisible(MA, !on); setManVisible(MB, !on);
+  if (A) rigPaint(RA, A.data.look, true, A); if (B) rigPaint(RB, B.data.look, false, B);
+}
+let RA = null, RB = null;
+
 // ===================== FIGHT ENGINE =====================
 let F = null, A, B, last = 0, running = false, shake = 0, slowmo = 0;
 function makeFighter(data, x, face, isAI){
@@ -1342,6 +1436,7 @@ function startFight(test){
   A = makeFighter(M, -1.4, 1, false); B = makeFighter(curOpp, 1.4, -1, true);
   if (isTourb(M)) A.aiMoves = ['tjab','vrille','fouet','faux','vent'].concat(M.all ? ['fused'] : []);
   paint(MA, A.data.look, true); paint(MB, B.data.look, false);
+  if (save.real3d !== false) loadRig(ok => { if (ok) rigSetup(); });
   F = {round:1, time:60, phase:'intro', phaseT:1.6, test:!!test};
   $('testTag').style.display = test ? 'block' : 'none';
   P = A; setControl(A);
@@ -1771,6 +1866,9 @@ $('mpJoin').onclick = () => {
 $('mpAuto').onclick = mpAuto;
 $('mpBack').onclick = () => { mpClose(); go('sMenu'); };
 $('bMP').onclick = () => go('sMP');
+const realUI = () => { $('bReal').textContent = save.real3d !== false ? '🧍 Personnages réalistes : OUI (toucher pour les bonhommes simples)' : '🤖 Bonhommes simples (toucher pour les personnages réalistes)'; };
+$('bReal').onclick = () => { save.real3d = save.real3d === false; persist(); realUI(); if (RA) rigSetup(); };
+realUI();
 function mpOnData(m){
   if (!MP) return;
   if (MP.role === 'host'){
@@ -1812,7 +1910,7 @@ function startOnline(hp, gp, role){
   resize(); go('sMP'); $('fight').classList.add('on');
   bannerLocal(role === 'host' ? 'TU ES À GAUCHE' : 'TU ES À DROITE', 1500);
 }
-const FPACK = f => ({l:+(f.lift||0).toFixed(2), x:+f.x.toFixed(3), p: KEYS.flatMap(k => [Math.round(f.pose[k][0]*10)/10, Math.round(f.pose[k][1]*10)/10]), hp:+f.hp.toFixed(1), st:Math.round(f.st), g:Math.round(f.gauge), z:f.zone, bal:Math.round(f.bal), dz:+(f.dazed||0).toFixed(2), w:f.wins, s:f.state});
+const FPACK = f => ({k: f.pk || 'idle', m: f.mvDir || 0, sty: f.data.style, l:+(f.lift||0).toFixed(2), x:+f.x.toFixed(3), p: KEYS.flatMap(k => [Math.round(f.pose[k][0]*10)/10, Math.round(f.pose[k][1]*10)/10]), hp:+f.hp.toFixed(1), st:Math.round(f.st), g:Math.round(f.gauge), z:f.zone, bal:Math.round(f.bal), dz:+(f.dazed||0).toFixed(2), w:f.wins, s:f.state});
 function mpSend(now){
   if (!MP || !MP.conn || !MP.conn.open || now - (MP.last||0) < 50) return;
   MP.last = now;
@@ -1823,7 +1921,7 @@ function mpApply(){
   for (const [f, D] of [[A, S.A], [B, S.B]]){
     f.x = f.x + (D.x - f.x) * .6;
     const tgt = {}; KEYS.forEach((k,i) => tgt[k] = [D.p[i*2], D.p[i*2+1]]); f.pose = lerp2(f.pose, tgt, .6);
-    f.lift = D.l || 0; f.hp = D.hp; f.st = D.st; f.gauge = D.g; f.zone = D.z; f.bal = D.bal; f.dazed = D.dz; f.wins = D.w; f.state = D.s;
+    f.pk = D.k; f.mvDir = D.m; f.lift = D.l || 0; if (D.sty) f.data.style = D.sty; f.hp = D.hp; f.st = D.st; f.gauge = D.g; f.zone = D.z; f.bal = D.bal; f.dazed = D.dz; f.wins = D.w; f.state = D.s;
   }
   F.time = S.F.time; F.round = S.F.round; F.phase = S.F.phase === 'over' ? F.phase : S.F.phase;
 }
@@ -1983,6 +2081,7 @@ function updateFighter(f, dt){
   if (f.acro){ acroTick(f, dt); return; }
   f.slipT = Math.max(0, f.slipT - dt); f.invuln = Math.max(0, f.invuln - dt); f.counter = Math.max(0, f.counter - dt);
   f.parry = Math.max(0, f.parry - dt); f.evade = Math.max(0, f.evade - dt); f.angle = Math.max(0, f.angle - dt); f.parried = Math.max(0, f.parried - dt);
+  f.pk = f.cur ? f.cur.p : 'idle';
   if (f.cur){
     f.t += dt*1000;
     const dur = f.cur.ms * f.tm * (1.1 - f.A.coordination/500) * (f.dazed > 0 ? 1.3 : 1) * (f.zone && f.zone.head < 40 ? 1 + .15*(1 - traitsOf(f.data).calme/100) : 1);
@@ -2008,6 +2107,7 @@ function updateFighter(f, dt){
   f.dazed = Math.max(0, (f.dazed||0) - dt); if (F.phase==='fight' && !['down','ko','thrown'].includes(f.state)) f.bal = Math.min(100, (f.bal??100) + dt*(10 + f.A.jambes/100*8));
   if (!f.isAI && !F.lesson){ if (canAct(f)){ f.state = K.guard && f.dazed <= 0 ? 'guard' : 'idle'; mv = (K.right?1:0) - (K.left?1:0); } }
   else if (canAct(f) && f.state!=='guard') mv = f.move===-1 ? f.face : f.move===1 ? -f.face : 0;
+  f.mvDir = (mv && canAct(f) && f.state!=='guard') ? mv * f.face : 0;
   if (mv && canAct(f) && f.state!=='guard'){ f.x = Math.max(-3.3, Math.min(3.3, f.x + mv * f.walk * (f.zone && f.zone.leg < 40 ? .6 : 1) * (f.dazed > 0 ? .7 : 1) * (f.bal < 40 ? .7 : 1) * (.85 + f.A.jambes/100*.3) * dt)); f.state = 'walk'; }
 }
 function loop(now){
@@ -2033,6 +2133,7 @@ function loop(now){
     if (F.mp === 'host') mpSend(now);
     }
     pose3(MA, to3(A.pose, A.x, A.face, A.sc, A.lift||0)); pose3(MB, to3(B.pose, B.x, B.face, B.sc, B.lift||0));
+    if (RA && RA.root.visible){ rigUpdate(RA, A, dt, true); rigUpdate(RB, B, dt, false); }
     // HUD
     $('hpA').style.width = (A.hp/A.hpMax*100)+'%'; $('hpB').style.width = (B.hp/B.hpMax*100)+'%'; $('lifeA').textContent = '❤ '+Math.ceil(A.hp)+'/'+A.hpMax; zoneHUD('zA', A); zoneHUD('zB', B); const sts = f => `⚖ ${Math.round(f.bal)} · 🔋 ${Math.round(f.st)}${f.dazed > 0 ? ' · 💫 SONNÉ' : ''}${f.bal < 40 ? ' · instable' : ''}`; $('stsA').textContent = sts(A); $('stsB').textContent = sts(B); $('lifeB').textContent = '❤ '+Math.ceil(B.hp)+'/'+B.hpMax; $('stA').style.width = A.st+'%'; $('stB').style.width = B.st+'%';
     $('ggA').style.width = A.gauge+'%'; $('ggB').style.width = B.gauge+'%';
