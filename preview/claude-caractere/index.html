@@ -488,6 +488,23 @@ function attrs(d){
     corps:  cl(30 + .3*end + (m-50)*.3 + res*60),
     jambes: cl(15 + .35*spd + .25*end + 18*Math.tanh(nLegs/8) + (m-50)*.1 - Math.max(0,w-110)*.15),
   };
+  const tr = traitsOf(d), B = bodyOf(d), lvl = d.level || 75, nAll = ids.length;
+  const nFlex = n(t => /yoga|souplesse|étirement|kalari|gymnast|mallakhamb|capoeira/i.test(t[8]+' '+t[7]));
+  const nExpl = n(t => /sprint|pliom|arraché|épaulé|kettlebell|strongman|highland|haltéro/i.test(t[8]+' '+t[7]));
+  const nMil = n(t => t[2]==='Militaire' || /armée|militaire|commando|légion|gign|sas|spetsnaz|marines|navy|ranger|bope|shayetet|gurkha|teukgong|jieitai|combatives|kapap|krav/i.test(t[7]));
+  const nCond = n(t => EXTRA[t[8]] && EXTRA[t[8]].res);
+  const ageP = Math.max(0, B.age-33);
+  Object.assign(a, {
+    allonge: Math.round((d.h||1.8)*100*1.02),
+    reflexes: cl(.4*spd + .3*a.vue + 15*Math.tanh(nDef/6) + (tr.iq-50)*.2 - ageP*.5),
+    explosivite: cl(.4*pow + .3*spd + 15*Math.tanh(nExpl/4) - ageP*.7 + (B.age < 20 ? -5 : 0)),
+    souplesse: cl(30 + 25*Math.tanh(nFlex/3) + 10*Math.tanh(nLegs/10) - Math.max(0,w-90)*.2 - ageP*.6),
+    precision: cl(.3*a.vue + (tr.iq-50)*.3 + lvl*.3 + 10*Math.tanh(nAll/50) + Math.min(8, ageP*.3)),
+    timing: cl(.3*a.vue + (tr.patience-50)*.2 + (tr.calme-50)*.2 + lvl*.3 + Math.min(8, ageP*.3)),
+    douleur: cl(30 + (tr.courage-50)*.3 + 20*Math.tanh(nMil/4) + 10*Math.tanh(nCond/3) + (B.os-50)*.2),
+    coordination: cl(.3*spd + .2*lvl + 15*Math.tanh(nAll/40) + (tr.calme-50)*.1),
+    squelette: Math.round(250 + B.os*5 + Math.max(0,w-60)*1.5 - ageP*4),
+  });
   return d._attrs = a;
 }
 // Rough estimates: how many average hits he survives / needs, like a video game sheet
@@ -505,6 +522,9 @@ function sheetHTML(d){
   return `<div class="stats">${row('❤','Vie',d.life||100,'#e63946',Math.max(100,d.life||100))}${row('💪','Force',d.s[0],STC[0])}${row('⚡','Vitesse',d.s[1],STC[1])}${row('🛡','Défense',d.s[2],STC[2])}${row('🔋','Endurance',d.s[3],STC[3])}${row('🤼','Lutte',d.s[4],STC[4])}
     ${row('👁','Vue',a.vue,'#9ad1ff')}${row('🧠','Menton',a.menton,'#f4a261')}${row('🫁','Corps',a.corps,'#e9c46a')}${row('🦵','Jambes',a.jambes,'#90be6d')}${row('🛡','Résistance',Math.round((d.resist||0)*100)+'%','#b0b0c0',100)}</div>
     <div class="stats">${row('🎂','Âge',bodyOf(d).age,'#adb5bd',70)}${row('🦴','Os',bodyOf(d).os,'#e9ecef')}${row('✋','Mains',bodyOf(d).mains,'#ffb4a2')}${row('🫁','Poumons',bodyOf(d).poumons,'#8ecae6')}</div>
+    <div class="tg" style="margin-top:6px">Qualités de combattant</div>
+    <div class="stats">${row('📏','Allonge',a.allonge,'#adb5bd',230)}${row('⚡','Réflexes',a.reflexes,'#4cc9f0')}${row('💥','Explosivité',a.explosivite,'#f72585')}${row('🤸','Souplesse',a.souplesse,'#b5e48c')}${row('🎯','Précision',a.precision,'#ffd166')}${row('⏱','Timing',a.timing,'#06d6a0')}${row('🧱','Douleur',a.douleur,'#ef476f')}${row('🧩','Coordination',a.coordination,'#a0c4ff')}</div>
+    <div class="tact" style="font-size:12px">🦴 Squelette : résiste à un choc d'environ <b>${a.squelette} kg</b> avant fracture <span style="color:var(--mute)">(estimation)</span></div>
     <div class="tact" style="font-size:12px">💥 Force de frappe ≈ <b>${punchForce(d)} kg</b> <span style="color:var(--mute)">(un boxeur pro tourne autour de 300 à 600 kg)</span></div>
     <div class="stats">${TRAITS.map(([k,ic,n]) => row(ic, n, traitsOf(d)[k], '#c77dff')).join('')}</div>
     <div class="tact" style="font-size:12px">🩺 Santé : <b>${d.health||'En forme'}</b><br>🎯 Encaisse ≈ <b>${e.head}</b> coups à la tête · <b>${e.body}</b> au corps · <b>${e.leg}</b> aux jambes<br>💥 Met K.O. un adversaire moyen en ≈ <b>${e.ko}</b> coups (≈ ${e.hit} dégâts par coup, ${e.techDmg} avec sa technique)</div>`;
@@ -628,6 +648,8 @@ const EXTRA = {"Course en altitude": {"life": 30}, "Vie en haute montagne": {"li
 CAT.push(...[["Méditation Zen", "Japon", "Mental et esprit (monde)", null, [0, 0, 2, 1, 0]], ["Vipassana", "Birmanie / Inde", "Mental et esprit (monde)", null, [0, 0, 1, 2, 0]], ["Pranayama (respiration)", "Inde", "Mental et esprit (monde)", null, [0, 0, 1, 2, 0]], ["Tummo (chaleur intérieure)", "Tibet", "Mental et esprit (monde)", null, [0, 0, 1, 2, 0]], ["Esprit du Bushido", "Japon", "Mental et esprit (monde)", null, [1, 0, 1, 1, 0]], ["Haka", "Nouvelle-Zélande", "Mental et esprit (monde)", null, [2, 0, 0, 1, 0]], ["Sisu (ténacité)", "Finlande", "Mental et esprit (monde)", null, [0, 0, 1, 3, 0]], ["Stoïcisme", "Grèce antique", "Mental et esprit (monde)", null, [0, 0, 2, 1, 0]], ["Visualisation", "Sport de haut niveau", "Mental et esprit (monde)", null, [1, 1, 1, 0, 0]], ["Mental de guerrier (Lethwei)", "Birmanie", "Mental et esprit (monde)", null, [1, 0, 1, 1, 0]], ["Ubuntu (esprit d'équipe)", "Afrique australe", "Mental et esprit (monde)", null, [0, 0, 1, 2, 0]], ["Ikigai (raison de se battre)", "Japon", "Mental et esprit (monde)", null, [1, 0, 0, 2, 0]]]);
 Object.assign(EXTRA, {"Méditation Zen": {"res": 0.03, "heal": 0.03}, "Vipassana": {"res": 0.03, "heal": 0.04}, "Pranayama (respiration)": {"res": 0.02, "life": 15}, "Tummo (chaleur intérieure)": {"res": 0.03, "life": 15}, "Esprit du Bushido": {"res": 0.04}, "Haka": {"res": 0.03, "life": 10}, "Sisu (ténacité)": {"res": 0.05, "life": 20}, "Stoïcisme": {"res": 0.04}, "Visualisation": {"res": 0.02}, "Mental de guerrier (Lethwei)": {"res": 0.05}, "Ubuntu (esprit d'équipe)": {"res": 0.02, "life": 10}, "Ikigai (raison de se battre)": {"res": 0.02, "life": 15}});
 for (const [n,v] of Object.entries({"Corps de fer": 0.08, "Tibias d'acier": 0.05, "Ma Bu (cavalier)": 0.03, "Sanchin kata": 0.05, "Misogi (eau froide)": 0.02, "Résistance au froid": 0.03, "Hell Week": 0.04, "Combat fatigué": 0.03, "Inoculation au stress": 0.03, "Ponts de lutte": 0.03, "Shiko": 0.03, "Endurance du Sumo": 0.05, "Pont de fer": 0.04, "Relâchement": 0.05, "Blocage tibia": 0.04, "Garde haute": 0.03, "Gainage": 0.02, "Sparring": 0.02, "Sac lourd": 0.02, "Bains froids": 0.02, "Strongman": 0.03, "Highland Games (tronc, pierre)": 0.02, "Sanchin-dachi": 0.03})) EXTRA[n] = Object.assign({}, EXTRA[n]||{}, {res:v});
+CAT.push(...[["Frappe Teukgong", "Teukgong Moosul (Corée)", "Poings", "cross", [3, 0, 0, 0, 1]], ["Projection Teukgong", "Teukgong Moosul (Corée)", "Projections", "throw", [1, 1, 1, 0, 4]], ["Coup de pied Teukgong", "Teukgong Moosul (Corée)", "Pieds", "high", [4, -1, -1, 0, 0]], ["Frappe Jieitai", "Jieitai kakutōjutsu (Japon)", "Poings", "palm", [4, 0, 2, -1, 0]], ["Projection Jieitai", "Jieitai kakutōjutsu (Japon)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Clinch Combatives", "Combatives (US Army)", "Coudes et genoux", "knee", [4, 0, 0, 1, 1]], ["Takedown Combatives", "Combatives (US Army)", "Projections", "grab", [0, -1, 0, 2, 5]], ["Frappe Combatives", "Combatives (US Army)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Frappe du légionnaire", "Légion étrangère (France)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Amenée au sol légionnaire", "Légion étrangère (France)", "Projections", "grab", [0, -1, 1, 2, 5]], ["Clé d'intervention GIGN", "GIGN (France)", "Projections", "throw", [1, 1, 1, 0, 4]], ["Frappe de dégagement GIGN", "GIGN (France)", "Poings", "palm", [4, 0, 1, -1, 1]], ["Coup de genou commando", "Commandos Marine (France)", "Coudes et genoux", "knee", [3, 0, 0, 1, 1]], ["Coude commando", "Commandos Marine (France)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Frappe SAS", "SAS (Royaume-Uni)", "Poings", "cross", [4, 0, 0, 0, 0]], ["Projection SAS", "SAS (Royaume-Uni)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Frappe Gurkha", "Gurkhas (Népal)", "Poings", "hook", [3, 1, -1, 0, 0]], ["Coude Gurkha", "Gurkhas (Népal)", "Coudes et genoux", "elbow", [3, 1, 0, 1, 0]], ["Frappe BOPE", "BOPE (Brésil)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Contrôle BOPE", "BOPE (Brésil)", "Projections", "grab", [0, -1, 1, 2, 5]], ["Riposte Shayetet", "Shayetet 13 (Israël)", "Poings", "chain", [-1, 4, 0, -1, 1]], ["Défense Shayetet", "Shayetet 13 (Israël)", "Défense", "slip", [0, 3, 3, 0, 0]], ["Frappe Spetsnaz", "Spetsnaz (Russie)", "Poings", "palm", [4, 0, 1, -1, 1]], ["Projection Spetsnaz", "Spetsnaz (Russie)", "Projections", "throw", [1, 0, 1, 0, 5]], ["Coup de pied Spetsnaz", "Spetsnaz (Russie)", "Pieds", "kick", [3, 0, 0, 1, 0]], ["Combo militaire chinois", "Armée chinoise (Chine)", "Poings", "chain", [-1, 4, 0, 0, 0]], ["Saisie militaire chinoise", "Armée chinoise (Chine)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coude des Marines thaï", "Marines thaïlandais", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Genou des Marines thaï", "Marines thaïlandais", "Coudes et genoux", "knee", [3, 0, 0, 1, 2]], ["Sélection de la Légion étrangère", "France", "Militaire", null, [1, 1, 1, 3, 0]], ["Stage commando (Commandos Marine)", "France", "Militaire", null, [1, 1, 1, 3, 1]], ["Sélection GIGN", "France", "Militaire", null, [1, 1, 2, 2, 1]], ["Sélection SAS (Brecon Beacons)", "Royaume-Uni", "Militaire", null, [0, 0, 1, 4, 0]], ["Doko race (Gurkhas)", "Népal", "Militaire", null, [1, 0, 0, 4, 1]], ["BUD/S (Navy SEAL)", "USA", "Militaire", null, [0, 0, 1, 4, 0]], ["Ranger School", "USA", "Militaire", null, [0, 0, 1, 3, 0]], ["Sélection Spetsnaz", "Russie", "Militaire", null, [1, 0, 1, 3, 1]], ["Sélection Shayetet 13", "Israël", "Militaire", null, [0, 1, 1, 3, 0]], ["Entraînement Teukgong", "Corée", "Militaire", null, [1, 1, 1, 2, 1]], ["Entraînement BOPE", "Brésil", "Militaire", null, [1, 0, 1, 3, 0]], ["Survie en milieu hostile", "Monde", "Militaire", null, [0, 0, 1, 3, 0]], ["Combat en armure (lesté)", "Monde", "Militaire", null, [2, -1, 1, 2, 0]], ["Résistance à la douleur", "Forces spéciales", "Militaire", null, [0, 0, 2, 1, 0]]]);
+Object.assign(EXTRA, {"Sélection de la Légion étrangère": {"res": 0.03, "life": 15}, "Stage commando (Commandos Marine)": {"res": 0.03, "life": 15}, "Sélection GIGN": {"res": 0.03}, "Sélection SAS (Brecon Beacons)": {"life": 20}, "Doko race (Gurkhas)": {"life": 25}, "BUD/S (Navy SEAL)": {"res": 0.03, "life": 20}, "Ranger School": {"res": 0.02, "life": 15}, "Sélection Spetsnaz": {"res": 0.04}, "Sélection Shayetet 13": {"res": 0.03}, "Entraînement Teukgong": {"res": 0.02}, "Entraînement BOPE": {"res": 0.02, "life": 10}, "Survie en milieu hostile": {"life": 15}, "Combat en armure (lesté)": {"res": 0.02}, "Résistance à la douleur": {"res": 0.04}});
 const ANIM = {jab:['jab','jab',null],cross:['cross','cross','kdCross'],hook:['hook','hook','kdHook'],chain:['chain','chain',null],palm:['palm','palm','kdPalm'],
   kick:['kick','low',null],teep:['teep','teep',null],high:['high','high','kdHigh'],spin:['spin','spin',null],elbow:['elbow','elbow','kdElbow'],knee:['knee','knee','kdKnee'],
   grab:['grab',null,'titan'],throw:['throw',null,'ippon'],slip:['slip','slip',null]};
@@ -1210,7 +1232,7 @@ function act(f, name){
   f.st = Math.max(0, f.st - m.cost); play(f, m.seq, (name==='slip'||name==='vent') ? 'slip' : 'attack');
   f.vmul = 1; if (name==='fused'){ f.vmul = f.data.fusedMove.mul; pop(f, f.data.fusedMove.name, '#f4b942'); }
   if (PM){ f.vmul = PM.mul; }
-  const vb = .8 + f.A.vue/250;
+  const vb = .8 + f.A.vue/250 + (f.A.timing-50)/400;
   if (name==='slip') f.slipT = .35*vb; if (m.parry) f.parry = m.parry*vb; if (m.evade) f.evade = m.evade*vb; if (m.angle) f.angle = m.angle; return true;
 }
 function special(f, i){
@@ -1229,17 +1251,17 @@ const rnd = (a) => (Math.random()*2-1)*a;
 const clamp01 = v => Math.max(0, Math.min(1, v));
 function hitQuality(att, def){
   const ta = traitsOf(att.data);
-  return clamp01(.45 + (att.spd-70)*.004 + (att.A.vue-60)*.003 + (att.pow-70)*.002 + (ta.iq-50)*.002
+  return clamp01(.45 + (att.spd-70)*.004 + (att.A.vue-60)*.003 + (att.pow-70)*.002 + (ta.iq-50)*.002 + (att.A.precision-60)*.003 + (att.A.coordination-60)*.001 - (def.A.reflexes-60)*.002
     - (def.def-70)*.004 - (def.A.vue-60)*.002
     + (def.dazed > 0 ? .2 : 0) + (def.bal < 40 ? .1 : 0) + (def.state==='stun' ? .1 : 0)
     - (att.st < 20 ? .15 : 0) - (att.dazed > 0 ? .15 : 0) - (att.bal < 40 ? .1 : 0)
     + (att.special ? .15 : 0) + rnd(.22));
 }
 function guardQuality(def, att){
-  return clamp01(.5 + (def.def-70)*.005 + (def.A.vue-60)*.003 - (att.pow-70)*.004 - (def.st < 20 ? .25 : 0) - (def.dazed > 0 ? .3 : 0) + rnd(.18));
+  return clamp01(.5 + (def.def-70)*.005 + (def.A.vue-60)*.003 + (def.A.reflexes-60)*.003 + (def.A.timing-60)*.002 - (att.pow-70)*.004 - (def.st < 20 ? .25 : 0) - (def.dazed > 0 ? .3 : 0) + rnd(.18));
 }
 function dodgeQuality(def, att){
-  return clamp01(.6 + (def.A.vue-60)*.005 + (def.spd-70)*.003 - (att.spd-70)*.004 - (def.dazed > 0 ? .3 : 0) - (def.bal < 40 ? .15 : 0) + rnd(.2));
+  return clamp01(.6 + (def.A.vue-60)*.005 + (def.spd-70)*.003 + (def.A.reflexes-60)*.003 + (def.A.souplesse-50)*.002 - (att.spd-70)*.004 - (def.dazed > 0 ? .3 : 0) - (def.bal < 40 ? .15 : 0) + rnd(.2));
 }
 const pct = q => Math.round(q*100) + ' %';
 function damage(att, def, raw, special){
@@ -1293,6 +1315,8 @@ function onEvent(f, ev){
     const punch = ['jab','cross','hook','chainL','chainR','fz4','vrille','palm'].includes(f.cur && f.cur.p);
     if (punch) mult *= (.8 + fb.mains/250) * (f.handHurt ? .8 : 1);
     mult *= 1.1 - ob.os/500;
+    mult *= .9 + f.A.explosivite/500;
+    if (['lowHit','highHit','spinHit','teepHit','faux'].includes(f.cur && f.cur.p)) mult *= .85 + f.A.souplesse/333;
     const VP = {head:[['MENTON',.35],['TEMPE',.25],['NEZ',.4]], body:[['FOIE',.3],['PLEXUS',.3],['CÔTES',.4]], leg:[['CUISSE',.6],['GENOU',.2],['MOLLET',.2]]}[Z];
     let vr = Math.random(), vp = VP[0][0]; for (const [nm,w] of VP){ vr -= w; if (vr <= 0){ vp = nm; break; } }
     if (vp==='NEZ' || vp==='CÔTES') mult *= 1.1;
@@ -1310,7 +1334,7 @@ function onEvent(f, ev){
     if (vp==='MENTON' && q >= .85 && o.hp > 0 && !ev.kd && Math.random() < .3 * (1 - o.A.menton/130) * (1 - ob.os/200)){ ev = Object.assign({}, ev, {kd:1}); pop(o, 'K.O. NET AU MENTON !', '#f4b942', true); slowmo = .6; }
     o.bal = Math.max(0, o.bal - d * ({head:.8, body:1, leg:2.6}[Z]) * (1.2 - o.A.jambes/100*.5));
     if (Z==='head' && (d > o.hpMax*.1 || o.zone.head < 40) && o.dazed <= 0){ o.dazed = 2.2 * (1.3 - traitsOf(o.data).calme/100*.6); pop(o, '💫 SONNÉ', '#f4b942', true); }
-    if (Z==='head') ev = Object.assign({}, ev, {stun: (ev.stun||300) * (1.3 - o.A.menton/100*.6) * (o.zone.head < 40 ? 1.4 : 1)});
+    if (Z==='head') ev = Object.assign({}, ev, {stun: (ev.stun||300) * (1.2 - o.A.douleur/250) * (1.3 - o.A.menton/100*.6) * (o.zone.head < 40 ? 1.4 : 1)});
     flash(f3[f.cur.p && POSES[f.cur.p].hit || 'rh'] || o3.head);
     if (ev.kdIfStun && wasStun) ev = Object.assign({}, ev, {kd:1});
     if (ev.count){ if (ev.count % 7 === 1) pop(f, ev.tag, '#f4b942'); $('banner').textContent = `${ev.count} / ${ev.total}`; $('banner').style.opacity = 1; clearTimeout($('banner')._t); $('banner')._t = setTimeout(()=>$('banner').style.opacity=0, 600); }
@@ -1543,7 +1567,7 @@ function updateFighter(f, dt){
   f.parry = Math.max(0, f.parry - dt); f.evade = Math.max(0, f.evade - dt); f.angle = Math.max(0, f.angle - dt); f.parried = Math.max(0, f.parried - dt);
   if (f.cur){
     f.t += dt*1000;
-    const dur = f.cur.ms * f.tm * (f.dazed > 0 ? 1.3 : 1) * (f.zone && f.zone.head < 40 ? 1 + .15*(1 - traitsOf(f.data).calme/100) : 1);
+    const dur = f.cur.ms * f.tm * (1.1 - f.A.coordination/500) * (f.dazed > 0 ? 1.3 : 1) * (f.zone && f.zone.head < 40 ? 1 + .15*(1 - traitsOf(f.data).calme/100) : 1);
     const k = Math.min(1, f.t/dur);
     f.pose = lerp2(f.from, POSES[f.cur.p], ease(k));
     if (k >= 1){
