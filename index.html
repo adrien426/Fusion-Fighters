@@ -1326,10 +1326,11 @@ const ease = t => t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
 
 
 // ===================== REALISTIC 3D FIGHTERS =====================
-// Mixamo-rigged character + Mixamo fight animations (models/fighter.glb).
-// The game logic still runs on the 2D pose library; each pose key is mapped to an animation clip.
-// If the model cannot load, the simple mannequins stay.
-const RIG = {gltf:null, failed:false, loading:false, cbs:[], baseH:1};
+// A Mixamo-rigged character (models/ninja.glb) animated with Mixamo fight clips (models/anims.glb).
+// The game logic still runs on the 2D pose library: each pose key is mapped to a clip, and attack clips
+// are time-warped so the frame where the fist/foot is furthest forward lands exactly on the game's hit.
+// If the files cannot load, the simple mannequins stay.
+const RIG = {body:null, clips:null, failed:false, loading:false, cbs:[], baseH:1, impact:{}};
 const CLIP_OF = {};
 [['jab','jab bJab bJabUp palm chainL tjab'], ['cross','cross hook chainR elbow gpHit mount gpUp rnc rncSq'],
  ['kick','lowWind lowHit teepCh teepHit highCh highHit fouet fauxW faux knee check'], ['spinKick','spin spinHit vrille pivot'],
@@ -1337,83 +1338,168 @@ const CLIP_OF = {};
  ['hitHead','rHead'], ['hitBody','rBody'], ['hitKidney','rLeg'], ['shoved','stumble pulled reaped'],
  ['fall','rDown collapse flatOver downOut suplexed flatCover downCover lifted lifted2 liftedBack overHip tap choked fz1 fz2 fz3 fz4'],
  ['getUp','rise'], ['taunt','feint bFeint'], ['walk','run run2']].forEach(([c, ks]) => ks.split(' ').forEach(k => CLIP_OF[k] = c));
-const LOOP_CLIPS = new Set(['idle','walk','back','block','climb']);
+const LOOP_CLIPS = new Set(['idle','walk','back','blockHigh','climb']);
 const HOLD_CLIPS = new Set(['fall','defeat']);
+const EFFECTOR = {jab:/(Left|Right)Hand$/, cross:/(Left|Right)Hand$/, kick:/(Left|Right)Foot$/, martelo:/(Left|Right)Foot$/, spinKick:/(Left|Right)Foot$/, capoeira:/(Left|Right)Foot$/, jumpAttack:/(Left|Right)(Foot|Hand)$/};
+const boneKey = n => n.replace(/^mixamorig[:_]?/i, '').replace(/[^A-Za-z0-9]/g, '').toLowerCase();
 function loadScript(urls, done, fail){ const go = i => { if (i >= urls.length) return fail(); const sc = document.createElement('script'); sc.src = urls[i]; sc.onload = done; sc.onerror = () => go(i+1); document.head.appendChild(sc); }; go(0); }
+// Retarget clips from the animation skeleton to the body skeleton in world space:
+// each bone keeps the same world rotation change from its rest pose (works even if bone axes differ).
+function retarget(clips, animRoot, bodyRoot){
+  const isB = o => /mixamo/i.test(o.name);
+  const src = {}, tgtList = [];
+  animRoot.updateMatrixWorld(true); bodyRoot.updateMatrixWorld(true);
+  animRoot.traverse(o => { if (isB(o)) src[boneKey(o.name)] = o; });
+  bodyRoot.traverse(o => { if (isB(o)) tgtList.push(o); });          // traverse order = parents first
+  const wq = o => o.getWorldQuaternion(new THREE.Quaternion());
+  const restS = {}, restT = new Map(), restTL = new Map();
+  for (const k in src) restS[k] = wq(src[k]);
+  tgtList.forEach(o => { restT.set(o, wq(o)); restTL.set(o, o.position.clone()); });
+  const sHips = src.hips, tHips = tgtList.find(o => boneKey(o.name) === 'hips');
+  const sHipsY0 = sHips ? new THREE.Vector3().setFromMatrixPosition(sHips.matrixWorld).y : 1;
+  const out = [];
+  for (const c of clips){
+    const mx = new THREE.AnimationMixer(animRoot), act = mx.clipAction(c); act.play();
+    const n = Math.max(2, Math.ceil(c.duration * 30) + 1), times = new Float32Array(n);
+    const qv = new Map(tgtList.map(o => [o, new Float32Array(n*4)])), hp = new Float32Array(n*3);
+    const G = new Map(), tmp = new THREE.Quaternion(), inv = new THREE.Quaternion();
+    for (let i = 0; i < n; i++){
+      const t = Math.min(c.duration, i / 30); times[i] = t; mx.setTime(t); animRoot.updateMatrixWorld(true);
+      G.clear();
+      for (const o of tgtList){
+        const s0 = src[boneKey(o.name)];
+        let g;
+        if (s0){ g = wq(s0).multiply(inv.copy(restS[boneKey(o.name)]).invert()).multiply(restT.get(o)); }
+        else g = restT.get(o).clone();
+        G.set(o, g);
+        const pg = G.get(o.parent) || o.parent.getWorldQuaternion(new THREE.Quaternion());
+        tmp.copy(pg).invert().multiply(g);
+        qv.get(o).set([tmp.x, tmp.y, tmp.z, tmp.w], i*4);
+      }
+      if (sHips && tHips){ const y = new THREE.Vector3().setFromMatrixPosition(sHips.matrixWorld).y, r = restTL.get(tHips);
+        hp.set([r.x, r.y * y / sHipsY0, r.z], i*3); }
+    }
+    act.stop(); mx.uncacheRoot(animRoot);
+    const tracks = tgtList.filter(o => src[boneKey(o.name)]).map(o => new THREE.QuaternionKeyframeTrack(o.name + '.quaternion', times, qv.get(o)));
+    if (tHips) tracks.push(new THREE.VectorKeyframeTrack(tHips.name + '.position', times, hp));
+    out.push(new THREE.AnimationClip(c.name, c.duration, tracks));
+  }
+  return out;
+}
+// Time (s) where the striking limb is furthest forward (+Z, Mixamo faces +Z).
+function findImpact(clip, root){
+  const re = EFFECTOR[clip.name]; if (!re) return null;
+  const mx = new THREE.AnimationMixer(root), act = mx.clipAction(clip); act.play();
+  const bones = []; root.traverse(o => { if (re.test(o.name)) bones.push(o); });
+  const hips = (() => { let h = null; root.traverse(o => { if (boneKey(o.name) === 'hips') h = o; }); return h; })();
+  let best = -1e9, bestT = clip.duration * .4; const v = new THREE.Vector3(), hv = new THREE.Vector3();
+  for (let i = 0; i <= 40; i++){
+    const t = clip.duration * i / 40; mx.setTime(t); root.updateMatrixWorld(true);
+    hv.setFromMatrixPosition(hips.matrixWorld);
+    for (const b of bones){ v.setFromMatrixPosition(b.matrixWorld); const z = v.z - hv.z + v.y*.15; if (z > best){ best = z; bestT = t; } }
+  }
+  act.stop(); mx.uncacheRoot(root);
+  return Math.max(.08, Math.min(clip.duration*.85, bestT));
+}
 function loadRig(cb){
-  if (RIG.gltf) return cb(true);
+  if (RIG.body) return cb(true);
   if (RIG.failed) return cb(false);
   RIG.cbs.push(cb); if (RIG.loading) return; RIG.loading = true;
   const fin = ok => { RIG.loading = false; RIG.failed = !ok; const l = RIG.cbs; RIG.cbs = []; l.forEach(f => f(ok)); };
   const ex = p => [`https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/${p}`, `https://unpkg.com/three@0.128.0/examples/js/${p}`];
-  const getModel = () => new THREE.GLTFLoader().load(window.FF_MODEL || 'models/fighter.glb', g => {
-    // keep animations in place: remove horizontal root motion of the hips
-    g.animations.forEach(c => c.tracks.forEach(t => { if (/Hips\.position$/.test(t.name)){ const v = t.values; for (let i = 3; i < v.length; i += 3){ v[i] = v[0]; v[i+2] = v[2]; } } }));
-    // measure model height (head top) in idle to match the game's scale
-    const m = THREE.SkeletonUtils.clone(g.scene), mx = new THREE.AnimationMixer(m);
-    mx.clipAction(g.animations.find(a => a.name === 'idle') || g.animations[0]).play(); mx.update(.01); m.updateMatrixWorld(true);
-    let top = 0; m.traverse(o => { if (o.isBone && /HeadTop_End$/.test(o.name)) top = new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).y; });
-    RIG.modelH = top || 1.75; RIG.gltf = g; fin(true);
-  }, undefined, () => fin(false));
-  if (THREE.GLTFLoader && THREE.SkeletonUtils) return getModel();
-  loadScript(ex('loaders/GLTFLoader.js'), () => loadScript(ex('utils/SkeletonUtils.js'), getModel, () => fin(false)), () => fin(false));
+  const getModels = () => {
+    const L = new THREE.GLTFLoader(), base = window.FF_MODELS || 'models/';
+    L.load(base + 'ninja.glb', body => L.load(base + 'anims.glb', an => {
+      try {
+        const clips = retarget(an.animations, an.scene, body.scene);
+        const probe = THREE.SkeletonUtils.clone(body.scene);
+        clips.forEach(c => { const t = findImpact(c, probe); if (t) RIG.impact[c.name] = t; });
+        const mx = new THREE.AnimationMixer(probe); mx.clipAction(clips.find(c => c.name === 'idle')).play(); mx.update(.01); probe.updateMatrixWorld(true);
+        let top = 0; probe.traverse(o => { if (/HeadTop_?End$/i.test(o.name)) top = new THREE.Vector3().setFromMatrixPosition(o.matrixWorld).y; });
+        RIG.modelH = top || 1.7; RIG.body = body; RIG.clips = clips; fin(true);
+      } catch(e){ console.warn('rig setup failed', e); fin(false); }
+    }, undefined, () => fin(false)), undefined, () => fin(false));
+  };
+  if (THREE.GLTFLoader && THREE.SkeletonUtils) return getModels();
+  loadScript(ex('loaders/GLTFLoader.js'), () => loadScript(ex('utils/SkeletonUtils.js'), getModels, () => fin(false)), () => fin(false));
 }
 function makeRigChar(){
-  const g = RIG.gltf, root = THREE.SkeletonUtils.clone(g.scene), mats = {};
-  root.traverse(o => { if (o.isMesh){ o.castShadow = true; o.frustumCulled = false; o.material = o.material.clone(); mats[o.name] = o.material; } });
+  const root = THREE.SkeletonUtils.clone(RIG.body.scene), mats = [];
+  root.traverse(o => { if (o.isMesh){ o.castShadow = true; o.frustumCulled = false; o.material = o.material.clone(); mats.push(o.material); } });
   scene.add(root);
   const mixer = new THREE.AnimationMixer(root), acts = {};
-  g.animations.forEach(c => { const a = mixer.clipAction(c); if (!LOOP_CLIPS.has(c.name)){ a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; } acts[c.name] = a; });
-  return {root, mixer, acts, mats, cur:null, curStep:null};
+  RIG.clips.forEach(c => { const a = mixer.clipAction(c); if (!LOOP_CLIPS.has(c.name)){ a.setLoop(THREE.LoopOnce, 1); a.clampWhenFinished = true; } acts[c.name] = a; });
+  return {root, mixer, acts, mats, cur:null, curName:'', curStep:null};
 }
-function rigPlay(R, name, speed){
+function rigStart(R, name){
   const a = R.acts[name] || R.acts.idle; if (!a) return;
-  if (R.cur === a){ if (speed) a.timeScale = speed; return; }
-  a.reset(); a.timeScale = speed || 1; a.play();
-  if (R.cur) a.crossFadeFrom(R.cur, .12, false);
+  a.reset(); a.timeScale = 1; a.play();
+  if (R.cur && R.cur !== a) a.crossFadeFrom(R.cur, .1, false);
   R.cur = a; R.curName = name;
 }
-const IN_STEP_HIT = .42;   // fraction of an attack clip where the blow lands
+// ms left until the next hit event of the current move (null if none)
+function msToHit(f){
+  if (!f.cur) return null;
+  const k = f.curDur && f.cur.ms ? f.curDur / f.cur.ms : (f.tm || 1);
+  let t = (f.curDur || f.cur.ms * k) - (f.t || 0);
+  if (f.cur.ev && f.cur.ev.hit) return t;
+  for (const s of (f.q || [])){ t += s.ms * k; if (s.ev && s.ev.hit) return t; if (CLIP_OF[s.p] !== CLIP_OF[f.cur.p]) break; }
+  return null;
+}
+// Skip the slow wind-up of long clips so the blow can land in time without playing faster than x2.
+function rigAlign(R, f, name){
+  const imp = RIG.impact[name], left = msToHit(f);
+  if (imp === undefined || left === null || !R.cur) return;
+  R.cur.time = Math.max(0, imp - (left/1000) * 2);
+}
 function rigClip(f){
   if (f.acro){ const t = f.acro.t; return t < .35 ? 'walk' : t < .6 ? 'climb' : 'jumpAttack'; }
   if (f.state === 'ko' || ((f.state === 'down' || f.state === 'thrown') && !f.cur)) return 'fall';
   const k = f.pk;
-  if (!k || k === 'idle') return f.mvDir > 0 ? 'walk' : f.mvDir < 0 ? 'back' : f.state === 'guard' ? 'blockHigh' : 'idle';
+  if (!k || k === 'idle' || k === f.idleP || k === 'guard') return f.mvDir > 0 ? 'walk' : f.mvDir < 0 ? 'back' : f.state === 'guard' ? 'blockHigh' : 'idle';
   let c = CLIP_OF[k] || 'idle';
-  if (c === 'kick' && /highHit|highCh/.test(k) && f.data.style === 'kick') c = 'martelo';
+  if (c === 'kick' && /high/.test(k) && f.data.style === 'kick') c = 'martelo';
   if (c === 'kick' && f.data.style === 'acro') c = 'capoeira';
   return c;
 }
-function rigUpdate(R, f, dt, isA){
+function rigUpdate(R, f, dt){
   const name = rigClip(f);
-  const stepMs = f.cur ? f.cur.ms * (f.tm || 1) : 300;
-  const a = R.acts[name];
-  let speed = 1;
-  if (a && !LOOP_CLIPS.has(name) && !HOLD_CLIPS.has(name)) speed = Math.max(.6, Math.min(3.5, a.getClip().duration * IN_STEP_HIT / Math.max(.08, stepMs/1000)));
-  if (name === 'walk' || name === 'back') speed = .8 + (f.walk || 1.4) * .35;
-  if (HOLD_CLIPS.has(name)) speed = 1.4;
-  // restart an attack clip when a new attack step begins
-  if (f.cur && f.cur !== R.curStep && R.curName === name && !LOOP_CLIPS.has(name) && R.cur && R.cur.time > R.cur.getClip().duration * .6){ R.cur.reset(); R.cur.play(); }
+  const newStep = f.cur && f.cur !== R.curStep;
+  if (name !== R.curName){ rigStart(R, name); rigAlign(R, f, name); }
+  else if (newStep && !LOOP_CLIPS.has(name) && !HOLD_CLIPS.has(name)){
+    // same clip again: restart only if the previous blow already landed (combos like jab-jab)
+    const imp = RIG.impact[name], a = R.cur;
+    if (a && (imp ? a.time >= imp - .02 : a.time > a.getClip().duration * .5)){ rigStart(R, name); rigAlign(R, f, name); }
+  }
   R.curStep = f.cur;
-  rigPlay(R, name, speed);
+  const a = R.cur;
+  if (a){
+    const imp = RIG.impact[name];
+    if (imp !== undefined){
+      const left = msToHit(f);
+      a.timeScale = a.time < imp && left !== null ? Math.max(.3, Math.min(8, (imp - a.time) / Math.max(.03, left/1000))) : 1.25;
+    } else if (name === 'walk' || name === 'back') a.timeScale = .8 + (f.walk || 1.4) * .35;
+    else if (HOLD_CLIPS.has(name)) a.timeScale = 1.5;
+    else if (/^hit|shoved|dodge|block$/.test(name)) a.timeScale = 1.6;
+    else a.timeScale = 1;
+  }
   R.mixer.update(dt);
-  const s = RIG.baseH / RIG.modelH * (f.sc || 1), d = f.data, bulk = Math.max(.85, Math.min(1.3, 1 + ((d.w || 78) - 78)/220 + ((d.m || 50) - 50)/400));
-  R.root.scale.set(s * bulk, s, s * bulk);
+  const sc = RIG.baseH / RIG.modelH * (f.sc || 1), d = f.data, bulk = Math.max(.88, Math.min(1.25, 1 + ((d.w || 78) - 78)/240 + ((d.m || 50) - 50)/450));
+  R.root.scale.set(sc * bulk, sc, sc * bulk);
   R.root.position.set(f.x, f.lift || 0, 0);
   R.root.rotation.y = f.face > 0 ? Math.PI/2 : -Math.PI/2;
 }
-function rigPaint(R, L, isA, f){
-  L = L || {};
-  const skin = new THREE.Color(L.skin || (isA ? '#c9a07f' : '#8d5b3c')), acc = new THREE.Color(isA ? '#e63946' : '#2f80c9');
-  for (const [n, m] of Object.entries(R.mats)){ if (/Joint/i.test(n)) m.color.copy(L.bare ? skin : acc); else m.color.copy(skin); m.roughness = .55; }
+function rigPaint(R, L, isA){
+  const tint = new THREE.Color(isA ? '#ffe2dc' : '#d6e4ff');
+  R.mats.forEach(m => { m.color.copy(tint); });
 }
-function setManVisible(M, v){ [...M.bones.map(b => b.mesh), ...M.joints.map(j => j.mesh), ...M.gloves.map(g => g.mesh), M.head, M.chest, M.belly, M.pelvis].forEach(m => m.visible = v); M.nails.forEach(n => n.mesh.visible = v && n.mesh.visible); }
+function setManVisible(M, v){ [...M.bones.map(b => b.mesh), ...M.joints.map(j => j.mesh), ...M.gloves.map(g => g.mesh), M.head, M.chest, M.belly, M.pelvis].forEach(m => m.visible = v); if (!v) M.nails.forEach(n => n.mesh.visible = false); }
 function rigSetup(){
-  if (!RIG.gltf || !renderer) return;
-  if (!RA){ RA = makeRigChar(); RB = makeRigChar(); RIG.baseH = to3(POSES.guard, 0, 1, 1).head.y + .13; }
+  if (!RIG.body || !renderer) return;
+  if (!RA){ RA = makeRigChar(); RB = makeRigChar(); RIG.baseH = (to3(POSES.guard, 0, 1, 1).head.y + .13) * .86; }
   const on = save.real3d !== false;
   RA.root.visible = RB.root.visible = on; setManVisible(MA, !on); setManVisible(MB, !on);
-  if (A) rigPaint(RA, A.data.look, true, A); if (B) rigPaint(RB, B.data.look, false, B);
+  if (A) rigPaint(RA, A.data.look, true); if (B) rigPaint(RB, B.data.look, false);
 }
 let RA = null, RB = null;
 
@@ -2085,6 +2171,7 @@ function updateFighter(f, dt){
   if (f.cur){
     f.t += dt*1000;
     const dur = f.cur.ms * f.tm * (1.1 - f.A.coordination/500) * (f.dazed > 0 ? 1.3 : 1) * (f.zone && f.zone.head < 40 ? 1 + .15*(1 - traitsOf(f.data).calme/100) : 1);
+    f.curDur = dur;
     const k = Math.min(1, f.t/dur);
     f.pose = lerp2(f.from, POSES[f.cur.p], ease(k));
     if (k >= 1){
@@ -2133,7 +2220,7 @@ function loop(now){
     if (F.mp === 'host') mpSend(now);
     }
     pose3(MA, to3(A.pose, A.x, A.face, A.sc, A.lift||0)); pose3(MB, to3(B.pose, B.x, B.face, B.sc, B.lift||0));
-    if (RA && RA.root.visible){ rigUpdate(RA, A, dt, true); rigUpdate(RB, B, dt, false); }
+    if (RA && RA.root.visible){ rigUpdate(RA, A, dt); rigUpdate(RB, B, dt); }
     // HUD
     $('hpA').style.width = (A.hp/A.hpMax*100)+'%'; $('hpB').style.width = (B.hp/B.hpMax*100)+'%'; $('lifeA').textContent = '❤ '+Math.ceil(A.hp)+'/'+A.hpMax; zoneHUD('zA', A); zoneHUD('zB', B); const sts = f => `⚖ ${Math.round(f.bal)} · 🔋 ${Math.round(f.st)}${f.dazed > 0 ? ' · 💫 SONNÉ' : ''}${f.bal < 40 ? ' · instable' : ''}`; $('stsA').textContent = sts(A); $('stsB').textContent = sts(B); $('lifeB').textContent = '❤ '+Math.ceil(B.hp)+'/'+B.hpMax; $('stA').style.width = A.st+'%'; $('stB').style.width = B.st+'%';
     $('ggA').style.width = A.gauge+'%'; $('ggB').style.width = B.gauge+'%';
