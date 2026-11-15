@@ -1704,12 +1704,30 @@ function mpAuto(){
   $('mpCancel').onclick = () => { mpClose(); mpStatus('Recherche annulée.'); };
   loadPeer(() => {
     const me = MP = {role:'guest', auto:true, mine: mpPayload($('mpSel').value), matched:false, slot:-1};
-    const pr = me.probe = me.peer = new Peer(undefined, mpPeerOpts());
-    pr.on('error', e => { if (MP !== me) return;
-      if (e.type === 'peer-unavailable'){ const g = me.onGone; me.onGone = null; g && g(); return; }
-      if (['network','server-error','socket-error'].includes(e.type)) mpStatus('❌ Pas de connexion Internet.'); });
-    pr.on('open', () => seek(me, 0, LOBBY, () => mpStatus('😕 Trop de monde en attente. Réessaie dans un moment.')));
+    startProbe(me, 1);
   });
+}
+// The probe peer (random id) is used to connect to waiting players. Retries if the server is slow.
+function startProbe(me, attempt){
+  if (MP !== me) return;
+  if (typeof Peer !== 'function'){ mpStatus('❌ Le multijoueur n\'a pas pu se charger. Ouvre le jeu sur le site, pas dans l\'appli Claude.'); return; }
+  let pr;
+  try { pr = new Peer(undefined, mpPeerOpts()); } catch(e){ mpStatus('❌ Ce navigateur ne permet pas le multijoueur (' + (e.message || e) + '). Essaie avec Chrome ou Safari.'); return; }
+  me.probe = me.peer = pr; let opened = false;
+  const retry = why => {
+    if (MP !== me || me.matched) return;
+    try { pr.destroy(); } catch(e){}
+    if (attempt < 4){ mpStatus(`🔄 Connexion au serveur difficile, j'essaie encore (${attempt}/3)…`); setTimeout(() => startProbe(me, attempt+1), 1200*attempt); }
+    else mpStatus(`❌ Le serveur du multijoueur ne répond pas (${why}).<br>Vérifie Internet (Wi-Fi ou 4G), ouvre le jeu dans Chrome ou Safari, puis réessaie.`);
+  };
+  const t = setTimeout(() => { if (!opened) retry('trop lent'); }, 10000);
+  pr.on('error', e => { if (MP !== me || me.probe !== pr) return;
+    if (e.type === 'peer-unavailable'){ const g = me.onGone; me.onGone = null; g && g(); return; }
+    if (e.type === 'browser-incompatible'){ clearTimeout(t); mpStatus('❌ Ce navigateur ne permet pas le multijoueur. Ouvre le jeu dans Chrome ou Safari.'); return; }
+    if (!opened){ clearTimeout(t); retry(e.type || 'erreur'); return; }
+    if (e.type === 'network' || e.type === 'socket-closed' || e.type === 'disconnected'){ try { pr.reconnect(); } catch(err){} } });
+  pr.on('disconnected', () => { if (MP === me && me.probe === pr && !pr.destroyed){ try { pr.reconnect(); } catch(e){} } });
+  pr.on('open', () => { if (opened) return; opened = true; clearTimeout(t); if (me.slot < 0 && !me.matched) seek(me, 0, LOBBY, () => mpStatus('😕 Trop de monde en attente. Réessaie dans un moment.')); });
 }
 function seek(me, k, end, onEnd){
   if (!mpAlive(me)) return;
@@ -1724,7 +1742,7 @@ function claim(me, k, cb){
   const hp = new Peer(lobbyId(k), mpPeerOpts()); let done = false;
   const t = setTimeout(() => { if (!done){ done = true; try { hp.destroy(); } catch(e){} cb(null); } }, 8000);
   hp.on('open', () => { if (done) return; done = true; clearTimeout(t); cb(hp); });
-  hp.on('error', e => { if (done) return; if (e.type === 'unavailable-id'){ done = true; clearTimeout(t); try { hp.destroy(); } catch(err){} cb(null); } });
+  hp.on('error', e => { if (done) return; done = true; clearTimeout(t); try { hp.destroy(); } catch(err){} cb(null); });
 }
 function join(me, k, cb){
   let done = false; const fin = r => { if (done) return; done = true; clearTimeout(me.pt); me.onGone = null; cb(r); };
@@ -1748,6 +1766,7 @@ function join(me, k, cb){
 }
 function waitAt(me, k, hp){
   const old = me.host; me.host = hp; me.slot = k; if (old) try { old.destroy(); } catch(e){}
+  hp.on('disconnected', () => { if (MP === me && me.host === hp && !hp.destroyed){ try { hp.reconnect(); } catch(e){} } });
   hp.on('connection', conn => {
     if (MP !== me || me.matched || me.host !== hp){ conn.on('open', () => { conn.send({t:'busy'}); setTimeout(() => conn.close(), 400); }); return; }
     me.matched = true; clearInterval(me.scan); me.role = 'host';
