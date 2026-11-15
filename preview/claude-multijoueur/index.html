@@ -1644,34 +1644,12 @@ function mpData(p){
   return opponent(+p.id.slice(1));
 }
 function mpPeerOpts(){ return window.FF_PEER_OPTS || {}; }
-function mpClose(){ if (MP){ clearInterval(MP.scan); clearTimeout(MP.pt); try { MP.host && MP.host.destroy(); } catch(e){} try { MP.probe && MP.probe.destroy(); } catch(e){} try { MP.conn && MP.conn.close(); } catch(e){} try { MP.peer && MP.peer.destroy(); } catch(e){} } MP = null; }
+function mpClose(){ if (MP){ clearInterval(MP.scan); clearInterval(MP.retry); clearTimeout(MP.pt); try { MP.host && MP.host.destroy(); } catch(e){} try { MP.probe && MP.probe.destroy(); } catch(e){} try { MP.conn && MP.conn.close(); } catch(e){} try { MP.peer && MP.peer.destroy(); } catch(e){} } MP = null; }
 function mpWire(conn, role){
   MP.conn = conn;
   conn.on('data', m => mpOnData(m));
   conn.on('close', () => { if (F && F.mp){ banner('ADVERSAIRE DÉCONNECTÉ', 2500); F.phase = 'over'; } mpStatus('Connexion terminée.'); });
 }
-$('mpHost').onclick = () => {
-  mpClose(); const code = String(Math.floor(100000 + Math.random()*900000));
-  mpStatus('Préparation…');
-  loadPeer(() => {
-    const peer = new Peer('fusionff-' + code, mpPeerOpts());
-    MP = {peer, role:'host', mine: mpPayload($('mpSel').value), last: 0};
-    peer.on('open', () => { MP.code = code; mpStatus(`Ton code : <b style="font-size:32px;letter-spacing:4px;color:var(--gold)">${code}</b><br>Donne-le à l'autre joueur, ou invite-le avec un lien :` + inviteHTML(code) + `<div style="margin-top:6px">En attente d'un joueur…</div>`); bindInvite(code); });
-    peer.on('error', e => mpStatus('❌ Erreur : ' + (e.type || e)));
-    peer.on('connection', conn => { mpWire(conn, 'host'); mpStatus('✅ Joueur connecté, on attend son personnage…'); });
-  });
-};
-$('mpJoin').onclick = () => {
-  const code = $('mpCode').value.trim(); if (!/^\d{6}$/.test(code)){ mpStatus('Entre le code à 6 chiffres.'); return; }
-  mpClose(); mpStatus('Connexion…');
-  loadPeer(() => {
-    const peer = new Peer(undefined, mpPeerOpts());
-    MP = {peer, role:'guest', mine: mpPayload($('mpSel').value)};
-    peer.on('error', e => mpStatus('❌ ' + (e.type === 'peer-unavailable' ? 'Aucune partie avec ce code.' : 'Erreur : ' + (e.type || e))));
-    peer.on('open', () => { const conn = peer.connect('fusionff-' + code, {reliable:true}); mpWire(conn, 'guest');
-      conn.on('open', () => { conn.send({t:'hello', p: MP.mine}); mpStatus('✅ Connecté ! La partie commence…'); }); });
-  });
-};
 // ---- Invite: share a link that opens the game and fills the code ----
 const inviteLink = code => location.origin + location.pathname + '?join=' + code;
 const inviteText = code => `🥊 Viens te battre contre moi sur Fusion Fighters ! Code : ${code}`;
@@ -1689,100 +1667,84 @@ function bindInvite(code){
   if ($('invCopy')) $('invCopy').onclick = copy;
   if ($('invShare')) $('invShare').onclick = () => { if (navigator.share) navigator.share({title:'Fusion Fighters', text: inviteText(code), url: inviteLink(code)}).catch(() => {}); else copy(); };
 }
-$('mpInviteTop').onclick = () => { if (MP && MP.role === 'host' && MP.code && !(MP.conn && MP.conn.open)){ const b = $('invShare'); if (b) b.click(); return; } $('mpHost').onclick(); };
+$('mpInviteTop').onclick = () => { if (MP && MP.code && !MP.matched){ const b = $('invShare'); if (b) b.click(); return; } $('mpHost').onclick(); };
 // Opened from an invite link: go to multiplayer with the code ready
 (() => { const j = new URLSearchParams(location.search).get('join'); if (!j || !/^\d{6}$/.test(j)) return;
   setTimeout(() => { go('sMP'); $('mpCode').value = j; mpStatus(`📨 Tu es invité à la partie <b style="color:var(--gold)">${j}</b> !<br>Choisis ton personnage, puis appuie sur <b>Rejoindre</b>.`); $('mpJoin').style.background = '#2fa36b'; }, 50); })();
-// ---- Automatic matchmaking (no code): shared lobby slots on the PeerJS server ----
-// For slot k: try to take the id 'fusionff-lobby-k'. Free -> wait there. Taken -> connect
-// to whoever holds it: a waiting player answers 'start' (match), a playing one 'busy' (next slot).
-// Waiting players keep trying lower slots, so two waiting players always meet.
-const LOBBY = 12, lobbyId = k => 'fusionff-lobby-' + k;
-const mpAlive = me => MP === me && !me.matched;
-function mpAuto(){
-  mpClose(); mpStatus('🔎 Je cherche un adversaire…<br><button id="mpCancel" style="margin-top:8px">Annuler</button>');
-  $('mpCancel').onclick = () => { mpClose(); mpStatus('Recherche annulée.'); };
-  loadPeer(() => {
-    const me = MP = {role:'guest', auto:true, mine: mpPayload($('mpSel').value), matched:false, slot:-1};
-    startProbe(me, 1);
-  });
-}
-// The probe peer (random id) is used to connect to waiting players. Retries if the server is slow.
-function startProbe(me, attempt){
-  if (MP !== me) return;
-  if (typeof Peer !== 'function'){ mpStatus('❌ Le multijoueur n\'a pas pu se charger. Ouvre le jeu sur le site, pas dans l\'appli Claude.'); return; }
-  let pr;
-  try { pr = new Peer(undefined, mpPeerOpts()); } catch(e){ mpStatus('❌ Ce navigateur ne permet pas le multijoueur (' + (e.message || e) + '). Essaie avec Chrome ou Safari.'); return; }
-  me.probe = me.peer = pr; let opened = false;
-  const retry = why => {
-    if (MP !== me || me.matched) return;
-    try { pr.destroy(); } catch(e){}
-    if (attempt < 4){ mpStatus(`🔄 Connexion au serveur difficile, j'essaie encore (${attempt}/3)…`); setTimeout(() => startProbe(me, attempt+1), 1200*attempt); }
-    else mpStatus(`❌ Le serveur du multijoueur ne répond pas (${why}).<br>Vérifie Internet (Wi-Fi ou 4G), ouvre le jeu dans Chrome ou Safari, puis réessaie.`);
+// ---- Online play through Trystero: WebRTC, connected through many public Nostr relays ----
+// (no single server: if one relay is down or blocked, the others still work)
+const TRY_APP = 'adrien426-fusion-fighters-v1';
+let TRY = null;
+function loadTry(cb){
+  if (TRY) return cb(TRY);
+  if (window.FF_TRY){ TRY = window.FF_TRY; return cb(TRY); }
+  const urls = ['https://esm.run/trystero@0.21.8/nostr', 'https://esm.sh/trystero@0.21.8/nostr', 'https://cdn.jsdelivr.net/npm/trystero@0.21.8/+esm'];
+  const next = i => {
+    if (i >= urls.length){ mpStatus('❌ Impossible de charger le multijoueur. Ouvre le jeu sur le site, dans Chrome ou Safari.'); return; }
+    import(urls[i]).then(m => { if (!m.joinRoom) throw 0; TRY = {joinRoom: m.joinRoom, selfId: m.selfId, config: {}}; cb(TRY); }).catch(() => next(i+1));
   };
-  const t = setTimeout(() => { if (!opened) retry('trop lent'); }, 10000);
-  pr.on('error', e => { if (MP !== me || me.probe !== pr) return;
-    if (e.type === 'peer-unavailable'){ const g = me.onGone; me.onGone = null; g && g(); return; }
-    if (e.type === 'browser-incompatible'){ clearTimeout(t); mpStatus('❌ Ce navigateur ne permet pas le multijoueur. Ouvre le jeu dans Chrome ou Safari.'); return; }
-    if (!opened){ clearTimeout(t); retry(e.type || 'erreur'); return; }
-    if (e.type === 'network' || e.type === 'socket-closed' || e.type === 'disconnected'){ try { pr.reconnect(); } catch(err){} } });
-  pr.on('disconnected', () => { if (MP === me && me.probe === pr && !pr.destroyed){ try { pr.reconnect(); } catch(e){} } });
-  pr.on('open', () => { if (opened) return; opened = true; clearTimeout(t); if (me.slot < 0 && !me.matched) seek(me, 0, LOBBY, () => mpStatus('😕 Trop de monde en attente. Réessaie dans un moment.')); });
+  next(0);
 }
-function seek(me, k, end, onEnd){
-  if (!mpAlive(me)) return;
-  if (k >= end){ onEnd && onEnd(); return; }
-  claim(me, k, hp => {
-    if (!mpAlive(me)){ hp && hp.destroy(); return; }
-    if (hp){ waitAt(me, k, hp); return; }
-    join(me, k, res => { if (res !== 'match') seek(me, k+1, end, onEnd); });
-  });
-}
-function claim(me, k, cb){
-  const hp = new Peer(lobbyId(k), mpPeerOpts()); let done = false;
-  const t = setTimeout(() => { if (!done){ done = true; try { hp.destroy(); } catch(e){} cb(null); } }, 8000);
-  hp.on('open', () => { if (done) return; done = true; clearTimeout(t); cb(hp); });
-  hp.on('error', e => { if (done) return; done = true; clearTimeout(t); try { hp.destroy(); } catch(err){} cb(null); });
-}
-function join(me, k, cb){
-  let done = false; const fin = r => { if (done) return; done = true; clearTimeout(me.pt); me.onGone = null; cb(r); };
-  const conn = me.probe.connect(lobbyId(k), {reliable:true});
-  me.onGone = () => fin('miss');
-  me.pt = setTimeout(() => { try { conn.close(); } catch(e){} fin('miss'); }, 7000);
-  conn.on('open', () => conn.send({t:'hello', p: me.mine}));
-  conn.on('data', m => {
-    if (me.conn === conn){ mpOnData(m); return; }
-    if (MP !== me){ conn.close(); return; }
-    if (m.t === 'busy'){ conn.close(); fin('busy'); return; }
-    if (m.t === 'start'){
-      if (me.matched || done){ conn.close(); fin('miss'); return; }
-      me.matched = true; clearInterval(me.scan); try { me.host && me.host.destroy(); } catch(e){} me.host = null;
-      me.role = 'guest'; me.conn = conn;
-      conn.on('close', () => { if (F && F.mp){ banner('ADVERSAIRE DÉCONNECTÉ', 2500); F.phase = 'over'; } mpStatus('Connexion terminée.'); });
-      mpStatus('✅ Adversaire trouvé ! Le combat commence…');
-      fin('match'); mpOnData(m);
+// Join a room and pair with one other free player in it.
+// Free players announce themselves; in each pair the lower id asks, the other accepts.
+function mpRoom(roomName, waitingHTML, code){
+  mpClose(); mpStatus('🔌 Connexion…');
+  loadTry(T => {
+    const me = MP = {role:'guest', mine: mpPayload($('mpSel').value), matched:false, peers:{}, pending:null, partner:null, code};
+    let room;
+    try { room = T.joinRoom(Object.assign({appId: TRY_APP}, T.config || {}), roomName); }
+    catch(e){ mpStatus('❌ Ce navigateur ne permet pas le multijoueur. Ouvre le jeu dans Chrome ou Safari.'); return; }
+    me.room = room; me.peer = {destroy: () => { try { room.leave(); } catch(e){} }};
+    const [sendSt, getSt] = room.makeAction('st'), [sendPr, getPr] = room.makeAction('pr'), [sendM, getM] = room.makeAction('m');
+    const myId = T.selfId, free = () => !me.matched && !me.pending;
+    const waiting = () => { if (MP === me && !me.matched) mpStatus(waitingHTML()); bindWait(); };
+    const bindWait = () => { if ($('mpCancel')) $('mpCancel').onclick = () => { mpClose(); mpStatus('Recherche annulée.'); }; if (me.code) bindInvite(me.code); };
+    room.onPeerJoin(id => { me.peers[id] = false; sendSt({free: !me.matched}, id); });
+    room.onPeerLeave(id => { delete me.peers[id]; if (me.pending === id){ me.pending = null; clearTimeout(me.pt); }
+      if (me.partner === id && me.conn) me.conn._close(); });
+    getSt((d, id) => { me.peers[id] = !!d.free; tryPair(); });
+    getPr((d, id) => {
+      if (MP !== me) return;
+      if (d.t === 'ask'){ if (free()){ me.matched = true; sendPr({t:'ok'}, id); begin(id, 'guest'); } else sendPr({t:'no'}, id); return; }
+      if (d.t === 'ok'){ if (me.pending === id && !me.matched){ me.pending = null; clearTimeout(me.pt); me.matched = true; begin(id, 'host'); } else sendPr({t:'cancel'}, id); return; }
+      if (d.t === 'no' && me.pending === id){ me.pending = null; clearTimeout(me.pt); setTimeout(tryPair, 300 + Math.random()*900); return; }
+      if (d.t === 'cancel' && me.partner === id && !(F && F.mp)){ me.matched = false; me.partner = null; me.conn = null; sendSt({free:true}); waiting(); }
+    });
+    getM((d, id) => { if (me.conn && id === me.partner) me.conn._data(d); });
+    function tryPair(){
+      if (MP !== me || !free()) return;
+      const c = Object.keys(me.peers).filter(id => me.peers[id] && id > myId).sort();
+      if (!c.length) return;
+      const id = c[0]; me.pending = id; sendPr({t:'ask'}, id);
+      me.pt = setTimeout(() => { if (me.pending === id){ me.pending = null; tryPair(); } }, 5000);
     }
+    function begin(id, role){
+      me.partner = id; me.role = role; sendSt({free:false});
+      const h = {data:[], close:[]};
+      const conn = {open:true, send: d => { if (conn.open) sendM(d, id); }, on: (ev, cb) => (h[ev] = h[ev] || []).push(cb),
+        close: () => { conn.open = false; try { room.leave(); } catch(e){} },
+        _close: () => { if (!conn.open) return; conn.open = false; h.close.forEach(f => f()); },
+        _data: d => h.data.forEach(f => f(d))};
+      mpWire(conn, role);
+      mpStatus('✅ Adversaire trouvé ! Le combat commence…');
+      if (role === 'guest') conn.send({t:'hello', p: me.mine});
+    }
+    me.retry = setInterval(tryPair, 2000);
+    waiting();
   });
 }
-function waitAt(me, k, hp){
-  const old = me.host; me.host = hp; me.slot = k; if (old) try { old.destroy(); } catch(e){}
-  hp.on('disconnected', () => { if (MP === me && me.host === hp && !hp.destroyed){ try { hp.reconnect(); } catch(e){} } });
-  hp.on('connection', conn => {
-    if (MP !== me || me.matched || me.host !== hp){ conn.on('open', () => { conn.send({t:'busy'}); setTimeout(() => conn.close(), 400); }); return; }
-    me.matched = true; clearInterval(me.scan); me.role = 'host';
-    mpWire(conn, 'host'); mpStatus('✅ Adversaire trouvé ! Le combat commence…');
-    conn.on('close', () => { if (MP === me && !(F && F.mp)){ me.matched = false; me.conn = null; me.role = 'guest'; waitUI(me); } });
-  });
-  waitUI(me);
+const cancelBtn = '<br><button id="mpCancel" style="margin-top:8px">Annuler</button>';
+function mpAuto(){
+  mpRoom('lobby', () => '⏳ En attente d\'un adversaire…<br><span style="font-size:13px;color:var(--mute)">Dès que quelqu\'un d\'autre appuie sur « Combat automatique », le combat commence.</span>' + cancelBtn);
 }
-function waitUI(me){
-  mpStatus('⏳ En attente d\'un adversaire…<br><span style="font-size:13px;color:var(--mute)">Dès que quelqu\'un d\'autre appuie sur « Combat automatique », le combat commence.</span><br><button id="mpCancel" style="margin-top:8px">Annuler</button>');
-  $('mpCancel').onclick = () => { mpClose(); mpStatus('Recherche annulée.'); };
-  clearInterval(me.scan);
-  me.scan = setInterval(() => { if (!mpAlive(me) || me.scanning || me.slot <= 0) return; me.scanning = true; seek(me, 0, me.slot, () => { me.scanning = false; }); }, 3000 + Math.random()*2000);
-  // after a scan moves us down (waitAt), allow scanning again
-  me.scanning = false;
-}
+$('mpHost').onclick = () => {
+  const code = String(Math.floor(100000 + Math.random()*900000));
+  mpRoom('code-' + code, () => `Ton code : <b style="font-size:32px;letter-spacing:4px;color:var(--gold)">${code}</b><br>Donne-le à l'autre joueur, ou invite-le avec un lien :` + inviteHTML(code) + `<div style="margin-top:6px">En attente d'un joueur…</div>` + cancelBtn, code);
+};
+$('mpJoin').onclick = () => {
+  const code = $('mpCode').value.trim(); if (!/^\d{6}$/.test(code)){ mpStatus('Entre le code à 6 chiffres.'); return; }
+  mpRoom('code-' + code, () => `🔎 Je rejoins la partie <b style="color:var(--gold)">${code}</b>…<br><span style="font-size:13px;color:var(--mute)">Le combat commence dès que ton ami est là.</span>` + cancelBtn);
+};
 $('mpAuto').onclick = mpAuto;
 $('mpBack').onclick = () => { mpClose(); go('sMenu'); };
 $('bMP').onclick = () => go('sMP');
