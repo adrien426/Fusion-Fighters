@@ -249,6 +249,7 @@ h2{font-size:30px;margin:6px 0 4px}
   <div class="fusionCard"><div class="tact"><b>Ton personnage</b></div><select id="mpSel" class="sel2"></select><div id="mpInfo" class="tm" style="font-size:12px;color:var(--mute);margin-top:4px"></div></div>
   <div class="artChips" style="margin:6px 0"><button data-arena="cage">🔷 Cage MMA</button><button data-arena="ring">🥊 Ring à 3 cordes</button></div>
   <button class="big" id="mpHost">➕ Créer une partie</button>
+  <button class="big" id="mpInviteTop" style="background:#2fa36b">📨 Inviter des gens</button>
   <div class="fusionCard" style="border-color:var(--blue)"><div class="tact"><b>Rejoindre une partie</b></div>
     <div class="pager"><input id="mpCode" maxlength="6" inputmode="numeric" placeholder="Code à 6 chiffres"><button id="mpJoin">Rejoindre</button></div></div>
   <div class="fusionCard" id="mpStatus" style="text-align:center;font-size:15px">Pas encore connecté.</div>
@@ -1652,7 +1653,7 @@ $('mpHost').onclick = () => {
   loadPeer(() => {
     const peer = new Peer('fusionff-' + code, mpPeerOpts());
     MP = {peer, role:'host', mine: mpPayload($('mpSel').value), last: 0};
-    peer.on('open', () => mpStatus(`Ton code : <b style="font-size:32px;letter-spacing:4px;color:var(--gold)">${code}</b><br>Donne-le à l'autre joueur, puis attends…`));
+    peer.on('open', () => { MP.code = code; mpStatus(`Ton code : <b style="font-size:32px;letter-spacing:4px;color:var(--gold)">${code}</b><br>Donne-le à l'autre joueur, ou invite-le avec un lien :` + inviteHTML(code) + `<div style="margin-top:6px">En attente d'un joueur…</div>`); bindInvite(code); });
     peer.on('error', e => mpStatus('❌ Erreur : ' + (e.type || e)));
     peer.on('connection', conn => { mpWire(conn, 'host'); mpStatus('✅ Joueur connecté, on attend son personnage…'); });
   });
@@ -1668,6 +1669,27 @@ $('mpJoin').onclick = () => {
       conn.on('open', () => { conn.send({t:'hello', p: MP.mine}); mpStatus('✅ Connecté ! La partie commence…'); }); });
   });
 };
+// ---- Invite: share a link that opens the game and fills the code ----
+const inviteLink = code => location.origin + location.pathname + '?join=' + code;
+const inviteText = code => `🥊 Viens te battre contre moi sur Fusion Fighters ! Code : ${code}`;
+function inviteHTML(code){
+  const t = encodeURIComponent(inviteText(code) + ' ' + inviteLink(code));
+  return `<div class="artChips" style="justify-content:center;margin-top:8px">
+    <button id="invShare" style="background:#2fa36b;color:#fff">📨 Inviter</button>
+    <a href="https://wa.me/?text=${t}" target="_blank" rel="noopener"><button>💬 WhatsApp</button></a>
+    <a href="sms:?&body=${t}"><button>✉️ SMS</button></a>
+    <button id="invCopy">📋 Copier le lien</button></div>`;
+}
+function bindInvite(code){
+  const copy = () => { const l = inviteText(code) + ' ' + inviteLink(code);
+    (navigator.clipboard ? navigator.clipboard.writeText(l) : Promise.reject()).then(() => { $('invCopy').textContent = '✅ Lien copié !'; }).catch(() => prompt('Copie ce lien :', l)); };
+  if ($('invCopy')) $('invCopy').onclick = copy;
+  if ($('invShare')) $('invShare').onclick = () => { if (navigator.share) navigator.share({title:'Fusion Fighters', text: inviteText(code), url: inviteLink(code)}).catch(() => {}); else copy(); };
+}
+$('mpInviteTop').onclick = () => { if (MP && MP.role === 'host' && MP.code && !(MP.conn && MP.conn.open)){ const b = $('invShare'); if (b) b.click(); return; } $('mpHost').onclick(); };
+// Opened from an invite link: go to multiplayer with the code ready
+(() => { const j = new URLSearchParams(location.search).get('join'); if (!j || !/^\d{6}$/.test(j)) return;
+  setTimeout(() => { go('sMP'); $('mpCode').value = j; mpStatus(`📨 Tu es invité à la partie <b style="color:var(--gold)">${j}</b> !<br>Choisis ton personnage, puis appuie sur <b>Rejoindre</b>.`); $('mpJoin').style.background = '#2fa36b'; }, 50); })();
 $('mpBack').onclick = () => { mpClose(); go('sMenu'); };
 $('bMP').onclick = () => go('sMP');
 function mpOnData(m){
