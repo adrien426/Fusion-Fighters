@@ -160,6 +160,7 @@ h2{font-size:30px;margin:6px 0 4px}
     <b>Comment jouer</b><br>
     ◀ ▶ : se déplacer · <b>GARDE</b> (maintenir) : bloque les coups<br>
     <b>JAB</b> : rapide · <b>VRILLE</b> : dévie son coup et frappe, double dégâts au bon moment · <b>FOUET</b> : coude · <b>FAUX</b> : fauchage, il tombe s'il est sonné · <b>PAS DU VENT</b> : esquive totale et +30 % de dégâts juste après<br>
+    <b>Points vitaux</b> : menton (K.O. net possible), tempe (sonné), nez ; foie (paralysé), plexus (souffle coupé), côtes (fêlées si os fragiles) ; cuisse, genou (perd l'équilibre), mollet. 3 chutes dans un round = K.O. technique.<br>
     <b>Réussite 0 à 100 %</b> : chaque coup, garde et esquive affiche sa réussite. À 100 %, c'est parfait et ça fait le plus de dégâts. La vitesse, la force, la vue et l'intelligence l'augmentent ; la fatigue, l'état sonné et le manque d'équilibre la baissent.<br>
     <b>⚡ TECHNIQUE FUSION</b> (jauge dorée) : ta technique, Vrille → Fouet → Pas du Vent → Faux → Coup Fusion. Chaque adversaire a aussi sa propre technique parfaite.<br>
     Enchaînement conseillé : <b>Vrille, Fouet, Faux</b>. Les saisies adverses passent à travers ta garde : esquive-les avec le Pas du Vent.<br>
@@ -199,6 +200,10 @@ h2{font-size:30px;margin:6px 0 4px}
     <div class="slid"><span>Taille</span><input type="range" id="cH" min="150" max="220" value="182"><b id="cHv"></b></div>
     <div class="slid"><span>Poids</span><input type="range" id="cW" min="50" max="160" value="85"><b id="cWv"></b></div>
     <div class="slid"><span>Muscles</span><input type="range" id="cM" min="0" max="100" value="50"><b id="cMv"></b></div>
+    <div class="slid"><span>🎂 Âge</span><input type="range" id="cAge" min="16" max="70" value="26"><b id="cAgeV"></b></div>
+    <div class="slid"><span>🦴 Os</span><input type="range" id="cOs" min="0" max="99" value="50"><b id="cOsV"></b></div>
+    <div class="slid"><span>✋ Mains</span><input type="range" id="cMains" min="0" max="99" value="50"><b id="cMainsV"></b></div>
+    <div class="slid"><span>🫁 Poumons</span><input type="range" id="cPoum" min="0" max="99" value="50"><b id="cPoumV"></b></div>
     <div class="slid"><span>Expérience</span><input type="range" id="cL" min="30" max="99" value="70"><b id="cLv"></b></div>
     <div class="slid"><span>Vie</span><input type="range" id="cLife" min="50" max="1000" step="10" value="100"><b id="cLifeV"></b></div>
     <div id="cStats"></div>
@@ -344,7 +349,7 @@ const SPECIALS = {
 };
 
 // ===================== PLAYER: LE TOURBILLON =====================
-const PLAYER = {name:'LE TOURBILLON', traits:{agr:60, iq:90, calme:95, patience:80, ruse:85, courage:90}, life:100, health:'Pleine forme', m:65, w:80, resist:.1, s:[86,86,86,84,76], sps:['fusion'], idleP:'vGuard',
+const PLAYER = {name:'LE TOURBILLON', body:{age:28, os:85, mains:85, poumons:90}, traits:{agr:60, iq:90, calme:95, patience:80, ruse:85, courage:90}, life:100, health:'Pleine forme', m:65, w:80, resist:.1, s:[86,86,86,84,76], sps:['fusion'], idleP:'vGuard',
   moves:[['tjab','JAB',"Rapide, il mesure la distance."],['vrille','VRILLE',"Pendant une fraction de seconde, la main avant dévie son coup. Lancée au bon moment, elle fait double dégâts."],
          ['fouet','FOUET',"Coude court, très rapide."],['faux','FAUX',"Fauchage. Sur un adversaire sonné, il tombe."],['vent','PAS DU VENT',"Esquive totale. Pendant 1 seconde, tes coups font +30 % de dégâts (tu es sur son côté)."]]};
 
@@ -440,12 +445,13 @@ function opponent(r){
   const nick = NICK[Math.floor(R()*NICK.length)];
   const sigIds = [...new Set(arts.flatMap(a => artTechs(a.n)))];
   const traits = {}; TRAITS.forEach(([k]) => traits[k] = Math.round(25 + R()*70));
-  const fmv = fusedMove(sigIds.length ? sigIds : [TECHS[1][0]], null, {h, w, m: Math.max(20, Math.min(95, 50 + (w-80)*.5)), s, life:100, health:'En forme', traits});
+  const body = {age: Math.round(19 + R()*20), os: Math.round(35 + R()*60), mains: Math.round(35 + R()*60), poumons: Math.round(35 + R()*60)};
+  const fmv = fusedMove(sigIds.length ? sigIds : [TECHS[1][0]], null, {h, w, m: Math.max(20, Math.min(95, 50 + (w-80)*.5)), s, life:100, health:'En forme', traits, body});
   const key = 'sig'+r; SPECIALS[key] = fusedSpecial(fmv);
   const title = r <= 10 ? 'Légende mondiale' : r <= 30 ? 'Champion du monde' : r <= 60 ? 'Champion' : 'Combattant';
   const look = {skin: SKINS[Math.floor(R()*7)][1], nails: NAILS[0][1], bare: R() < .3};
   const pmv = personalMoves(sigIds);
-  return oppCache[r] = {rank:r, traits, pmoves: pmv, techIds: sigIds, m: Math.max(20, Math.min(95, 50 + (w-80)*.5)), level:Math.round(L), s, moves: Object.keys(pmv).filter(k => k!=='pm_dodge').concat(moves.filter(m => m==='slip')), sps:[key], fusedMove: fmv, arts:arts.map(a=>a.n), h, w, title, look, life: vitals(100, sigIds, 'En forme', w, 50 + (w-80)*.5, traits, s).life, resist: vitals(100, sigIds, 'En forme', w, 50 + (w-80)*.5, traits, s).res, health:'En forme',
+  return oppCache[r] = {rank:r, traits, body, pmoves: pmv, techIds: sigIds, m: Math.max(20, Math.min(95, 50 + (w-80)*.5)), level:Math.round(L), s, moves: Object.keys(pmv).filter(k => k!=='pm_dodge').concat(moves.filter(m => m==='slip')), sps:[key], fusedMove: fmv, arts:arts.map(a=>a.n), h, w, title, look, life: vitals(100, sigIds, 'En forme', w, 50 + (w-80)*.5, traits, s).life, resist: vitals(100, sigIds, 'En forme', w, 50 + (w-80)*.5, traits, s).res, health:'En forme',
     person: FIRST[Math.floor(R()*FIRST.length)] + ' « ' + nick + ' »', idleP:'guard'};
 }
 const STAT = ['Puissance','Vitesse','Défense','Endurance','Lutte'];
@@ -498,6 +504,8 @@ function sheetHTML(d){
   const a = attrs(d), e = estimate(d), row = (ic, n, v, c, max=99) => `<span>${ic} ${n}</span><div class="bar"><i style="width:${Math.min(100, v/max*100)}%;background:${c}"></i></div><b style="color:var(--txt)">${v}</b>`;
   return `<div class="stats">${row('❤','Vie',d.life||100,'#e63946',Math.max(100,d.life||100))}${row('💪','Force',d.s[0],STC[0])}${row('⚡','Vitesse',d.s[1],STC[1])}${row('🛡','Défense',d.s[2],STC[2])}${row('🔋','Endurance',d.s[3],STC[3])}${row('🤼','Lutte',d.s[4],STC[4])}
     ${row('👁','Vue',a.vue,'#9ad1ff')}${row('🧠','Menton',a.menton,'#f4a261')}${row('🫁','Corps',a.corps,'#e9c46a')}${row('🦵','Jambes',a.jambes,'#90be6d')}${row('🛡','Résistance',Math.round((d.resist||0)*100)+'%','#b0b0c0',100)}</div>
+    <div class="stats">${row('🎂','Âge',bodyOf(d).age,'#adb5bd',70)}${row('🦴','Os',bodyOf(d).os,'#e9ecef')}${row('✋','Mains',bodyOf(d).mains,'#ffb4a2')}${row('🫁','Poumons',bodyOf(d).poumons,'#8ecae6')}</div>
+    <div class="tact" style="font-size:12px">💥 Force de frappe ≈ <b>${punchForce(d)} kg</b> <span style="color:var(--mute)">(un boxeur pro tourne autour de 300 à 600 kg)</span></div>
     <div class="stats">${TRAITS.map(([k,ic,n]) => row(ic, n, traitsOf(d)[k], '#c77dff')).join('')}</div>
     <div class="tact" style="font-size:12px">🩺 Santé : <b>${d.health||'En forme'}</b><br>🎯 Encaisse ≈ <b>${e.head}</b> coups à la tête · <b>${e.body}</b> au corps · <b>${e.leg}</b> aux jambes<br>💥 Met K.O. un adversaire moyen en ≈ <b>${e.ko}</b> coups (≈ ${e.hit} dégâts par coup, ${e.techDmg} avec sa technique)</div>`;
 }
@@ -633,17 +641,29 @@ const HEALTH_RES = {'Pleine forme':.05,'En forme':0,'Fatigué':-.05,'Blessé':-.
 // Total life and hit resistance from everything: base, practices, health, muscles, weight
 function vitals(base, techs, health, w, m, traits, st){
   const b = bonusOf(techs), tr = Object.assign({}, T50, traits||{}), end = st ? st[3] : 50, def = st ? st[2] : 50;
-  const parts = [['base', base], ['pratiques', b.life], ['santé', HEALTH_LIFE[health]||0], ['muscles', Math.round((m-50)*.4)], ['poids', Math.round((w-80)*.3)], ['courage', Math.round((tr.courage-50)*.4)], ['endurance', Math.round((end-50)*.5)]];
+  const parts = [['base', base], ['pratiques', b.life], ['santé', HEALTH_LIFE[health]||0], ['muscles', Math.round((m-50)*.4)], ['poids', Math.round((w-80)*.3)], ['courage', Math.round((tr.courage-50)*.4)], ['endurance', Math.round((end-50)*.5)], ['os', Math.round(((arguments[7]||{}).os ?? 50) - 50)*.4|0]];
   const life = Math.max(30, parts.reduce((x,p)=>x+p[1],0));
-  const res = Math.max(0, Math.min(.6, b.res + (HEALTH_RES[health]||0) + Math.max(0,(w-80))*.001 + (m-50)*.001 + (tr.calme-50)*.001 + (def-50)*.001));
+  const res = Math.max(0, Math.min(.6, b.res + (HEALTH_RES[health]||0) + Math.max(0,(w-80))*.001 + (m-50)*.001 + (tr.calme-50)*.001 + (def-50)*.001 + (((arguments[7]||{}).os ?? 50) - 50)*.0015));
   return {life, res, heal: b.heal, parts};
 }
 function overall(s){ return Math.round(s.reduce((a,b)=>a+b,0)/s.length); }
+// Human body: age, bones, hands, lungs
+const BODY0 = {age:26, os:50, mains:50, poumons:50};
+const bodyOf = d => Object.assign({}, BODY0, d.body || {});
+function ageAdj(age){
+  const a = [0,0,0,0,0];
+  if (age < 20){ a[0] -= (20-age)*1.5; a[3] -= (20-age)*.6; a[2] -= (20-age)*.8; }
+  if (age > 32){ a[0] -= (age-32)*.5; a[1] -= (age-32)*.8; a[3] -= (age-32)*.6; a[2] += Math.min(10, (age-32)*.4); }
+  if (age >= 24 && age <= 32){ a[0] += 2; a[1] += 2; }
+  return a;
+}
+function punchForce(d){ const b = bodyOf(d); return Math.round(((d.w||80)*2.2 + d.s[0]*3 + (d.m||50)*1.5) * (.8 + b.mains/250) * (1 - Math.max(0, b.age-35)*.008)); }
 function customStats(c){
-  const L = c.level, h = c.h*100, w = c.w, m = c.m;
+  const L = c.level, h = c.h*100, w = c.w, m = c.m, B = bodyOf(c), AA = ageAdj(B.age);
   const phys = [ (w-80)*.2 + (m-50)*.18, -(w-80)*.2 + (180-h)*.12 - (m-50)*.04, (m-50)*.06 + (h-180)*.04, -(w-90)*.1 - (m-50)*.05, (w-80)*.12 + (m-50)*.08 ];
   const tech = [0,0,0,0,0]; c.techs.forEach(id => { const t = TT(id); if (t) t[6].forEach((v,i) => tech[i] += v); });
-  return [0,1,2,3,4].map(i => Math.max(15, Math.min(99, Math.round(L*.85 + phys[i] + 22*Math.tanh(tech[i]/22)))));
+  const bodyA = [(B.mains-50)*.1, 0, (B.os-50)*.1, (B.poumons-50)*.2, 0];
+  return [0,1,2,3,4].map(i => Math.max(15, Math.min(99, Math.round(L*.85 + phys[i] + 22*Math.tanh(tech[i]/22) + AA[i] + bodyA[i]))));
 }
 
 // ---- Fusion of selected techniques ----
@@ -767,7 +787,11 @@ function fusedMove(ids, nameHint, prof){
   const strike = sp => grp==='proj'
     ? W.map(x=>({...x})).concat([ST('dive',T(140),{grab: sp ? 'titan' : 'plaquage', range:1.05, force: sp ? 1 : 0})])
     : W.map(x=>({...x})).concat([ST(HIT, sp?T(150):T(130), H(sp ? 24 : 9, {range: 1.14 * (hcm>190 ? 1.08 : 1), target: grp==='knee'?'body':'head', react: grp==='knee'?'rBody':'rHead', kd: sp?1:0, kiai: sp?1:0, shake: sp?1.4:.5, stun:380})), ST('guard', 260)]);
-  const name = nameHint || (GROUP_NOUN[grp] + ' ' + SUFFIX[(n*7 + fight.length + Math.round(hcm)) % SUFFIX.length]);
+  const domT = Object.entries(tr).sort((x,y)=>y[1]-x[1])[0][0];
+  const FEM = {punch:true, kick:false, elbow:true, knee:false, proj:true};
+  const ADJ = {agr:['Furieux','Furieuse'], iq:['Calculé','Calculée'], calme:['Glacial','Glaciale'], patience:['Patient','Patiente'], ruse:['Trompeur','Trompeuse'], courage:['Intrépide','Intrépide']};
+  const seed = Math.abs(Math.round(hcm*7 + w*13 + m*3 + pow*11 + spd*17 + n*5 + Object.values(tr).reduce((x,v,i)=>x+v*(i+3),0)));
+  const name = nameHint || (GROUP_NOUN[grp] + ' ' + ADJ[domT][FEM[grp]?1:0] + ' ' + SUFFIX[seed % SUFFIX.length]);
   const GN = {punch:'un coup de poing (paume)', kick:'un coup de pied', elbow:'un coup de coude', knee:'un coup de genou', proj:'une projection'};
   const why = [];
   if (grp==='kick') why.push(hcm > 185 ? `Grand (${prof.h.toFixed(2).replace('.',',')} m) : son allonge rend ses coups de pied très difficiles à éviter` : `Souple et rapide : le coup de pied est son arme la plus longue`);
@@ -790,7 +814,21 @@ function fusedMove(ids, nameHint, prof){
   if (setup==='feint') why.push(`En spéciale, une feinte de jab ouvre la garde avant le coup`);
   if (tm < 1) why.push(`Très rapide : le geste est raccourci`);
   why.push(`${n} technique${n>1?'s':''} fondue${n>1?'s':''} dedans (${arts.slice(0,3).join(', ')}${arts.length>3?'…':''}) : puissance ×${mul.toFixed(2)}`);
-  const pre = setup ? SET[setup] : [];
+  let pre = setup ? SET[setup] : [];
+  // Aggressive but not very strong: a flurry of fast hits so the technique still does damage
+  const flurry = tr.agr >= 65 && pow < 75 && grp !== 'proj';
+  if (flurry){ const nHits = 2 + Math.round(spd/40) + (tr.courage >= 70 ? 1 : 0); const F2 = []; for (let i=0;i<nHits;i++) F2.push(ST(i%2?'chainR':'chainL', T(65), H(3.5,{stun:220}))); F2.push(ST('elbow', T(110), H(7,{range:.98}))); pre = pre.concat(F2);
+    why.push(`Agressif mais pas très fort (force ${pow}) : une rafale de ${nHits} coups rapides et un coude, pour faire des dégâts par le nombre`); }
+  // Variation unique to him
+  if (seed % 3 === 0 && grp !== 'proj') pre = pre.concat([ST('pivot', T(90))]);
+  if (seed % 3 === 1 && grp !== 'proj' && !flurry) pre = pre.concat([ST('jab', T(85), H(3,{stun:200}))]);
+  const B = Object.assign({age:26, os:50, mains:50, poumons:50}, prof.body||{});
+  if (B.age > 35) why.push(`${B.age} ans : moins explosif, mais l'expérience rend le coup plus précis`);
+  if (B.age < 20) why.push(`${B.age} ans : jeune, rapide, mais pas encore toute sa force`);
+  if (grp==='punch' && B.mains >= 75) why.push(`Mains solides (${B.mains}) : il peut frapper fort sans se blesser`);
+  if (grp==='punch' && B.mains < 40) why.push(`Mains fragiles (${B.mains}) : le coup se fait avec la paume pour protéger la main`);
+  if (B.os >= 75) why.push(`Os très solides (${B.os}) : il peut encaisser pour placer son coup`);
+  if (B.poumons >= 75) why.push(`Grands poumons (${B.poumons}) : il garde du souffle pour enchaîner`);
   return {name, grp, n, mul, arts, why, seq: strike(false), sseq: pre.map(x=>({...x})).concat(strike(true)), step: GROUP_STEP[grp],
     desc: `La meilleure technique pour lui : ${GN[grp]} qui fusionne ${n} technique${n>1?'s':''}`};
 }
@@ -827,20 +865,20 @@ function specialSeq(c){
 function buildCustom(c){
   const s = customStats(c);
   const key = 'cust'+c.id;
-  const prof = {h:c.h, w:c.w, m:c.m, s, life: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c)).life, health:c.health||'En forme', traits:c.traits};
+  const prof = {body: bodyOf(c), h:c.h, w:c.w, m:c.m, s, life: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life, health:c.health||'En forme', traits:c.traits};
   const fmv = fusedMove(c.techs, c.tn, prof) || fusedMove([byName('Direct')], c.tn, prof);
   SPECIALS[key] = fusedSpecial(fmv);
   const pmv = personalMoves(c.techs);
   if (!/^technique ultime/i.test(fmv.name)) SPECIALS[key].name = 'Technique ultime : ' + fmv.name;
-  return {rank:null, custom:c.id, traits: c.traits, techIds: c.techs, fusedMove: fmv, pmoves: pmv, level:overall(s), s, moves: Object.keys(pmv).filter(k => k!=='pm_dodge').length ? Object.keys(pmv).filter(k => k!=='pm_dodge') : ['fused'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]),
-    h:c.h, w:c.w, title:'Créé par toi', person:c.name, idleP:'guard', life: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c)).life, resist: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c)).res, healBonus: bonusOf(c.techs).heal, health: c.health || 'En forme', look: lookOf(c), m: c.m};
+  return {rank:null, custom:c.id, body: bodyOf(c), traits: c.traits, techIds: c.techs, fusedMove: fmv, pmoves: pmv, level:overall(s), s, moves: Object.keys(pmv).filter(k => k!=='pm_dodge').length ? Object.keys(pmv).filter(k => k!=='pm_dodge') : ['fused'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]),
+    h:c.h, w:c.w, title:'Créé par toi', person:c.name, idleP:'guard', life: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life, resist: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).res, healBonus: bonusOf(c.techs).heal, health: c.health || 'En forme', look: lookOf(c), m: c.m};
 }
 const byName = n => TECHS.find(t => t[8]===n)[0];
 let cInv = null, cPers = [], pq = '';
 let cT = ['Jab','Direct','Low kick','Double-leg'].map(byName), cSp = ['Jab','Direct','Double-leg'].map(byName), showAll = false, tq = '', tcat = 'Tout';
 function readCustom(){
   return {id: Date.now(), name: ($('cName').value.trim() || 'Adversaire mystère'), h:+$('cH').value/100, w:+$('cW').value, m:+$('cM').value, level:+$('cL').value,
-    techs:[...cT], spec:[], traits:{...cTr}, tn:$('cTN').value.trim(), life:+$('cLife').value, health:cLook.health, skin:cLook.skin, nails:cLook.nails, bare:cLook.bare};
+    techs:[...cT], spec:[], traits:{...cTr}, body:{...cBody}, tn:$('cTN').value.trim(), life:+$('cLife').value, health:cLook.health, skin:cLook.skin, nails:cLook.nails, bare:cLook.bare};
 }
 const MUSC = m => m < 20 ? 'Mince' : m < 45 ? 'Normal' : m < 70 ? 'Musclé' : m < 90 ? 'Très musclé' : 'Colosse';
 const modTxt = mods => mods.map((v,i) => v ? `<span class="${v>0?'up':'dn'}">${STAT[i]} ${v>0?'+':''}${v}</span>` : '').filter(Boolean).join(' · ');
@@ -882,7 +920,7 @@ function preset(kind){
   const sum = t => t[6].reduce((a,b)=>a+b,0);
   let c;
   if (kind==='best'){
-    c = {...base, name:'Le Meilleur', level:99, techs: TECHS.map(t => t[0]), tn:'La Technique Ultime'};
+    c = {...base, name:'Le Meilleur', level:99, techs: TECHS.map(t => t[0]), tn:''};
     let bestS = -1, bp = null;
     for (let h=160; h<=215; h+=5) for (let w=60; w<=130; w+=5) for (let m=40; m<=100; m+=10){ const t = {...c, h:h/100, w, m}; const sc = scoreOf(t) - (Math.abs(h-188)+Math.abs(w-95)+Math.abs(m-85))/1000; if (sc > bestS){ bestS = sc; bp = t; } }
     c = bp; c.spec = []; c.inv = inventTechnique(c.techs, 'La Technique Ultime');
@@ -893,16 +931,17 @@ function preset(kind){
     for (let h=150; h<=220; h+=10) for (let w=50; w<=160; w+=10) for (let m=0; m<=100; m+=25){ const t = {...c, h:h/100, w, m}; const sc = scoreOf(t); if (sc < worstS){ worstS = sc; wp = t; } }
     c = wp;
   } else {
-    c = {...base, name:'Monsieur Moyen', level:62, h:1.77, w:78, m:45, techs:['Jab','Direct','Crochet','Low kick','Esquive rotative','Single-leg','Sparring'].map(byName), tn:'Le Classique'};
+    c = {...base, name:'Monsieur Moyen', level:62, h:1.77, w:78, m:45, techs:['Jab','Direct','Crochet','Low kick','Esquive rotative','Single-leg','Sparring'].map(byName), tn:''};
     c.spec = ['Jab','Direct','Crochet'].map(byName);
   }
   const LH = {worst:[50,'Malade'], avg:[100,'En forme'], best:[1000,'Pleine forme']}[kind];
+  cBody = kind==='worst' ? {age:68, os:10, mains:10, poumons:10} : kind==='best' ? {age:28, os:99, mains:99, poumons:99} : {...BODY0};
   cTr = kind==='worst' ? {agr:10, iq:10, calme:10, patience:10, ruse:10, courage:10} : kind==='best' ? {agr:80, iq:99, calme:99, patience:85, ruse:99, courage:99} : {...T50}; $('cLife').value = LH[0]; cLook.health = LH[1];
   $('cName').value = c.name; $('cH').value = Math.round(c.h*100); $('cW').value = c.w; $('cM').value = c.m; $('cL').value = c.level; $('cTN').value = c.tn;
   cT = [...c.techs]; cSp = [...c.spec]; cInv = c.inv || null; createUI(); window.scrollTo({top:0,behavior:'smooth'});
 }
 function seqUI(){
-  { const rc = readCustom(); const f = fusedMove(cT, $('cTN').value.trim(), {h:rc.h, w:rc.w, m:rc.m, s:customStats(rc), life:vitals(rc.life, rc.techs, rc.health, rc.w, rc.m, rc.traits, customStats(rc)).life, health:rc.health, traits:rc.traits});
+  { const rc = readCustom(); const f = fusedMove(cT, $('cTN').value.trim(), {h:rc.h, w:rc.w, m:rc.m, s:customStats(rc), life:vitals(rc.life, rc.techs, rc.health, rc.w, rc.m, rc.traits, customStats(rc), rc.body).life, health:rc.health, traits:rc.traits, body:rc.body});
     $('cTop').innerHTML = f ? `<div class="tact" style="font-size:12px;color:var(--gold);letter-spacing:1px">⚡ SA TECHNIQUE PARFAITE (créée pour lui, se met à jour toute seule)</div><div class="fn" style="font-size:30px">🥊 ${f.name}</div><div class="tact">${f.desc} · puissance ×${f.mul.toFixed(2)}</div><ul class="tact">${f.why.slice(0,5).map(x=>`<li>${x}</li>`).join('')}</ul><div class="tm" style="font-size:12px;color:var(--mute)">Toutes les raisons sont plus bas, dans « Sa technique parfaite ».</div>` : '<span style="color:var(--mute)">Choisis des techniques pour créer sa technique parfaite.</span>';
     $('cSeq').innerHTML = f ? `<span class="st2 kd" style="font-size:15px">🥊 ${f.name}<br><span style="font-size:11px;color:var(--mute)">${f.desc} · puissance ×${f.mul.toFixed(2)}</span></span><div class="tact" style="width:100%;margin-top:6px"><b>Pourquoi c'est la meilleure pour lui :</b><ul>${f.why.map(x=>`<li>${x}</li>`).join('')}</ul></div>` : '<span style="color:var(--mute);font-size:13px">Choisis au moins une technique de combat.</span>';
     preview(); return; }
@@ -920,16 +959,19 @@ function seqUI(){
 function preview(){
   const c = readCustom();
   if ($('cLookTxt')) lookUI();
+  $('cAge').value = cBody.age; $('cOs').value = cBody.os; $('cMains').value = cBody.mains; $('cPoum').value = cBody.poumons;
+  $('cAgeV').textContent = cBody.age + ' ans'; $('cOsV').textContent = cBody.os; $('cMainsV').textContent = cBody.mains; $('cPoumV').textContent = cBody.poumons;
   $('cHv').textContent = c.h.toFixed(2).replace('.',',')+' m'; $('cWv').textContent = c.w+' kg'; $('cMv').textContent = MUSC(c.m); $('cLv').textContent = c.level;
   const s = customStats(c); $('cOvr').textContent = overall(s); $('cStats').innerHTML = sheetHTML(buildCustom(Object.assign({}, c, {id:'preview'})));
 }
 ['cH','cW','cM','cL','cLife'].forEach(id => $(id).oninput = seqUI);
+[['cAge','age'],['cOs','os'],['cMains','mains'],['cPoum','poumons']].forEach(([id,k]) => $(id).oninput = () => { cBody[k] = +$(id).value; seqUI(); });
 $('cName').oninput = preview;
 $('cTN').oninput = seqUI;
 function myOppsUI(){
   const list = (save.customs || []).filter(c => c.techs && c.techs.every(id => TT(id)));
   $('myOpps').innerHTML = list.length ? '<div class="tact" style="margin-bottom:6px"><b>Mes adversaires créés</b> <span style="color:var(--mute)">(🧪 tester · 📹 apprendre · 🥊 combattre)</span></div>' + list.map((c,i) => { const o = buildCustom(c);
-    return `<div class="myo"><div><b>${c.name}</b> · note ${o.level}<br><span>${c.h.toFixed(2).replace('.',',')} m · ${c.w} kg · ${MUSC(c.m)} · ❤ ${vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c)).life} · 🛡 ${Math.round(vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c)).res*100)} % · ${c.health||'En forme'} · ${c.techs.length} techniques</span></div><button data-l="${i}" style="background:#2b2b35">📹</button><button data-t="${i}" style="background:#2b2b35">🧪</button><button data-f="${i}">🥊</button><button class="del" data-d="${i}">✕</button></div>`; }).join('') : '';
+    return `<div class="myo"><div><b>${c.name}</b> · note ${o.level}<br><span>${c.h.toFixed(2).replace('.',',')} m · ${c.w} kg · ${MUSC(c.m)} · ❤ ${vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life} · 🛡 ${Math.round(vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).res*100)} % · ${c.health||'En forme'} · ${c.techs.length} techniques</span></div><button data-l="${i}" style="background:#2b2b35">📹</button><button data-t="${i}" style="background:#2b2b35">🧪</button><button data-f="${i}">🥊</button><button class="del" data-d="${i}">✕</button></div>`; }).join('') : '';
   $('myOpps').querySelectorAll('[data-f]').forEach(b => b.onclick = () => showVs(buildCustom(list[+b.dataset.f])));
   $('myOpps').querySelectorAll('[data-t]').forEach(b => b.onclick = () => { curOpp = buildCustom(list[+b.dataset.t]); startFight(true); });
   $('myOpps').querySelectorAll('[data-l]').forEach(b => b.onclick = () => startLesson(buildCustom(list[+b.dataset.l])));
@@ -943,7 +985,7 @@ const NAILS = [['Naturels','#f1c9b8'],['Noirs','#151515'],['Rouges','#d1182b'],[
 const HEALTH = [['Pleine forme',1.2,1],['En forme',1,1],['Fatigué',.75,1],['Blessé',1,.8],['Malade',.6,.9]];
 const lookOf = c => ({skin: c.skin || '#d8d4cf', nails: c.nails || NAILS[0][1], bare: !!c.bare});
 const healthOf = h => HEALTH.find(x => x[0]===h) || HEALTH[1];
-let cTr = {...T50};
+let cTr = {...T50}, cBody = {...BODY0};
 function traitsUI(){
   $('cTraits').innerHTML = TRAITS.map(([k,ic,n]) => `<div class="slid"><span>${ic} ${n.split(' ')[0]}</span><input type="range" min="0" max="99" value="${cTr[k]}" data-tr="${k}"><b>${cTr[k]}</b></div>`).join('');
   document.querySelectorAll('[data-tr]').forEach(i => i.oninput = () => { cTr[i.dataset.tr] = +i.value; i.nextElementSibling.textContent = i.value; seqUI(); });
@@ -959,7 +1001,7 @@ function lookUI(){
   document.querySelectorAll('#cHealth [data-health]').forEach(b => b.onclick = () => { cLook.health = b.dataset.health; lookUI(); seqUI(); });
   document.querySelectorAll('#cHands [data-bare]').forEach(b => b.onclick = () => { cLook.bare = b.dataset.bare==='1'; lookUI(); });
   const h = healthOf(cLook.health);
-  const bo = bonusOf(cT), V = vitals(+$('cLife').value, cT, cLook.health, +$('cW').value, +$('cM').value, cTr, customStats(readCustom()));
+  const bo = bonusOf(cT), V = vitals(+$('cLife').value, cT, cLook.health, +$('cW').value, +$('cM').value, cTr, customStats(readCustom()), {...cBody});
   $('cLookTxt').innerHTML = `❤ Vie totale : <b>${V.life}</b> <span style="color:var(--mute)">(${V.parts.filter(p=>p[1]).map(p => p[0] + ' ' + (p[1]>0 && p[0]!=='base' ? '+' : '') + p[1]).join(' · ')})</span><br>🛡 Résistance aux coups : <b>${Math.round(V.res*100)} %</b> de dégâts en moins<br>Santé : <b>${cLook.health}</b> (récupération ×${(h[1]*(1+bo.heal)).toFixed(2)}${h[2]<1?', commence à '+Math.round(h[2]*100)+' % de vie':''})`;
   $('cLifeV').textContent = $('cLife').value;
 }
@@ -989,6 +1031,7 @@ function fusePersons(){
     else { x.o.arts.forEach(a => artTechs(a).forEach(id => techs.add(id))); h += x.o.h; w += x.o.w; lv = Math.max(lv, x.o.level); names.push(x.o.person.split(' ')[0]); }
   });
   h /= sel.length; w /= sel.length;
+  cBody = {age: Math.round(sel.reduce((x,y) => x + bodyOf(y.c||y.o).age, 0)/sel.length), os: Math.max(...sel.map(y => bodyOf(y.c||y.o).os)), mains: Math.max(...sel.map(y => bodyOf(y.c||y.o).mains)), poumons: Math.max(...sel.map(y => bodyOf(y.c||y.o).poumons))};
   cTr = {}; TRAITS.forEach(([k]) => cTr[k] = Math.min(99, Math.round(Math.max(...sel.map(x => traitsOf(x.c || x.o)[k])))));
   cT = [...techs]; cSp = [];
   $('cName').value = names.slice(0,4).join('-') + (names.length > 4 ? '…' : '');
@@ -1001,11 +1044,11 @@ function fusePersons(){
 $('pq').oninput = e => { pq = e.target.value; persUI(); };
 $('bPersFuse').onclick = fusePersons;
 $('bCreate').onclick = () => go('sCreate');
-$('bFuse').onclick = () => { const rc = readCustom(); const f = fusedMove(cT, '', {h:rc.h, w:rc.w, m:rc.m, s:customStats(rc), life:vitals(rc.life, rc.techs, rc.health, rc.w, rc.m, rc.traits, customStats(rc)).life, health:rc.health, traits:rc.traits}); if (f && !$('cTN').value.trim()) $('cTN').value = f.name; seqUI(); };
+$('bFuse').onclick = () => { const rc = readCustom(); const f = fusedMove(cT, '', {h:rc.h, w:rc.w, m:rc.m, s:customStats(rc), life:vitals(rc.life, rc.techs, rc.health, rc.w, rc.m, rc.traits, customStats(rc), rc.body).life, health:rc.health, traits:rc.traits, body:rc.body}); if (f && !$('cTN').value.trim()) $('cTN').value = f.name; seqUI(); };
 function fillAll(ids, tn, nm){ cT = ids; cSp = []; cInv = inventTechnique(ids, tn); $('cTN').value = tn; if (!$('cName').value.trim() || ["L'Ultime","Le Vert","Le Rouge"].includes($('cName').value)) $('cName').value = nm; createUI(); }
 $('pGreen').onclick = () => fillAll(TECHS.filter(t => t[6].every(v => v >= 0)).map(t => t[0]), 'Technique Verte', 'Le Vert');
 $('pRed').onclick = () => fillAll(TECHS.filter(t => t[6].some(v => v < 0)).map(t => t[0]), 'Technique Rouge', 'Le Rouge');
-$('pAll').onclick = () => { cTr = {agr:99, iq:99, calme:99, patience:99, ruse:99, courage:99}; $('cLife').value = 1000; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); createUI(); };
+$('pAll').onclick = () => { cBody = {age:28, os:99, mains:99, poumons:99}; cTr = {agr:99, iq:99, calme:99, patience:99, ruse:99, courage:99}; $('cLife').value = 1000; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); createUI(); };
 $('pWorst').onclick = () => preset('worst'); $('pAvg').onclick = () => preset('avg'); $('pBest').onclick = () => preset('best');
 $('bSaveOpp').onclick = () => { if (!cT.length) return;
   if (!cSp.length && !cInv) $('bFuse').onclick();
@@ -1138,7 +1181,7 @@ function setControl(f){
 }
 $('ctl').onclick = () => { if (F && !F.lesson) { setControl(P===A ? B : A); banner(P===A ? 'TU CONTRÔLES LE TOURBILLON' : 'TU CONTRÔLES ' + curOpp.person.toUpperCase(), 1000); } };
 function newRound(){
-  A.x=-1.4; B.x=1.4; for (const f of [A,B]){ f.hp=Math.round(f.hpMax*healthOf(f.data.health)[2]); f.st=100; f.zone={head:100, body:100, leg:100}; f.bal=100; f.dazed=0; f.q=[]; f.cur=null; f.state='idle'; f.pose={...G}; f.from={...G}; f.armor=0; f.invuln=0; }
+  A.x=-1.4; B.x=1.4; for (const f of [A,B]){ f.hp=Math.round(f.hpMax*healthOf(f.data.health)[2]); f.st=100; f.zone={head:100, body:100, leg:100}; f.bal=100; f.dazed=0; f.kds=0; f.ribs=false; f.handHurt=false; f.q=[]; f.cur=null; f.state='idle'; f.pose={...G}; f.from={...G}; f.armor=0; f.invuln=0; }
   F.time = 60; F.phase='intro'; F.phaseT=1.4; banner('ROUND '+F.round);
 }
 function zoneHUD(id, f){ const c = v => v > 60 ? '#52b788' : v > 40 ? '#f4b942' : '#e63946'; $(id).innerHTML = [['🧠','head'],['🫁','body'],['🦵','leg']].map(([i,k]) => `<span>${i}<i style="width:${f.zone[k]*.22}px;background:${c(f.zone[k])}"></i></span>`).join(''); }
@@ -1208,6 +1251,8 @@ function knockdown(def, fall){
   def.armor = 0; def.state = 'down';
   def.q = [ST(fall||'collapse',200), ST('downOut',260)];
   if (F.test && def.hp <= 0){ def.hp = def.hpMax; pop(def,'K.O. (test) : santé rechargée','#f4b942'); }
+  def.kds = (def.kds||0) + 1;
+  if (!F.test && def.hp > 0 && def.kds >= 3 && F.phase==='fight'){ pop(def,'3 CHUTES : K.O. TECHNIQUE','#f4b942',true); def.state = 'ko'; def.q.push(ST('downOut',3000)); nextStep(def); roundOver(other(def)); return; }
   if (def.hp <= 0){ def.state = 'ko'; def.q.push(ST('downOut',3000)); nextStep(def); roundOver(other(def)); return; }
   def.q.push(ST('downOut',800), ST('rise',380), ST(def.idleP,250,{getup:1}));
   nextStep(def);
@@ -1244,18 +1289,32 @@ function onEvent(f, ev){
     if (f.zone && f.zone.leg < 40 && ['lowHit','highHit','spinHit','teepHit','faux'].includes(f.cur && f.cur.p)) mult *= .7;
     const q = clamp01(hitQuality(f, o) + (dodgeFail ? .15 : 0));
     mult *= .4 + q*.9;
+    const fb = bodyOf(f.data), ob = bodyOf(o.data);
+    const punch = ['jab','cross','hook','chainL','chainR','fz4','vrille','palm'].includes(f.cur && f.cur.p);
+    if (punch) mult *= (.8 + fb.mains/250) * (f.handHurt ? .8 : 1);
+    mult *= 1.1 - ob.os/500;
+    const VP = {head:[['MENTON',.35],['TEMPE',.25],['NEZ',.4]], body:[['FOIE',.3],['PLEXUS',.3],['CÔTES',.4]], leg:[['CUISSE',.6],['GENOU',.2],['MOLLET',.2]]}[Z];
+    let vr = Math.random(), vp = VP[0][0]; for (const [nm,w] of VP){ vr -= w; if (vr <= 0){ vp = nm; break; } }
+    if (vp==='NEZ' || vp==='CÔTES') mult *= 1.1;
     if (q >= .95) shake = Math.max(shake, 1);
     const d = damage(f, o, ev.hit * mult, f.special);
     const before = o.zone[Z]; o.zone[Z] = Math.max(0, o.zone[Z] - d*1.6*(100/o.hpMax)*(o.hpMax>150 ? 1.5 : 1));
     if (before >= 40 && o.zone[Z] < 40) pop(o, {head:'VUE TROUBLE', body:'SOUFFLE COUPÉ', leg:'JAMBE TOUCHÉE'}[Z], '#f4b942', true);
     if (Z==='body') o.st = Math.max(0, o.st - d*.8);
+    if (vp==='FOIE'){ o.st = Math.max(0, o.st - 20); ev = Object.assign({}, ev, {stun:(ev.stun||300) + 500}); if (q >= .7) pop(o, 'FOIE !', '#f4b942', true); }
+    if (vp==='PLEXUS'){ o.st = Math.max(0, o.st - 30 * (1.3 - ob.poumons/200)); if (q >= .7) pop(o, 'PLEXUS : PLUS D\'AIR', '#f4b942'); }
+    if (vp==='CÔTES' && ob.os < 40 && q >= .8 && !o.ribs){ o.ribs = true; o.zone.body = Math.max(0, o.zone.body - 15); pop(o, 'CÔTE FÊLÉE', '#e63946', true); }
+    if (vp==='GENOU'){ o.bal = Math.max(0, o.bal - 25); }
+    if (vp==='TEMPE' && q >= .75 && o.dazed <= 0){ o.dazed = 1.5; pop(o, '💫 TEMPE : SONNÉ', '#f4b942', true); }
+    if (punch && fb.mains < 40 && q >= .85 && !f.handHurt){ f.handHurt = true; pop(f, '✋ MAIN BLESSÉE', '#e63946'); }
+    if (vp==='MENTON' && q >= .85 && o.hp > 0 && !ev.kd && Math.random() < .3 * (1 - o.A.menton/130) * (1 - ob.os/200)){ ev = Object.assign({}, ev, {kd:1}); pop(o, 'K.O. NET AU MENTON !', '#f4b942', true); slowmo = .6; }
     o.bal = Math.max(0, o.bal - d * ({head:.8, body:1, leg:2.6}[Z]) * (1.2 - o.A.jambes/100*.5));
     if (Z==='head' && (d > o.hpMax*.1 || o.zone.head < 40) && o.dazed <= 0){ o.dazed = 2.2 * (1.3 - traitsOf(o.data).calme/100*.6); pop(o, '💫 SONNÉ', '#f4b942', true); }
     if (Z==='head') ev = Object.assign({}, ev, {stun: (ev.stun||300) * (1.3 - o.A.menton/100*.6) * (o.zone.head < 40 ? 1.4 : 1)});
     flash(f3[f.cur.p && POSES[f.cur.p].hit || 'rh'] || o3.head);
     if (ev.kdIfStun && wasStun) ev = Object.assign({}, ev, {kd:1});
     if (ev.count){ if (ev.count % 7 === 1) pop(f, ev.tag, '#f4b942'); $('banner').textContent = `${ev.count} / ${ev.total}`; $('banner').style.opacity = 1; clearTimeout($('banner')._t); $('banner')._t = setTimeout(()=>$('banner').style.opacity=0, 600); }
-    else pop(o, (q >= .95 ? 'COUP PARFAIT ' : '') + (ev.kiai ? 'KIAI ! ' : '') + tag + {head:'TÊTE ', body:'CORPS ', leg:'JAMBES '}[Z] + '-'+Math.round(d) + ' (' + pct(q) + ')', ev.kd||tag||q >= .95 ? '#f4b942' : q < .35 ? '#9a9aa8' : '#e63946', ev.kd || q >= .95);
+    else pop(o, (q >= .95 ? 'COUP PARFAIT ' : '') + (ev.kiai ? 'KIAI ! ' : '') + tag + vp + ' -'+Math.round(d) + ' (' + pct(q) + ')', ev.kd||tag||q >= .95 ? '#f4b942' : q < .35 ? '#9a9aa8' : '#e63946', ev.kd || q >= .95);
     if (ev.push) o.x += ev.push*f.face;
     shake = Math.max(shake, ev.shake || .35);
     if (!ev.noPush) o.x += .08*f.face;
@@ -1499,7 +1558,7 @@ function updateFighter(f, dt){
     const bob = Math.sin(performance.now()/260 + (f===A?0:1))*1.2;
     const t = {}; for (const k2 of KEYS) t[k2] = [target[k2][0], target[k2][1] + (k2==='lf'||k2==='rf'?0:bob)];
     f.pose = lerp2(f.pose, t, Math.min(1, dt*14));
-    if (F.phase==='fight' && !['down','ko','stun','thrown'].includes(f.state)) f.st = Math.min(100, f.st + dt*(8 + f.end/100*14) * (f.state==='guard'?.4:1) * (f.heal||1) * (f.zone && f.zone.body < 40 ? .5 : 1));
+    if (F.phase==='fight' && !['down','ko','stun','thrown'].includes(f.state)) f.st = Math.min(100, f.st + dt*(8 + f.end/100*14) * (.7 + bodyOf(f.data).poumons/170) * (f.state==='guard'?.4:1) * (f.heal||1) * (f.zone && f.zone.body < 40 ? .5 : 1));
   }
   // movement
   let mv = 0;
