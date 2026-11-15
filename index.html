@@ -155,7 +155,8 @@ h2{font-size:30px;margin:6px 0 4px}
   <button class="big alt" id="bMeAll" style="font-size:19px;border-color:var(--gold)"></button>
   <button class="big" id="bOpp">🏆 Classement : choisir un adversaire</button>
   <button class="big alt" id="bCreate">🛠 Créer mon propre adversaire</button>
-  <button class="big alt" id="b2P" style="border-color:var(--blue)">👥 Mode 2 joueurs</button>
+  <button class="big" id="bMP" style="background:var(--blue)">🌐 Multijoueur (chacun son téléphone)</button>
+  <button class="big alt" id="b2P" style="border-color:var(--blue)">👥 2 joueurs sur le même téléphone</button>
   <div class="help">
     <b>Comment jouer</b><br>
     ◀ ▶ : se déplacer · <b>GARDE</b> (maintenir) : bloque les coups<br>
@@ -235,6 +236,19 @@ h2{font-size:30px;margin:6px 0 4px}
   </div>
   <button class="big" id="bSaveOpp">💾 Créer et combattre</button>
   <button class="big alt" data-go="sMenu">← Retour</button>
+</section>
+
+<!-- ONLINE MULTIPLAYER -->
+<section class="screen" id="sMP">
+  <h2>🌐 Multijoueur</h2>
+  <p class="sub">Chacun sur son téléphone. Un joueur crée la partie et donne le code à l'autre. L'autre entre le code. Chacun choisit son personnage.</p>
+  <div class="fusionCard"><div class="tact"><b>Ton personnage</b></div><select id="mpSel" class="sel2"></select><div id="mpInfo" class="tm" style="font-size:12px;color:var(--mute);margin-top:4px"></div></div>
+  <button class="big" id="mpHost">➕ Créer une partie</button>
+  <div class="fusionCard" style="border-color:var(--blue)"><div class="tact"><b>Rejoindre une partie</b></div>
+    <div class="pager"><input id="mpCode" maxlength="6" inputmode="numeric" placeholder="Code à 6 chiffres"><button id="mpJoin">Rejoindre</button></div></div>
+  <div class="fusionCard" id="mpStatus" style="text-align:center;font-size:15px">Pas encore connecté.</div>
+  <div class="help">Le multijoueur marche sur le site <b>adrien426.github.io/Fusion-Fighters</b>, avec Internet sur les deux téléphones. Il ne marche pas dans l'appli Claude.</div>
+  <button class="big alt" id="mpBack">← Retour</button>
 </section>
 
 <!-- TWO PLAYERS -->
@@ -466,6 +480,7 @@ const persist = () => { try { localStorage.setItem('ff2_save', JSON.stringify(sa
 // ===================== UI =====================
 const $ = id => document.getElementById(id);
 function go(id){ document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id===id)); window.scrollTo(0,0);
+  if (id==='sMP') mpUI();
   if (id==='sMenu') menu(); if (id==='sOpp') oppUI(); if (id==='sCreate') createUI(); if (id==='s2P') twoPUI(); }
 document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
 // ---- Character traits ----
@@ -1207,8 +1222,10 @@ function newRound(){
   F.time = 60; F.phase='intro'; F.phaseT=1.4; banner('ROUND '+F.round);
 }
 function zoneHUD(id, f){ const c = v => v > 60 ? '#52b788' : v > 40 ? '#f4b942' : '#e63946'; $(id).innerHTML = [['🧠','head'],['🫁','body'],['🦵','leg']].map(([i,k]) => `<span>${i}<i style="width:${f.zone[k]*.22}px;background:${c(f.zone[k])}"></i></span>`).join(''); }
-function banner(t, ms=1300){ const b = $('banner'); b.textContent = t; b.style.opacity = 1; clearTimeout(b._t); b._t = setTimeout(()=>b.style.opacity=0, ms); }
-function pop(f, txt, col, big){
+function banner(t, ms=1300){ if (F && F.mp === 'host' && MP && MP.conn && MP.conn.open) MP.conn.send({t:'ban', txt:t, ms}); bannerLocal(t, ms); }
+function bannerLocal(t, ms=1300){ const b = $('banner'); b.textContent = t; b.style.opacity = 1; clearTimeout(b._t); b._t = setTimeout(()=>b.style.opacity=0, ms); }
+function pop(f, txt, col, big){ if (F && F.mp === 'host' && MP && MP.conn && MP.conn.open) MP.conn.send({t:'pop', w: f===A?'A':'B', txt, col, big}); popLocal(f, txt, col, big); }
+function popLocal(f, txt, col, big){
   const v = to3(f.pose, f.x, f.face, f.sc).head.clone(); v.y += .25;
   const p = v.project(camera), r = renderer.domElement.getBoundingClientRect();
   const d = document.createElement('div'); d.className = 'pop'; d.textContent = txt; d.style.color = col||'#e63946'; if (big) d.style.fontSize = '34px';
@@ -1373,6 +1390,9 @@ function timeUp(){
 function endMatch(){
   F.phase = 'over';
   const win = A.wins > B.wins;
+  if (F.mp === 'host'){ const hostWin = A.wins > B.wins;
+    $('endT').textContent = hostWin ? 'VICTOIRE !' : 'DÉFAITE'; $('endT').style.color = hostWin ? 'var(--gold)' : 'var(--red)'; $('endP').innerHTML = `${A.wins} - ${B.wins}`; $('endBox').classList.add('on');
+    if (MP && MP.conn && MP.conn.open) MP.conn.send({t:'end', title: hostWin ? 'DÉFAITE' : 'VICTOIRE !', col: hostWin ? 'var(--red)' : 'var(--gold)', text: `${B.wins} - ${A.wins}`}); return; }
   if (F.twoP){ const w = A.wins > B.wins ? 'JOUEUR 1' : 'JOUEUR 2'; $('endT').textContent = w + ' GAGNE !'; $('endT').style.color = A.wins > B.wins ? 'var(--red)' : 'var(--blue)'; $('endP').innerHTML = `${A.wins} - ${B.wins}`; $('endBox').classList.add('on'); F.phase = 'over'; return; }
   if (P === B){ $('endT').textContent = B.wins > A.wins ? 'VICTOIRE DE ' + curOpp.person.toUpperCase() : 'LE TOURBILLON GAGNE'; $('endT').style.color = 'var(--gold)'; $('endP').innerHTML = `${B.wins} - ${A.wins}. Tu contrôlais ${curOpp.person}, donc le classement ne change pas.`; $('endBox').classList.add('on'); F.phase='over'; return; }
   $('endT').textContent = win ? 'VICTOIRE !' : 'DÉFAITE';
@@ -1442,6 +1462,118 @@ function press2(f, k){
 }
 $('b2Go').onclick = () => start2P($('j1').value, $('j2').value);
 const KB1 = {a:'left',q:'left',d:'right',s:'guard',w:'dodge',z:'dodge'}, KB2 = {ArrowLeft:'left',ArrowRight:'right',ArrowDown:'guard',ArrowUp:'dodge'};
+
+// ===================== ONLINE MULTIPLAYER (PeerJS, host-authoritative) =====================
+let MP = null;
+function loadPeer(cb){
+  if (window.Peer) return cb();
+  const add = (src, next) => { const sc = document.createElement('script'); sc.src = src; sc.onload = cb; sc.onerror = next; document.head.appendChild(sc); };
+  add('https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js', () => add('https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js', () => mpStatus('❌ Impossible de charger le multijoueur (pas d\'Internet, ou appli Claude).')));
+}
+const mpStatus = t => $('mpStatus').innerHTML = t;
+function mpUI(){
+  const opts = fighterOptions().map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+  const v = $('mpSel').value; $('mpSel').innerHTML = opts; $('mpSel').value = v || 'tourb';
+  const info = () => { const d = fighterData($('mpSel').value); $('mpInfo').textContent = `Note ${overall(d.s)} · ❤ ${d.life||100}`; };
+  info(); $('mpSel').onchange = info;
+}
+function mpPayload(id){
+  if (id === 'tourb') return {id, all: !!save.playerAll, look: save.look || null};
+  if (id[0] === 'c') return {id:'c', custom: (save.customs||[]).find(x => 'c'+x.id === id)};
+  return {id};
+}
+function mpData(p){
+  if (p.id === 'tourb'){ const keep = [save.playerAll, save.look]; save.playerAll = p.all; save.look = p.look; const d = me(); save.playerAll = keep[0]; save.look = keep[1]; return d; }
+  if (p.id === 'c') return buildCustom(p.custom);
+  return opponent(+p.id.slice(1));
+}
+function mpPeerOpts(){ return window.FF_PEER_OPTS || {}; }
+function mpClose(){ if (MP){ try { MP.conn && MP.conn.close(); } catch(e){} try { MP.peer && MP.peer.destroy(); } catch(e){} } MP = null; }
+function mpWire(conn, role){
+  MP.conn = conn;
+  conn.on('data', m => mpOnData(m));
+  conn.on('close', () => { if (F && F.mp){ banner('ADVERSAIRE DÉCONNECTÉ', 2500); F.phase = 'over'; } mpStatus('Connexion terminée.'); });
+}
+$('mpHost').onclick = () => {
+  mpClose(); const code = String(Math.floor(100000 + Math.random()*900000));
+  mpStatus('Préparation…');
+  loadPeer(() => {
+    const peer = new Peer('fusionff-' + code, mpPeerOpts());
+    MP = {peer, role:'host', mine: mpPayload($('mpSel').value), last: 0};
+    peer.on('open', () => mpStatus(`Ton code : <b style="font-size:32px;letter-spacing:4px;color:var(--gold)">${code}</b><br>Donne-le à l'autre joueur, puis attends…`));
+    peer.on('error', e => mpStatus('❌ Erreur : ' + (e.type || e)));
+    peer.on('connection', conn => { mpWire(conn, 'host'); mpStatus('✅ Joueur connecté, on attend son personnage…'); });
+  });
+};
+$('mpJoin').onclick = () => {
+  const code = $('mpCode').value.trim(); if (!/^\d{6}$/.test(code)){ mpStatus('Entre le code à 6 chiffres.'); return; }
+  mpClose(); mpStatus('Connexion…');
+  loadPeer(() => {
+    const peer = new Peer(undefined, mpPeerOpts());
+    MP = {peer, role:'guest', mine: mpPayload($('mpSel').value)};
+    peer.on('error', e => mpStatus('❌ ' + (e.type === 'peer-unavailable' ? 'Aucune partie avec ce code.' : 'Erreur : ' + (e.type || e))));
+    peer.on('open', () => { const conn = peer.connect('fusionff-' + code, {reliable:true}); mpWire(conn, 'guest');
+      conn.on('open', () => { conn.send({t:'hello', p: MP.mine}); mpStatus('✅ Connecté ! La partie commence…'); }); });
+  });
+};
+$('mpBack').onclick = () => { mpClose(); go('sMenu'); };
+$('bMP').onclick = () => go('sMP');
+function mpOnData(m){
+  if (!MP) return;
+  if (MP.role === 'host'){
+    if (m.t === 'hello'){ MP.conn.send({t:'start', host: MP.mine, guest: m.p}); startOnline(MP.mine, m.p, 'host'); return; }
+    if (!F || !F.mp) return;
+    if (m.t === 'k') B.keys[m.k] = m.v;
+    if (m.t === 'p') press2(B, m.k);
+    if (m.t === 'sp') special(B, m.i);
+  } else {
+    if (m.t === 'start'){ startOnline(m.host, m.guest, 'guest'); return; }
+    if (!F || !F.mp) return;
+    if (m.t === 's') MP.state = m;
+    if (m.t === 'pop'){ const f = m.w === 'A' ? A : B; popLocal(f, m.txt, m.col, m.big); }
+    if (m.t === 'ban') bannerLocal(m.txt, m.ms);
+    if (m.t === 'end'){ F.phase = 'over'; $('endT').textContent = m.title; $('endT').style.color = m.col; $('endP').innerHTML = m.text; $('endBox').classList.add('on'); }
+  }
+}
+function startOnline(hp, gp, role){
+  const d1 = mpData(hp), d2 = mpData(gp);
+  curOpp = Object.assign({}, role === 'host' ? d2 : d1, {person: nameOf(role === 'host' ? d2 : d1)});
+  startFight(false);
+  A = makeFighter(d1, -1.4, 1, false); B = makeFighter(d2, 1.4, -1, false);
+  A.keys = k1; B.keys = k2; P = null; F.twoP = true; F.mp = role;
+  paint(MA, d1.look, true); paint(MB, d2.look, false);
+  $('ctl').style.display = 'none'; $('testTag').style.display = 'none'; document.querySelector('.pad').style.display = 'none'; $('pad2').style.display = 'grid';
+  $('nA').textContent = (role==='host' ? '🎮 Toi · ' : 'Adversaire · ') + nameOf(d1); $('nB').textContent = (role==='guest' ? '🎮 Toi · ' : 'Adversaire · ') + nameOf(d2);
+  $('spA').textContent = '⚡ ' + SPECIALS[d1.sps[0]].name; $('spB').textContent = '⚡ ' + SPECIALS[d2.sps[0]].name;
+  const mineF = role === 'host' ? A : B, p = role === 'host' ? 1 : 2, mv = movesOf(mineF.data);
+  $('pad2').innerHTML = `<div class="half p${p}" style="grid-column:1/-1;grid-template-columns:repeat(4,minmax(0,1fr))"><button class="b" data-k="left">◀</button><button class="b" data-k="right">▶</button><button class="b g" data-k="guard">🛡 GARDE</button><button class="b g" data-k="dodge">↯ ESQUIVE</button>`
+    + mv.map(([k,l]) => `<button class="b" data-k="${k}">${l}</button>`).join('')
+    + mineF.data.sps.slice(0,2).map((k,i) => `<button class="b spc" data-sp="${i}">⚡ ${SPECIALS[k].name.toUpperCase()}</button>`).join('') + `</div>`;
+  const local = role === 'host' ? k1 : k2;
+  $('pad2').querySelectorAll('[data-k]').forEach(b => { const k = b.dataset.k;
+    b.onpointerdown = e => { e.preventDefault(); b.classList.add('on');
+      if (role === 'host'){ A.keys[k] = true; press2(A,k); } else { local[k] = true; MP.conn.send({t:'k', k, v:true}); MP.conn.send({t:'p', k}); } };
+    b.onpointerup = b.onpointerleave = b.onpointercancel = () => { b.classList.remove('on');
+      if (role === 'host') A.keys[k] = false; else if (local[k]){ local[k] = false; MP.conn.send({t:'k', k, v:false}); } }; });
+  $('pad2').querySelectorAll('[data-sp]').forEach(b => b.onpointerdown = e => { e.preventDefault(); if (role === 'host') special(A, +b.dataset.sp); else MP.conn.send({t:'sp', i:+b.dataset.sp}); });
+  resize(); go('sMP'); $('fight').classList.add('on');
+  bannerLocal(role === 'host' ? 'TU ES À GAUCHE' : 'TU ES À DROITE', 1500);
+}
+const FPACK = f => ({x:+f.x.toFixed(3), p: KEYS.flatMap(k => [Math.round(f.pose[k][0]*10)/10, Math.round(f.pose[k][1]*10)/10]), hp:+f.hp.toFixed(1), st:Math.round(f.st), g:Math.round(f.gauge), z:f.zone, bal:Math.round(f.bal), dz:+(f.dazed||0).toFixed(2), w:f.wins, s:f.state});
+function mpSend(now){
+  if (!MP || !MP.conn || !MP.conn.open || now - (MP.last||0) < 50) return;
+  MP.last = now;
+  MP.conn.send({t:'s', A: FPACK(A), B: FPACK(B), F: {time: +F.time.toFixed(1), round: F.round, phase: F.phase}});
+}
+function mpApply(){
+  const S = MP && MP.state; if (!S) return;
+  for (const [f, D] of [[A, S.A], [B, S.B]]){
+    f.x = f.x + (D.x - f.x) * .6;
+    const tgt = {}; KEYS.forEach((k,i) => tgt[k] = [D.p[i*2], D.p[i*2+1]]); f.pose = lerp2(f.pose, tgt, .6);
+    f.hp = D.hp; f.st = D.st; f.gauge = D.g; f.zone = D.z; f.bal = D.bal; f.dazed = D.dz; f.wins = D.w; f.state = D.s;
+  }
+  F.time = S.F.time; F.round = S.F.round; F.phase = S.F.phase === 'over' ? F.phase : S.F.phase;
+}
 // ===================== LESSON: learn the technique for real =====================
 const FAM = {jab:'jab',cross:'cross',kdCross:'cross',hook:'hook',kdHook:'hook',chain:'chain',palm:'palm',kdPalm:'palm',low:'kick',teep:'teep',high:'high',kdHigh:'high',
   spin:'spin',elbow:'elbow',kdElbow:'elbow',knee:'knee',kdKnee:'knee',titan:'grab',loup:'grab',ippon:'throw',ipponS:'throw',slip:'slip'};
@@ -1549,6 +1681,7 @@ function press(k){
 const KB = {ArrowLeft:'left',ArrowRight:'right',a:'left',d:'right',q:'left',s:'guard',ArrowDown:'guard',w:'dodge',z:'dodge',ArrowUp:'dodge'};
 const KEYMOVE = ['j','k','l','u','h','g'];
 addEventListener('keydown', e => { if (!$('fight').classList.contains('on')) return;
+  if (F && F.mp) return;
   if (F && F.twoP){ const r = (f, map, mk, spk) => { const k = map[e.key]; if (k && !f.keys[k]){ f.keys[k] = true; press2(f,k); }
       const mi = mk.indexOf(e.key); if (mi >= 0){ const m = movesOf(f.data)[mi]; if (m) press2(f, m[0]); } if (spk.includes(e.key)) special(f,0); };
     r(A, KB1, ['f','g','h','j'], ['r']); r(B, KB2, ['1','2','3','4'], ['0','Enter']); return; }
@@ -1557,8 +1690,8 @@ addEventListener('keydown', e => { if (!$('fight').classList.contains('on')) ret
   const mi = KEYMOVE.indexOf(e.key); if (mi >= 0){ const btn = document.querySelectorAll('#padR [data-k]')[mi]; if (btn) press(btn.dataset.k); }
   if (k && !keys[k]){ keys[k] = true; press(k); } });
 addEventListener('keyup', e => { if (F && F.twoP){ const a = KB1[e.key], b = KB2[e.key]; if (a) A.keys[a] = false; if (b) B.keys[b] = false; return; } const k = KB[e.key]; if (k) keys[k] = false; });
-$('pause').onclick = () => { if (F && F.twoP){ $('fight').classList.remove('on'); F = null; go('s2P'); return; } const wasL = F && F.lesson; $('fight').classList.remove('on'); F = null; if (wasL){ endLesson(); go(curOpp && !curOpp.rank ? 'sCreate' : 'sVs'); } else go('sOpp'); };
-$('bAgain').onclick = () => { if (twoSel) start2P(twoSel[0], twoSel[1]); else startFight(lastTest); };
+$('pause').onclick = () => { if (F && F.mp){ $('fight').classList.remove('on'); F = null; mpClose(); go('sMP'); mpStatus('Partie quittée.'); return; } if (F && F.twoP){ $('fight').classList.remove('on'); F = null; go('s2P'); return; } const wasL = F && F.lesson; $('fight').classList.remove('on'); F = null; if (wasL){ endLesson(); go(curOpp && !curOpp.rank ? 'sCreate' : 'sVs'); } else go('sOpp'); };
+$('bAgain').onclick = () => { if (F && F.mp){ $('fight').classList.remove('on'); F = null; mpClose(); go('sMP'); mpStatus('Crée ou rejoins une nouvelle partie pour la revanche.'); return; } if (twoSel) start2P(twoSel[0], twoSel[1]); else startFight(lastTest); };
 $('bBack').onclick = () => { const t = twoSel; $('fight').classList.remove('on'); F = null; go(t ? 's2P' : curOpp && !curOpp.rank ? 'sCreate' : 'sOpp'); };
 
 // Update
@@ -1597,6 +1730,7 @@ function loop(now){
   if (F && $('fight').classList.contains('on')){
     const dt = rdt * (slowmo>0 ? .35 : 1); slowmo = Math.max(0, slowmo - rdt);
     if (F.lesson) lessonTick(rdt);
+    if (F.mp === 'guest') mpApply(); else {
     if (F.phase==='intro'){ F.phaseT -= rdt; if (F.phaseT<=0){ F.phase='fight'; banner('FIGHT !',700); } }
     else if (F.phase==='fight'){ if (F.test){ F.time = 99; A.gauge = Math.min(100, A.gauge + rdt*25); B.gauge = Math.min(100, B.gauge + rdt*25); } else { F.time -= rdt; if (F.time<=0){ F.time=0; timeUp(); } } }
     else if (F.phase==='roundEnd'){ F.phaseT -= rdt; if (F.phaseT<=0){ if (A.wins===2 || B.wins===2 || F.round===3) endMatch(); else { F.round++; newRound(); } } }
@@ -1610,6 +1744,8 @@ function loop(now){
       else { const w = other(f); F.phase = 'roundEnd'; F.phaseT = 2.6; w.wins = 2; F.round = 3; slowmo = .4; banner('HORS DU RING ! ÉLIMINÉ', 2200); }
     }
     if (A.x > B.x - .3) A.x = B.x - .3;
+    if (F.mp === 'host') mpSend(now);
+    }
     pose3(MA, to3(A.pose, A.x, A.face, A.sc)); pose3(MB, to3(B.pose, B.x, B.face, B.sc));
     // HUD
     $('hpA').style.width = (A.hp/A.hpMax*100)+'%'; $('hpB').style.width = (B.hp/B.hpMax*100)+'%'; $('lifeA').textContent = '❤ '+Math.ceil(A.hp)+'/'+A.hpMax; zoneHUD('zA', A); zoneHUD('zB', B); const sts = f => `⚖ ${Math.round(f.bal)} · 🔋 ${Math.round(f.st)}${f.dazed > 0 ? ' · 💫 SONNÉ' : ''}${f.bal < 40 ? ' · instable' : ''}`; $('stsA').textContent = sts(A); $('stsB').textContent = sts(B); $('lifeB').textContent = '❤ '+Math.ceil(B.hp)+'/'+B.hpMax; $('stA').style.width = A.st+'%'; $('stB').style.width = B.st+'%';
