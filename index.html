@@ -481,6 +481,23 @@ function pickStyle(arts, s, w, traits, R){
   for (const k in sc) sc[k] += bias[k] + R()*2.6;
   return Object.entries(sc).sort((a,b) => b[1]-a[1])[0][0];
 }
+// Style for a created fighter: from his body, stats, character and chosen techniques (no randomness)
+function customStyle(c, s){
+  const [pow, spd, def, , grap] = s, w = c.w || 78, h = (c.h || 1.78)*100, m = c.m || 50, tr = c.traits || T50;
+  const an = (c.techs || []).map(id => TT(id)).filter(Boolean), cnt = f => an.filter(f).length, N = Math.max(1, an.length);
+  const share = f => cnt(f) / N;
+  const sc = {
+    combo:  spd/30 + share(t => ['jab','cross','hook','chain','palm'].includes(t[3]))*4 - Math.max(0, w-90)/25,
+    throw:  grap/30 + share(t => t[3] && t[4] === null)*5 + share(t => t[3]==='grab')*3,
+    ground: grap/35 + Math.max(0, w-85)/20 + (m-50)/40 + share(t => /lutte|jiu|sambo|double|plaqu/i.test(t[7]+' '+t[8]))*4,
+    kick:   spd/45 + Math.max(0, h-178)/9 + share(t => ['kick','teep','high','spin','low'].includes(t[3]))*5,
+    clinch: (m-50)/25 + pow/60 + share(t => ['elbow','knee'].includes(t[3]))*5,
+    power:  pow/28 + Math.max(0, w-90)/18,
+    counter:(tr.patience + tr.iq + tr.calme)/110 + def/45,
+    acro:   spd/40 + Math.max(0, 80-w)/12 - Math.max(0, w-90)/10 + share(t => /capoeira|lucha|parkour|gymn|wushu|540|tornado|saut|volant/i.test(t[7]+' '+t[8]))*6,
+  };
+  return Object.entries(sc).sort((a,b) => b[1]-a[1])[0][0];
+}
 function styleSpecial(style, fmv){
   const S = k => STEPS[k].seq(), sp = fusedSpecial(fmv), lab = STY[style];
   const seqs = {
@@ -942,7 +959,7 @@ function fusedMove(ids, nameHint, prof){
   if (grp==='punch') why.push(spd >= 75 ? `Rapide (vitesse ${spd}) : un coup de poing part plus vite que tout le reste` : `Le coup le plus sûr : il garde l'équilibre et peut enchaîner`);
   if (grp==='elbow') why.push(`Puissant de près (puissance ${pow}) : le coude est l'os le plus dur, il ne lui faut presque pas d'élan`);
   if (grp==='knee') why.push(`Endurant et musclé : au corps-à-corps, le genou use l'adversaire et le plie en deux`);
-  if (grp==='proj') why.push(`${w >= 95 ? `Lourd (${w} kg)` : 'Bon lutteur'}${m >= 70 ? ' et musclé' : ''} (lutte ${grap}) : il écrase l'adversaire au sol avec tout son poids`);
+  if (grp==='proj') why.push(w >= 95 || grap >= 60 ? `${w >= 95 ? `Lourd (${w} kg)` : 'Bon lutteur'}${m >= 70 ? ' et musclé' : ''} (lutte ${grap}) : il écrase l'adversaire au sol avec tout son poids` : `Léger (${w} kg, lutte ${grap}) : il ne force pas, il utilise l'élan de l'adversaire pour le faire tomber`);
   if (hl==='Fatigué' || hl==='Malade') why.push(`Santé « ${hl} » : un coup court qui économise son énergie`);
   if (hl==='Blessé') why.push(`Blessé : rien de risqué sur une jambe`);
   if (hl==='Pleine forme') why.push(`Pleine forme : il peut la lancer à pleine vitesse`);
@@ -1011,10 +1028,11 @@ function buildCustom(c){
   const key = 'cust'+c.id;
   const prof = {body: bodyOf(c), h:c.h, w:c.w, m:c.m, s, life: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life, health:c.health||'En forme', traits:c.traits};
   const fmv = fusedMove(c.techs, c.tn, prof) || fusedMove([byName('Direct')], c.tn, prof);
-  SPECIALS[key] = fusedSpecial(fmv);
+  const style = customStyle(c, s);
+  SPECIALS[key] = styleSpecial(style, fmv);
   const pmv = personalMoves(c.techs);
   if (!/^technique ultime/i.test(fmv.name)) SPECIALS[key].name = 'Technique ultime : ' + fmv.name;
-  return {rank:null, custom:c.id, gear: c.gear || ['nues'], mood: c.mood || 'Calme', body: bodyOf(c), traits: c.traits, techIds: c.techs, fusedMove: fmv, pmoves: pmv, level:overall(s), s, moves: Object.keys(pmv).filter(k => k!=='pm_dodge').length ? Object.keys(pmv).filter(k => k!=='pm_dodge') : ['fused'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]),
+  return {rank:null, custom:c.id, style, gear: c.gear || ['nues'], mood: c.mood || 'Calme', body: bodyOf(c), traits: c.traits, techIds: c.techs, fusedMove: fmv, pmoves: pmv, level:overall(s), s, moves: Object.keys(pmv).filter(k => k!=='pm_dodge').length ? Object.keys(pmv).filter(k => k!=='pm_dodge') : ['fused'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]),
     h:c.h, w:c.w, title:'Créé par toi', person:c.name, idleP:'guard', life: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life, resist: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).res, healBonus: bonusOf(c.techs).heal, health: c.health || 'En forme', look: lookOf(c), m: c.m};
 }
 const byName = n => TECHS.find(t => t[8]===n)[0];
@@ -1069,7 +1087,7 @@ function preset(kind){
     for (let h=160; h<=215; h+=5) for (let w=60; w<=130; w+=5) for (let m=40; m<=100; m+=10){ const t = {...c, h:h/100, w, m}; const sc = scoreOf(t) - (Math.abs(h-188)+Math.abs(w-95)+Math.abs(m-85))/1000; if (sc > bestS){ bestS = sc; bp = t; } }
     c = bp; c.spec = []; c.inv = inventTechnique(c.techs, 'La Technique Ultime');
   } else if (kind==='worst'){
-    c = {...base, name:'Le Pire', level:30, techs:['Coup de pied 540','Tomoe-nage'].map(byName), tn:'La Catastrophe'};
+    c = {...base, name:'Le Pire', level:30, techs:['Coup de pied 540','Tomoe-nage'].map(byName), tn:''};
     c.spec = ['Coup de pied 540'].map(byName);
     let worstS = 999, wp = null;
     for (let h=150; h<=220; h+=10) for (let w=50; w<=160; w+=10) for (let m=0; m<=100; m+=25){ const t = {...c, h:h/100, w, m}; const sc = scoreOf(t); if (sc < worstS){ worstS = sc; wp = t; } }
@@ -1087,7 +1105,7 @@ function preset(kind){
 }
 function seqUI(){
   { const rc = readCustom(); const f = fusedMove(cT, $('cTN').value.trim(), {h:rc.h, w:rc.w, m:rc.m, s:customStats(rc), life:vitals(rc.life, rc.techs, rc.health, rc.w, rc.m, rc.traits, customStats(rc), rc.body).life, health:rc.health, traits:rc.traits, body:rc.body});
-    $('cTop').innerHTML = f ? `<div class="tact" style="font-size:12px;color:var(--gold);letter-spacing:1px">⚡ SA TECHNIQUE PARFAITE (créée pour lui, se met à jour toute seule)</div><div class="fn" style="font-size:30px">🥊 ${f.name}</div><div class="tact">${f.desc} · puissance ×${f.mul.toFixed(2)}</div><ul class="tact">${f.why.slice(0,5).map(x=>`<li>${x}</li>`).join('')}</ul><div class="tm" style="font-size:12px;color:var(--mute)">Toutes les raisons sont plus bas, dans « Sa technique parfaite ».</div>` : '<span style="color:var(--mute)">Choisis des techniques pour créer sa technique parfaite.</span>';
+    $('cTop').innerHTML = f ? `<div class="tact" style="font-size:12px;color:var(--gold);letter-spacing:1px">⚡ SA TECHNIQUE PARFAITE (créée pour lui, se met à jour toute seule)</div><div class="fn" style="font-size:30px">🥊 ${f.name}</div>${(() => { const st = STY[customStyle(rc, customStats(rc))]; return `<div class="tact" style="font-size:15px"><b>${st[0]} Son style : ${st[1]}</b> · ${st[2]}</div>`; })()}<div class="tact">${f.desc} · puissance ×${f.mul.toFixed(2)}</div><ul class="tact">${f.why.slice(0,5).map(x=>`<li>${x}</li>`).join('')}</ul><div class="tm" style="font-size:12px;color:var(--mute)">Toutes les raisons sont plus bas, dans « Sa technique parfaite ».</div>` : '<span style="color:var(--mute)">Choisis des techniques pour créer sa technique parfaite.</span>';
     $('cSeq').innerHTML = f ? `<span class="st2 kd" style="font-size:15px">🥊 ${f.name}<br><span style="font-size:11px;color:var(--mute)">${f.desc} · puissance ×${f.mul.toFixed(2)}</span></span><div class="tact" style="width:100%;margin-top:6px"><b>Pourquoi c'est la meilleure pour lui :</b><ul>${f.why.map(x=>`<li>${x}</li>`).join('')}</ul></div>` : '<span style="color:var(--mute);font-size:13px">Choisis au moins une technique de combat.</span>';
     preview(); return; }
   if (cInv){ $('cSeq').innerHTML = cInv.steps.map((st,i) => `<span class="st2 ${i===cInv.steps.length-1?'kd':''}">${st.name}<br><span style="font-size:10px;color:var(--mute)">${st.art}</span></span>`).join('<span class="ar">→</span>') + ` <span class="st2" id="spClear">✕ vider</span>`;
