@@ -1283,20 +1283,33 @@ function init3D(){
 }
 function resize(){ const v = $('view'); renderer.setSize(v.clientWidth, v.clientHeight); camera.aspect = v.clientWidth/v.clientHeight; camera.updateProjectionMatrix(); }
 const UC = new THREE.CylinderGeometry(1,1,1,12), US = new THREE.SphereGeometry(1,16,12);
+// Detailed fighter figure: tapered limbs with muscles, face, hair, clothes (shorts or gi) and visible gear.
+const TAPER = {}; const taper = rt => TAPER[rt] || (TAPER[rt] = new THREE.CylinderGeometry(rt, 1, 1, 14));
 function mannequin(c){
-  const skin = new THREE.MeshStandardMaterial({color:c.skin,roughness:.55}), shorts = new THREE.MeshStandardMaterial({color:c.accent,roughness:.6});
-  const glove = new THREE.MeshStandardMaterial({color:c.accent,roughness:.35}), shirt = new THREE.MeshStandardMaterial({color:c.shirt,roughness:.7});
-  const mk = (g,m) => { const x = new THREE.Mesh(g,m); x.castShadow = true; scene.add(x); return x; };
-  const f = {
-    bones:[['lS','le',.05,skin],['le','lh',.043,skin],['rS','re',.05,skin],['re','rh',.043,skin],['lH','lk',.075,shorts],['lk','lf',.055,skin],['rH','rk',.075,shorts],['rk','rf',.055,skin],['neck','headB',.05,skin]].map(([a,b,r,m])=>({a,b,r,mesh:mk(UC,m)})),
-    joints:[['lS',.065,skin],['rS',.065,skin],['le',.05,skin],['re',.05,skin],['lk',.07,skin],['rk',.07,skin],['lH',.085,shorts],['rH',.085,shorts],['lf',.06,skin],['rf',.06,skin]].map(([k,r,m])=>{const x=mk(US,m);x.scale.setScalar(r);return {k,mesh:x};}),
-    gloves:['lh','rh'].map(k=>{const x=mk(US,glove);x.scale.set(.075,.068,.068);return {k,mesh:x};}),
-    head:mk(US,skin), chest:mk(UC,shirt), belly:mk(UC,shirt), pelvis:mk(US,shorts),
-  };
-  f.skinMat = skin; f.gloveMat = glove; f.accent = c.accent;
-  const nailMat = new THREE.MeshStandardMaterial({color:0xf1c9b8, roughness:.25, metalness:.1}); f.nailMat = nailMat;
+  const M = (col, r=.55) => new THREE.MeshStandardMaterial({color:col, roughness:r});
+  const mat = {skin:M(c.skin), shorts:M(c.accent,.6), top:M(0xf4f4f0,.8), glove:M(c.accent,.35), belt:M(0x111111,.6), hair:M(0x2b1d14,.9),
+    dark:M(0x111111,.3), guard:M(c.accent,.45), stripe:M(0xffffff,.5), mouth:M(c.accent,.3)};
+  const mk = (g, m) => { const x = new THREE.Mesh(g, m); x.castShadow = true; scene.add(x); return x; };
+  const f = {mat, accent:c.accent, mus:1, fat:0, bulk:1, gi:false};
+  f.limbs = {uaL:mk(taper(.78), mat.skin), uaR:mk(taper(.78), mat.skin), faL:mk(taper(.72), mat.skin), faR:mk(taper(.72), mat.skin),
+    thL:mk(taper(.66), mat.skin), thR:mk(taper(.66), mat.skin), caL:mk(taper(.58), mat.skin), caR:mk(taper(.58), mat.skin)};
+  f.musc = {biL:mk(US, mat.skin), biR:mk(US, mat.skin), foL:mk(US, mat.skin), foR:mk(US, mat.skin), quL:mk(US, mat.skin), quR:mk(US, mat.skin), cfL:mk(US, mat.skin), cfR:mk(US, mat.skin)};
+  f.joints = ['lS','rS','le','re','lk','rk'].map(k => ({k, mesh:mk(US, mat.skin)}));
+  f.delts = [mk(US, mat.skin), mk(US, mat.skin)];
+  f.chest = mk(US, mat.skin); f.belly = mk(US, mat.skin); f.pelvis = mk(US, mat.shorts);
+  f.pecs = [mk(US, mat.skin), mk(US, mat.skin)]; f.abs = mk(US, mat.skin); f.traps = mk(US, mat.skin);
+  f.neckM = mk(taper(.9), mat.skin);
+  f.shorts = [mk(taper(.85), mat.shorts), mk(taper(.85), mat.shorts)]; f.band = mk(UC, mat.stripe); f.belt = mk(UC, mat.belt); f.beltKnot = mk(US, mat.belt);
+  f.feet = [mk(US, mat.skin), mk(US, mat.skin)];
+  f.gloves = ['lh','rh'].map(k => ({k, mesh:mk(US, mat.glove)}));
+  f.head = mk(US, mat.skin); f.jaw = mk(US, mat.skin); f.hairM = mk(US, mat.hair); f.bun = mk(US, mat.hair);
+  f.eyes = [mk(US, mat.dark), mk(US, mat.dark)]; f.nose = mk(US, mat.skin); f.ears = [mk(US, mat.skin), mk(US, mat.skin)];
+  f.helmet = mk(US, mat.guard); f.mouthG = mk(US, mat.mouth);
+  f.shins = [mk(taper(.85), mat.guard), mk(taper(.85), mat.guard)]; f.vest = mk(US, mat.guard);
+  f.skinMat = mat.skin; f.gloveMat = mat.glove;
+  const nailMat = M(0xf1c9b8, .25); f.nailMat = nailMat;
   f.nails = ['lh','rh'].map(k => { const x = mk(US, nailMat); x.scale.set(.022,.016,.04); x.visible = false; return {k, e: k==='lh'?'le':'re', mesh:x}; });
-  f.head.scale.set(.105,.125,.1); return f;
+  f.hair = 'short'; f.gear = {}; return f;
 }
 function place(m,a,b,rx,rz){ const d = new THREE.Vector3().subVectors(b,a), L = d.length(); m.position.copy(a).addScaledVector(d,.5); if (L>1e-5) m.quaternion.setFromUnitVectors(UP,d.normalize()); m.scale.set(rx,L,rz); }
 function to3(p, x, face, sc=1, lift=0){
@@ -1307,21 +1320,92 @@ function to3(p, x, face, sc=1, lift=0){
   o.mid = o.hip.clone().lerp(o.neck,.45); o.headB = o.neck.clone().addScaledVector(new THREE.Vector3().subVectors(o.head,o.neck),.45);
   return o;
 }
-function pose3(f,o){
-  f.bones.forEach(b => place(b.mesh,o[b.a],o[b.b],b.r,b.r)); f.joints.forEach(j => j.mesh.position.copy(o[j.k])); f.gloves.forEach(g => g.mesh.position.copy(o[g.k]));
-  f.head.position.copy(o.head); place(f.chest,o.mid,o.neck.clone().add(new THREE.Vector3(0,-.02,0)),.11,.2); place(f.belly,o.hip,o.mid,.1,.155);
-  f.pelvis.position.copy(o.hip); f.pelvis.scale.set(.1,.09,.17); f.pelvis.quaternion.copy(f.belly.quaternion);
+const _v1 = new THREE.Vector3(), _v2 = new THREE.Vector3();
+// ellipsoid spanning [t0,t1] of segment a->b
+function span(m, a, b, t0, t1, rx, rz){ _v1.copy(a).lerp(b, t0); _v2.copy(a).lerp(b, t1); const d = new THREE.Vector3().subVectors(_v2, _v1), L = d.length();
+  m.position.copy(_v1).addScaledVector(d, .5); if (L > 1e-5) m.quaternion.setFromUnitVectors(UP, d.normalize()); m.scale.set(rx, L/2, rz); }
+function pose3(f, o){
+  const face = Math.sign(o.rS.z - o.lS.z) || 1, mu = f.mus, bk = f.bulk, fw = new THREE.Vector3(face, 0, 0);
+  const L = f.limbs, Q = f.musc, gi = f.gi;
+  const rUA = .062*mu, rFA = .052*mu, rTH = .1*mu*bk, rCA = .07*mu;
+  place(L.uaL, o.lS, o.le, rUA, rUA); place(L.uaR, o.rS, o.re, rUA, rUA);
+  place(L.faL, o.le, o.lh, rFA, rFA); place(L.faR, o.re, o.rh, rFA, rFA);
+  place(L.thL, o.lH, o.lk, rTH, rTH); place(L.thR, o.rH, o.rk, rTH, rTH);
+  place(L.caL, o.lk, o.lf, rCA, rCA); place(L.caR, o.rk, o.rf, rCA, rCA);
+  const mm = (m, a, b, t0, t1, r) => { m.visible = !gi; if (!gi) span(m, a, b, t0, t1, r, r); };
+  const m3 = mu*mu*mu;
+  mm(Q.biL, o.lS, o.le, .15, .85, .068*m3); mm(Q.biR, o.rS, o.re, .15, .85, .068*m3);
+  mm(Q.foL, o.le, o.lh, .02, .6, .06*mu*mu); mm(Q.foR, o.re, o.rh, .02, .6, .06*mu*mu);
+  span(Q.quL, o.lH, o.lk, .05, .9, .112*mu*mu*bk, .108*mu*bk); span(Q.quR, o.rH, o.rk, .05, .9, .112*mu*mu*bk, .108*mu*bk);
+  span(Q.cfL, o.lk, o.lf, .05, .6, .082*mu*mu, .078*mu); span(Q.cfR, o.rk, o.rf, .05, .6, .082*mu*mu, .078*mu);
+  // joints match the limb thickness so there is no visible ball
+  f.joints.forEach(j => { j.mesh.position.copy(o[j.k]); j.mesh.scale.setScalar(/S$/.test(j.k) ? rUA*1.05 : /k$/.test(j.k) ? rCA*1.02 : rFA*1.02); });
+  f.delts[0].position.copy(o.lS).addScaledVector(UP, -.01); f.delts[1].position.copy(o.rS).addScaledVector(UP, -.01);
+  f.delts.forEach(m => m.scale.set(.08*mu*mu, .085*mu, .08*mu*mu));
+  const top = o.neck.clone().add(new THREE.Vector3(0, -.03, 0));
+  span(f.chest, o.mid, top, -.25, 1.05, .125*bk*(.9 + mu*.1), .2*bk*(.82 + mu*.18));
+  span(f.belly, o.hip, o.mid, -.15, 1.15, (.115 + f.fat*.07)*bk, (.165 + f.fat*.03)*bk);
+  f.pelvis.position.copy(o.hip); f.pelvis.scale.set(.12*bk, .1, .19*bk); f.pelvis.quaternion.copy(f.belly.quaternion);
+  [-1, 1].forEach((sd, i) => { const p = f.pecs[i]; p.visible = !gi && !f.gear.vest; p.position.copy(o.mid).lerp(top, .62).addScaledVector(fw, .085*bk).add(new THREE.Vector3(0, 0, sd*.07*bk)); p.quaternion.copy(f.chest.quaternion); p.scale.set(.05*mu*mu, .065*mu, .085*mu); });
+  f.abs.visible = !gi && !f.gear.vest; f.abs.position.copy(o.hip).lerp(o.mid, .65).addScaledVector(fw, .07 + f.fat*.04); f.abs.quaternion.copy(f.belly.quaternion); f.abs.scale.set(.055 + f.fat*.06, .115, .1*bk);
+  f.traps.position.copy(o.neck).add(new THREE.Vector3(0, -.035, 0)).addScaledVector(fw, -.02); f.traps.quaternion.copy(f.chest.quaternion); f.traps.scale.set(.07*mu, .055*mu*mu, .15*mu);
+  f.vest.visible = !!f.gear.vest; if (f.gear.vest) span(f.vest, o.hip.clone().lerp(o.mid, .5), top, -.05, 1, .14*bk, .215*bk);
+  place(f.neckM, o.neck, o.headB, .06*(.8 + mu*.25), .06*(.8 + mu*.25));
+  [['lH','lk'], ['rH','rk']].forEach(([h, k], i) => { const end = o[h].clone().lerp(o[k], gi ? .98 : (f.longShorts ? .62 : .45)); place(f.shorts[i], o[h], end, .118*mu*bk, .118*mu*bk); });
+  f.band.visible = !gi; place(f.band, o.hip.clone().add(new THREE.Vector3(0, .03, 0)), o.hip.clone().add(new THREE.Vector3(0, .075, 0)), (.122 + f.fat*.06)*bk, .19*bk);
+  f.belt.visible = f.beltKnot.visible = gi;
+  if (gi){ place(f.belt, o.hip.clone().lerp(o.mid, .32), o.hip.clone().lerp(o.mid, .5), (.124 + f.fat*.07)*bk, .175*bk); f.beltKnot.position.copy(o.hip).lerp(o.mid, .4).addScaledVector(fw, .11*bk + f.fat*.05); f.beltKnot.scale.set(.025, .03, .04); }
+  f.shins.forEach((m, i) => { m.visible = !!f.gear.shins; if (f.gear.shins){ const k = i ? o.rk : o.lk, ft = i ? o.rf : o.lf; place(m, k.clone().lerp(ft, .08), k.clone().lerp(ft, .92), .086*mu, .086*mu); } });
+  [o.lf, o.rf].forEach((p, i) => { const m = f.feet[i]; m.position.copy(p).addScaledVector(fw, .055).add(new THREE.Vector3(0, -.025, 0)); m.scale.set(.105, .042, .05); });
+  f.gloves.forEach(g => { g.mesh.position.copy(o[g.k]); const s = f.gear.gloveSize || .05; g.mesh.scale.set(s*1.1, s, s); });
+  f.head.position.copy(o.head);
+  const hq = new THREE.Quaternion().setFromUnitVectors(UP, new THREE.Vector3().subVectors(o.head, o.neck).normalize()); f.head.quaternion.copy(hq); f.head.scale.set(.1, .122, .095);
+  const hp = (dx, dy, dz) => o.head.clone().add(new THREE.Vector3(dx*face, dy, dz*face).applyQuaternion(hq));
+  f.jaw.position.copy(hp(.03, -.06, 0)); f.jaw.quaternion.copy(hq); f.jaw.scale.set(.07, .055, .075);
+  f.eyes.forEach((e, i) => { e.position.copy(hp(.088, .018, i ? .035 : -.035)); e.scale.setScalar(.013); });
+  f.nose.position.copy(hp(.1, -.008, 0)); f.nose.scale.set(.02, .028, .016);
+  f.ears.forEach((e, i) => { e.position.copy(hp(0, .005, i ? .095 : -.095)); e.scale.set(.018, .03, .012); });
+  f.hairM.visible = f.hair !== 'bald' && !f.gear.helmet; f.bun.visible = f.hair === 'bun' && !f.gear.helmet;
+  if (f.hairM.visible){ f.hairM.position.copy(hp(-.012, .028, 0)); f.hairM.quaternion.copy(hq); f.hairM.scale.set(.106, f.hair === 'long' ? .13 : .108, .1); }
+  if (f.bun.visible){ f.bun.position.copy(hp(-.09, .07, 0)); f.bun.scale.setScalar(.04); }
+  f.helmet.visible = !!f.gear.helmet; if (f.gear.helmet){ f.helmet.position.copy(hp(-.01, .02, 0)); f.helmet.quaternion.copy(hq); f.helmet.scale.set(.118, .135, .112); }
+  f.mouthG.visible = !!f.gear.mouth; if (f.gear.mouth){ f.mouthG.position.copy(hp(.085, -.045, 0)); f.mouthG.scale.set(.012, .012, .03); }
   if (f.nails) f.nails.forEach(n => { const d = new THREE.Vector3().subVectors(o[n.k], o[n.e]).normalize(); n.mesh.position.copy(o[n.k]).addScaledVector(d, .055); });
 }
-function paint(M, L, isA){
-  L = L || {};
-  M.skinMat.color.set(L.skin || (isA ? '#d8d4cf' : '#8f9aab'));
-  M.gloveMat.color.set(L.bare ? (L.skin || '#d8d4cf') : M.accent);
-  M.gloves.forEach(g => g.mesh.scale.set(L.bare ? .05 : .075, L.bare ? .045 : .068, L.bare ? .05 : .068));
+const GI_ARTS = /judo|karat|jiu|jujitsu|aïkido|aikido|sambo|kudo|hapkido|kyokushin|bjj/i;
+// Dress a figure from the fighter's data: skin, muscles, weight, hair, outfit and gear.
+function paint(M, L, isA, d){
+  L = L || {}; d = d || {};
+  const mt = M.mat, gear = d.gear || ['nues'];
+  const seed = [...(d.person || d.name || (isA ? 'A' : 'B'))].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) | 0, 7) >>> 0;
+  M.mus = .82 + Math.min(100, d.m ?? 50) / 100 * .36;
+  M.fat = Math.max(0, Math.min(1, ((d.w || 78) - 92) / 40));
+  M.bulk = Math.max(.9, Math.min(1.22, 1 + ((d.w || 78) - 78) / 220));
+  const arts = (d.arts || []).join(' ');
+  M.gi = gear.includes('kimono') || (GI_ARTS.test((d.arts || [])[0] || '') && seed % 3 !== 0);
+  M.longShorts = /muay|thaï|thai|lethwei/i.test(arts) ? false : seed % 2 === 0;
+  M.hair = ['short','bald','long','bun','short'][seed % 5];
+  mt.hair.color.set(['#1d140e','#3b2516','#0d0d0d','#6b4a2b','#a8742f','#d9c08a','#7a7a7a'][(seed >> 3) % 7]);
+  mt.skin.color.set(L.skin || ['#f1c8a5','#d9a47c','#b97e56','#8d5b3c','#5e3b26'][(seed >> 5) % 5]);
+  const acc = new THREE.Color(isA ? '#d62839' : '#2f6fc9');
+  mt.shorts.color.copy(M.gi ? new THREE.Color('#f4f4f0') : acc);
+  mt.stripe.color.set(isA ? '#ffd166' : '#ffffff');
+  mt.belt.color.set(['#111111','#5b3a1e','#6a2ca0','#1f5fbf','#111111'][(seed >> 7) % 5]);
+  const cover = M.gi ? mt.top : mt.skin;
+  [M.chest, M.belly, M.traps, ...M.delts, M.limbs.uaL, M.limbs.uaR, M.limbs.faL, M.limbs.faR, M.limbs.thL, M.limbs.thR, M.musc.quL, M.musc.quR, M.limbs.caL, M.limbs.caR, M.musc.cfL, M.musc.cfR, ...M.joints.map(j => j.mesh)].forEach(m => m.material = cover);
+  M.pelvis.material = M.gi ? mt.top : mt.shorts;
+  const g = gear.includes('boxe') ? 'boxe' : gear.includes('mma') ? 'mma' : gear.includes('bandes') ? 'bandes' : 'nues';
+  M.gear = {helmet: gear.includes('casque'), shins: gear.includes('tibias'), vest: gear.includes('plastron'), mouth: gear.includes('dents'),
+    gloveSize: L.bare ? .046 : g === 'boxe' ? .082 : g === 'mma' ? .058 : .048};
+  if (L.bare || g === 'nues') mt.glove.color.copy(mt.skin.color); else mt.glove.color.copy(g === 'bandes' ? new THREE.Color('#f2f2ee') : acc);
+  mt.guard.color.set(isA ? '#9e1b2a' : '#1d4f99'); mt.mouth.color.copy(acc);
   M.nailMat.color.set(L.nails || '#f1c9b8'); M.nails.forEach(n => n.mesh.visible = !!L.bare);
 }
 const lerp2 = (a,b,t) => { const o={}; for (const k of KEYS) o[k] = [a[k][0]+(b[k][0]-a[k][0])*t, a[k][1]+(b[k][1]-a[k][1])*t]; return o; };
 const ease = t => t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+
+
+
 
 // ===================== FIGHT ENGINE =====================
 let F = null, A, B, last = 0, running = false, shake = 0, slowmo = 0;
@@ -1341,7 +1425,7 @@ function startFight(test){
   const M = myData();
   A = makeFighter(M, -1.4, 1, false); B = makeFighter(curOpp, 1.4, -1, true);
   if (isTourb(M)) A.aiMoves = ['tjab','vrille','fouet','faux','vent'].concat(M.all ? ['fused'] : []);
-  paint(MA, A.data.look, true); paint(MB, B.data.look, false);
+  paint(MA, A.data.look, true, A.data); paint(MB, B.data.look, false, B.data);
   F = {round:1, time:60, phase:'intro', phaseT:1.6, test:!!test};
   $('testTag').style.display = test ? 'block' : 'none';
   P = A; setControl(A);
@@ -1596,7 +1680,7 @@ function start2P(id1, id2){
   A = makeFighter(d1, -1.4, 1, false); B = makeFighter(d2, 1.4, -1, false);
   if (isTourb(d1)) A.aiMoves = ['tjab','vrille','fouet','faux','vent'];
   A.keys = k1; B.keys = k2; P = null; F.twoP = true;
-  if (isTourb(d1)) A.aiMoves = ['tjab','vrille','fouet','faux','vent']; paint(MA, d1.look, true); paint(MB, d2.look, false);
+  if (isTourb(d1)) A.aiMoves = ['tjab','vrille','fouet','faux','vent']; paint(MA, d1.look, true, d1); paint(MB, d2.look, false, d2);
   $('ctl').style.display = 'none'; document.querySelector('.pad').style.display = 'none'; $('pad2').style.display = 'grid';
   $('nA').textContent = 'J1 · ' + nameOf(d1); $('nB').textContent = 'J2 · ' + nameOf(d2);
   $('spA').textContent = '⚡ ' + SPECIALS[d1.sps[0]].name; $('spB').textContent = '⚡ ' + SPECIALS[d2.sps[0]].name;
@@ -1794,7 +1878,7 @@ function startOnline(hp, gp, role){
   startFight(false);
   A = makeFighter(d1, -1.4, 1, false); B = makeFighter(d2, 1.4, -1, false);
   A.keys = k1; B.keys = k2; P = null; F.twoP = true; F.mp = role;
-  paint(MA, d1.look, true); paint(MB, d2.look, false);
+  paint(MA, d1.look, true, d1); paint(MB, d2.look, false, d2);
   $('ctl').style.display = 'none'; $('testTag').style.display = 'none'; document.querySelector('.pad').style.display = 'none'; $('pad2').style.display = 'grid';
   $('nA').textContent = (role==='host' ? '🎮 Toi · ' : 'Adversaire · ') + nameOf(d1); $('nB').textContent = (role==='guest' ? '🎮 Toi · ' : 'Adversaire · ') + nameOf(d2);
   $('spA').textContent = '⚡ ' + SPECIALS[d1.sps[0]].name; $('spB').textContent = '⚡ ' + SPECIALS[d2.sps[0]].name;
@@ -1812,7 +1896,7 @@ function startOnline(hp, gp, role){
   resize(); go('sMP'); $('fight').classList.add('on');
   bannerLocal(role === 'host' ? 'TU ES À GAUCHE' : 'TU ES À DROITE', 1500);
 }
-const FPACK = f => ({l:+(f.lift||0).toFixed(2), x:+f.x.toFixed(3), p: KEYS.flatMap(k => [Math.round(f.pose[k][0]*10)/10, Math.round(f.pose[k][1]*10)/10]), hp:+f.hp.toFixed(1), st:Math.round(f.st), g:Math.round(f.gauge), z:f.zone, bal:Math.round(f.bal), dz:+(f.dazed||0).toFixed(2), w:f.wins, s:f.state});
+const FPACK = f => ({k: f.pk || 'idle', m: f.mvDir || 0, sty: f.data.style, l:+(f.lift||0).toFixed(2), x:+f.x.toFixed(3), p: KEYS.flatMap(k => [Math.round(f.pose[k][0]*10)/10, Math.round(f.pose[k][1]*10)/10]), hp:+f.hp.toFixed(1), st:Math.round(f.st), g:Math.round(f.gauge), z:f.zone, bal:Math.round(f.bal), dz:+(f.dazed||0).toFixed(2), w:f.wins, s:f.state});
 function mpSend(now){
   if (!MP || !MP.conn || !MP.conn.open || now - (MP.last||0) < 50) return;
   MP.last = now;
@@ -1823,7 +1907,7 @@ function mpApply(){
   for (const [f, D] of [[A, S.A], [B, S.B]]){
     f.x = f.x + (D.x - f.x) * .6;
     const tgt = {}; KEYS.forEach((k,i) => tgt[k] = [D.p[i*2], D.p[i*2+1]]); f.pose = lerp2(f.pose, tgt, .6);
-    f.lift = D.l || 0; f.hp = D.hp; f.st = D.st; f.gauge = D.g; f.zone = D.z; f.bal = D.bal; f.dazed = D.dz; f.wins = D.w; f.state = D.s;
+    f.pk = D.k; f.mvDir = D.m; f.lift = D.l || 0; if (D.sty) f.data.style = D.sty; f.hp = D.hp; f.st = D.st; f.gauge = D.g; f.zone = D.z; f.bal = D.bal; f.dazed = D.dz; f.wins = D.w; f.state = D.s;
   }
   F.time = S.F.time; F.round = S.F.round; F.phase = S.F.phase === 'over' ? F.phase : S.F.phase;
 }
@@ -1854,7 +1938,7 @@ function startLesson(o){
   $('fight').classList.add('on'); document.querySelector('.pad').style.display = 'none'; $('lessonPanel').style.display = 'block'; $('pause').textContent = '✕ Fermer';
   document.querySelector('.hud').style.visibility = 'hidden'; $('ctl').style.display = 'none'; $('testTag').style.display = 'none'; $('endBox').classList.remove('on');
   const partner = {s:[60,60,90,90,60], person:'Partenaire', idleP:'guard'};
-  A = makeFighter(partner, -.52, 1, false); B = makeFighter(o, .52, -1, false); paint(MA, null, true); paint(MB, o.look, false);
+  A = makeFighter(partner, -.52, 1, false); B = makeFighter(o, .52, -1, false); paint(MA, partner.look, true, partner); paint(MB, o.look, false, o);
   F = {lesson:true, phase:'lesson', round:1, time:60};
   L = {sp, i:0, full:false, wait:0, base:B.tm};
   resize(); showStep(); playStep();
@@ -1983,9 +2067,11 @@ function updateFighter(f, dt){
   if (f.acro){ acroTick(f, dt); return; }
   f.slipT = Math.max(0, f.slipT - dt); f.invuln = Math.max(0, f.invuln - dt); f.counter = Math.max(0, f.counter - dt);
   f.parry = Math.max(0, f.parry - dt); f.evade = Math.max(0, f.evade - dt); f.angle = Math.max(0, f.angle - dt); f.parried = Math.max(0, f.parried - dt);
+  f.pk = f.cur ? f.cur.p : 'idle';
   if (f.cur){
     f.t += dt*1000;
     const dur = f.cur.ms * f.tm * (1.1 - f.A.coordination/500) * (f.dazed > 0 ? 1.3 : 1) * (f.zone && f.zone.head < 40 ? 1 + .15*(1 - traitsOf(f.data).calme/100) : 1);
+    f.curDur = dur;
     const k = Math.min(1, f.t/dur);
     f.pose = lerp2(f.from, POSES[f.cur.p], ease(k));
     if (k >= 1){
@@ -2008,6 +2094,7 @@ function updateFighter(f, dt){
   f.dazed = Math.max(0, (f.dazed||0) - dt); if (F.phase==='fight' && !['down','ko','thrown'].includes(f.state)) f.bal = Math.min(100, (f.bal??100) + dt*(10 + f.A.jambes/100*8));
   if (!f.isAI && !F.lesson){ if (canAct(f)){ f.state = K.guard && f.dazed <= 0 ? 'guard' : 'idle'; mv = (K.right?1:0) - (K.left?1:0); } }
   else if (canAct(f) && f.state!=='guard') mv = f.move===-1 ? f.face : f.move===1 ? -f.face : 0;
+  f.mvDir = (mv && canAct(f) && f.state!=='guard') ? mv * f.face : 0;
   if (mv && canAct(f) && f.state!=='guard'){ f.x = Math.max(-3.3, Math.min(3.3, f.x + mv * f.walk * (f.zone && f.zone.leg < 40 ? .6 : 1) * (f.dazed > 0 ? .7 : 1) * (f.bal < 40 ? .7 : 1) * (.85 + f.A.jambes/100*.3) * dt)); f.state = 'walk'; }
 }
 function loop(now){
