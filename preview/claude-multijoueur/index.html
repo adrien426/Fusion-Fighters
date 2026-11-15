@@ -545,7 +545,7 @@ function attrs(d){
     douleur: cl(30 + (tr.courage-50)*.3 + 20*Math.tanh(nMil/4) + 10*Math.tanh(nCond/3) + (B.os-50)*.2),
     coordination: cl(.3*spd + .2*lvl + 15*Math.tanh(nAll/40) + (tr.calme-50)*.1),
     squelette: Math.round(250 + B.os*5 + Math.max(0,w-60)*1.5 - ageP*4),
-    acrobatie: cl(15 + 35*Math.tanh(n(t => /capoeira|lucha|parkour|gymnast|calisthenics|mallakhamb|tornado|540|ninjutsu|wushu|kalari|taekkyon|engolo|ngolo|saut|volant|sauté/i.test(t[8]+' '+t[7]))/4) + .3*(spd||50) - Math.max(0,w-85)*.4 - ageP*.8 + (d.name===PLAYER.name ? 25 : 0)),
+    acrobatie: cl(15 + 35*Math.tanh(n(t => /capoeira|lucha|parkour|gymnast|calisthenics|mallakhamb|tornado|540|ninjutsu|wushu|kalari|taekkyon|engolo|ngolo|saut|volant|sauté/i.test(t[8]+' '+t[7]))/4) + .3*(spd||50) - Math.max(0,w-85)*.4 - ageP*.8 + (d.name===PLAYER.name ? 25 : 0) + (d.all ? 99 : 0)),
   });
   return d._attrs = a;
 }
@@ -1705,7 +1705,7 @@ function ai(f, dt){
   if (f.counterNext){ f.counterNext = false; act(f, ms[ms.length-1]); return; }
   if (Math.random() < .12 * (1.5 - tr.courage/100) * (1.3 - tr.agr/100*.6)){ f.move = 1; f.aiT = .3; return; }
   if (Math.random() < tr.ruse/100*.25){ const fe = ms.find(m => m==='jab'||m==='tjab'); if (fe){ act(f, fe); f.aiT = .12; return; } }
-  if (f.A.acrobatie >= 60 && d > 1.4 && Math.random() < .08 + (tr.agr-50)/600){ if (startAcro(f)) return; }
+  if (d > 1.4 && Math.random() < (.02 + f.A.acrobatie/1200) * (1 + (tr.agr-50)/100)){ if (startAcro(f)) return; }
   const edge = Math.abs(o.x) > 2.6 && Math.sign(o.x) === f.face;
   if (ms.includes('pm_out') && edge && Math.random() < .35 + tr.iq/250){ act(f, 'pm_out'); return; }
   const wgt = m => ({pm_head: 1 + tr.agr/60, pm_elbow: 1 + tr.agr/70 + tr.courage/150, pm_body: 1 + tr.patience/70, pm_leg: 1 + tr.iq/80, pm_proj: 1 + tr.courage/90, pm_out: edge ? 2 : .2}[m] || 1);
@@ -1751,24 +1751,25 @@ $('bBack').onclick = () => { const t = twoSel; $('fight').classList.remove('on')
 // ---- Acrobatics: climb the cage / rebound on the ropes, then a flying strike ----
 function startAcro(f){
   if (!canAct(f)) return false;
-  if (f.A.acrobatie < 40){ pop(f, 'PAS ASSEZ ACROBATE (' + f.A.acrobatie + ')', '#9a9aa8'); return false; }
-  if (f.st < 20){ pop(f, 'TROP FATIGUÉ', '#9a9aa8'); return false; }
-  const o = other(f); f.st -= 20;
+  const ac = f.A.acrobatie, cost = Math.round(15 + (100-ac)/5);
+  if (f.st < cost){ pop(f, 'TROP FATIGUÉ', '#9a9aa8'); return false; }
+  const o = other(f); f.st -= cost;
   const back = Math.sign(f.x - o.x) || -f.face;
-  f.acro = {t:0, x0:f.x, edge: back * (save.arena === 'ring' ? 3.35 : 3.3), tgt:null, hit:false};
+  f.acro = {t:0, x0:f.x, edge: back * (save.arena === 'ring' ? 3.35 : 3.3), tgt:null, hit:false, fail: Math.random() < Math.max(0, (55-ac)/90) * (1.2 - f.bal/250)};
   f.state = 'attack'; f.q = []; f.cur = null;
   pop(f, save.arena === 'ring' ? '🤸 LES CORDES !' : '🤸 LA CAGE !', '#f4b942', true);
   return true;
 }
 function acroTick(f, dt){
   const a = f.acro; a.t += dt / (1.15 - f.A.acrobatie/300);
-  const T1 = .35, T2 = .6, T3 = 1.0, top = save.arena === 'ring' ? .6 : 1.1, o = other(f);
+  const T1 = .35, T2 = .6, T3 = 1.0, top = (save.arena === 'ring' ? .6 : 1.1) * (.35 + f.A.acrobatie/150), o = other(f);
+  if (a.fail && a.t >= .5 && a.t < T3){ a.t = T3; f.lift = 0; f.acro = null; f.bal = Math.max(0, f.bal - 30); f.hp -= 3; pop(f, '😵 ACROBATIE RATÉE', '#e63946'); f.q = [ST('stumble', 350), ST('rDown', 600), ST('guard', 300)]; f.state = 'stun'; return; }
   if (a.t < T1){ f.x = a.x0 + (a.edge - a.x0) * (a.t/T1); f.lift = 0; f.pose = lerp2(f.pose, POSES.run, .3); }
   else if (a.t < T2){ const k = (a.t-T1)/(T2-T1); f.x = a.edge; f.lift = top*k; f.pose = lerp2(f.pose, POSES.highCh, .3); }
   else if (a.t < T3){ if (a.tgt === null) a.tgt = o.x - Math.sign(o.x - a.edge)*.8; const k = (a.t-T2)/(T3-T2);
-    f.x = a.edge + (a.tgt - a.edge)*k; f.lift = top*(1-k) + Math.sin(k*Math.PI)*.6; f.pose = lerp2(f.pose, k < .55 ? POSES.highCh : POSES.knee, .35);
-    if (k > .9 && !a.hit){ a.hit = true; f.cur = {p:'knee', ms:100}; onEvent(f, H(12 * (1 + f.A.acrobatie/200), {range:1.7, shake:1.3, react:'rHead', stun:600})); f.cur = null; } }
-  else { f.lift = 0; f.acro = null; f.state = 'idle'; }
+    f.x = a.edge + (a.tgt - a.edge)*k; f.lift = top*(1-k) + Math.sin(k*Math.PI)*.6*(.4 + f.A.acrobatie/160); f.pose = lerp2(f.pose, k < .55 ? POSES.highCh : POSES.knee, .35);
+    if (k > .9 && !a.hit){ a.hit = true; f.cur = {p:'knee', ms:100}; onEvent(f, H(7 + 10*f.A.acrobatie/100, {range:1.7, shake:1.3, react:'rHead', stun:600})); f.cur = null; } }
+  else { if (!a.hit && !a.fail){ a.hit = true; f.x = a.tgt === null ? f.x : a.tgt; f.cur = {p:'knee', ms:100}; onEvent(f, H(7 + 10*f.A.acrobatie/100, {range:1.7, shake:1.3, react:'rHead', stun:600})); f.cur = null; } f.lift = 0; f.acro = null; f.state = 'idle'; }
 }
 function updateFighter(f, dt){
   if (f.acro){ acroTick(f, dt); return; }
