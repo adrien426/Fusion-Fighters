@@ -238,6 +238,7 @@ h2{font-size:30px;margin:6px 0 4px}
     <div class="artChips" id="cAdd" style="display:none"></div>
   </div>
   <button class="big" id="bSaveOpp">💾 Créer et combattre</button>
+  <button class="big alt" id="bSaveMe">🎮 Créer et le jouer moi-même</button>
   <button class="big alt" data-go="sMenu">← Retour</button>
 </section>
 
@@ -493,18 +494,28 @@ document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.datas
 
 // ---- Equipment & mood ----
 const GEAR = {
-  nues:   {n:'✋ Mains nues', g:'gloves', punch:1.1},
-  bandes: {n:'🩹 Bandages', g:'gloves', punch:1.05, noHand:1},
-  mma:    {n:'🥊 Gants MMA (4 oz)', g:'gloves', punch:1.0, grab:.05, noHand:1},
-  boxe:   {n:'🥊 Gants de boxe (10 oz)', g:'gloves', punch:.85, guard:.1, grab:-.1, noHand:1},
-  dents:  {n:'🦷 Protège-dents', ko:.5},
-  casque: {n:'⛑ Casque', head:.8, vue:-8},
-  tibias: {n:'🦵 Protège-tibias', leg:.8, kick:.95},
-  coquille:{n:'🛡 Coquille', body:.95},
-  plastron:{n:'🦺 Plastron', body:.8, spd:-3},
-  kimono: {n:'🥋 Kimono', grab:.1},
-  chaussures:{n:'👟 Chaussures de lutte', grab:.05, bal:10},
+  nues:   {n:'✋ Mains nues', g:'gloves', punch:1.1, at:{precision:3}},
+  mma:    {n:'🥊 Gants MMA (4 oz)', g:'gloves', punch:1.0, grab:.05, noHand:1, at:{precision:2}},
+  boxe:   {n:'🥊 Gants de boxe (10 oz)', g:'gloves', punch:.85, guard:.1, grab:-.1, noHand:1, at:{menton:5, precision:-5, acrobatie:-3}},
+  bandes: {n:'🩹 Bandages', punch:1.03, noHand:1, at:{douleur:2}},
+  dents:  {n:'🦷 Protège-dents', ko:.5, at:{menton:10}},
+  casque: {n:'⛑ Casque', head:.8, at:{menton:12, vue:-8, reflexes:-3}},
+  tibias: {n:'🦵 Protège-tibias', leg:.8, kick:.95, at:{jambes:10, acrobatie:-2}},
+  coquille:{n:'🛡 Coquille', body:.95, at:{corps:3, douleur:3}},
+  plastron:{n:'🦺 Plastron', body:.8, at:{corps:15, acrobatie:-8, souplesse:-6}},
+  coudes: {n:'💪 Coudières', at:{precision:-1, douleur:3}, elbow:.9},
+  genoux: {n:'🦿 Genouillères', at:{jambes:4, acrobatie:2}},
+  kimono: {n:'🥋 Kimono', grab:.1, at:{souplesse:-2}},
+  chaussures:{n:'👟 Chaussures de lutte', grab:.05, bal:10, at:{coordination:4, acrobatie:3}},
 };
+const AT_FR = {precision:'précision', mains:'mains', menton:'menton', acrobatie:'acrobatie', vue:'vue', reflexes:'réflexes', jambes:'jambes', corps:'corps', douleur:'douleur', souplesse:'souplesse', coordination:'coordination'};
+const gearFx = k => { const G = GEAR[k], fx = Object.entries(G.at||{}).map(([a,v]) => `${v>0?'+':''}${v} ${AT_FR[a]}`);
+  if (G.punch && G.punch !== 1) fx.push(`${G.punch>1?'+':''}${Math.round((G.punch-1)*100)} % coups de poing`);
+  if (G.guard) fx.push(`+${Math.round(G.guard*100)} % garde`); if (G.grab) fx.push(`${G.grab>0?'+':''}${Math.round(G.grab*100)} % prises`);
+  if (G.ko) fx.push(`-${Math.round((1-G.ko)*100)} % risque K.O.`); for (const [z,l] of [['head','tête'],['body','corps'],['leg','jambes']]) if (G[z]) fx.push(`-${Math.round((1-G[z])*100)} % dégâts ${l}`);
+  if (G.noHand) fx.push('mains protégées'); if (G.bal) fx.push(`+${G.bal} équilibre`); return fx; };
+const BEST_GEAR = ['mma','bandes','dents','tibias','coquille','genoux','chaussures'];
+const ALL_GEAR = ['mma','bandes','dents','casque','tibias','coquille','plastron','coudes','genoux','kimono','chaussures'];
 const MOODS = {'Motivé':{regen:1.15, q:.02}, 'Calme':{q:.05}, 'En colère':{dmg:1.1, q:-.05}, 'Stressé':{q:-.07, regen:.9}, 'Confiant':{q:.04}, 'Triste':{dmg:.92, regen:.9}};
 const gearOf = d => d.gear || ['nues'];
 const gearVal = (d, k, def) => gearOf(d).reduce((v, g) => GEAR[g] && GEAR[g][k] !== undefined ? (def===1 ? v*GEAR[g][k] : v + GEAR[g][k]) : v, def);
@@ -547,6 +558,7 @@ function attrs(d){
     squelette: Math.round(250 + B.os*5 + Math.max(0,w-60)*1.5 - ageP*4),
     acrobatie: cl(15 + 35*Math.tanh(n(t => /capoeira|lucha|parkour|gymnast|calisthenics|mallakhamb|tornado|540|ninjutsu|wushu|kalari|taekkyon|engolo|ngolo|saut|volant|sauté/i.test(t[8]+' '+t[7]))/4) + .3*(spd||50) - Math.max(0,w-85)*.4 - ageP*.8 + (d.name===PLAYER.name ? 25 : 0) + (d.all ? 99 : 0)),
   });
+  for (const g of (d.gear||[])) for (const [k,v] of Object.entries((GEAR[g]||{}).at||{})) if (a[k] !== undefined) a[k] = cl(a[k] + v);
   return d._attrs = a;
 }
 // Rough estimates: how many average hits he survives / needs, like a video game sheet
@@ -569,7 +581,7 @@ function sheetHTML(d){
     <div class="tact" style="font-size:12px">🦴 Squelette : résiste à un choc d'environ <b>${a.squelette} kg</b> avant fracture <span style="color:var(--mute)">(estimation)</span></div>
     <div class="tact" style="font-size:12px">💥 Force de frappe ≈ <b>${punchForce(d)} kg</b> <span style="color:var(--mute)">(un boxeur pro tourne autour de 300 à 600 kg)</span></div>
     <div class="stats">${TRAITS.map(([k,ic,n]) => row(ic, n, traitsOf(d)[k], '#c77dff')).join('')}</div>
-    <div class="tact" style="font-size:12px">🎒 Équipement : <b>${gearOf(d).map(g => GEAR[g] ? GEAR[g].n : g).join(', ')}</b><br>😶 Humeur : <b>${d.mood || 'Calme'}</b></div>
+    <div class="tact" style="font-size:12px">🎒 Équipement :<br>${gearOf(d).filter(g => GEAR[g]).map(g => `<b>${GEAR[g].n}</b> <span style="color:var(--mute)">${gearFx(g).map(x => `<span style="color:${x[0]==='-' && !/risque|dégâts/.test(x) ? '#e63946' : '#52b788'}">${x}</span>`).join(' · ')}</span>`).join('<br>')}<br>😶 Humeur : <b>${d.mood || 'Calme'}</b></div>
     <div class="tact" style="font-size:12px">🩺 Santé : <b>${d.health||'En forme'}</b><br>🎯 Encaisse ≈ <b>${e.head}</b> coups à la tête · <b>${e.body}</b> au corps · <b>${e.leg}</b> aux jambes<br>💥 Met K.O. un adversaire moyen en ≈ <b>${e.ko}</b> coups (≈ ${e.hit} dégâts par coup, ${e.techDmg} avec sa technique)</div>`;
 }
 function statsHTML(s){ return `<div class="stats">${STAT.map((n,i)=>`<span>${n}</span><div class="bar"><i style="width:${s[i]}%;background:${STC[i]}"></i></div><b style="color:var(--txt)">${s[i]}</b>`).join('')}</div>`; }
@@ -599,12 +611,13 @@ function menu(){
   document.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => { save.mood = b.dataset.mm; persist(); menu(); });
   document.querySelectorAll('[data-mb]').forEach(b => b.onclick = () => setL('bare', b.dataset.mb==='1'));
   document.querySelectorAll('[data-mn]').forEach(b => b.onclick = () => { setL('nails', b.dataset.mn); setL('bare', true); });
+  $('meCard').insertAdjacentHTML('afterbegin', mySwitchHTML()); bindMySwitch(menu);
   $('bMeAll').textContent = M.all ? '↩ Revenir au Tourbillon normal' : `🌍 TOUT METTRE à mon Tourbillon (${TECHS.length} techniques)`;
 }
 $('bOpp').onclick = () => go('sOpp');
 document.querySelectorAll('[data-arena]').forEach(b => b.onclick = () => setArena(b.dataset.arena));
 setTimeout(() => setArena(save.arena || 'cage'), 0);
-$('bMeAll').onclick = () => { save.playerAll = !save.playerAll; persist(); menu(); };
+$('bMeAll').onclick = () => { save.playerAll = !save.playerAll; if (save.playerAll) save.gear = [...ALL_GEAR]; persist(); menu(); };
 let page = -1;
 function oppUI(){
   if (page<0) page = save.rank<=NOPP && save.rank>50 ? 1 : save.rank>NOPP ? 1 : 0;
@@ -621,9 +634,19 @@ $('pNext').onclick = () => { page = Math.min(Math.ceil(NOPP/50)-1,page+1); oppUI
 $('bGo').onclick = () => { const r = Math.max(1,Math.min(NOPP,+$('goRank').value||1)); page = Math.floor((r-1)/50); oppUI(); };
 let curOpp = null;
 const lookBadge = L => L ? `<span style="font-size:11px"><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.skin};vertical-align:-1px"></i> peau · ${L.bare ? `<i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.nails};vertical-align:-1px"></i> mains nues` : '🥊 gants'}</span>` : '';
+const myId = () => save.myChar || 'tourb';
+const myData = () => myId() === 'tourb' ? me() : fighterData(myId());
+function mySwitchHTML(){
+  return `<div class="fusionCard" style="margin:8px 0"><div class="tact"><b style="color:var(--red)">🎮 Ton combattant pour ce combat</b></div><select class="sel2 mySel">${fighterOptions().map(([v,l]) => `<option value="${v}" ${v===myId()?'selected':''}>${l}</option>`).join('')}</select>${myId()!=='tourb' ? '<button class="big alt myBack" style="font-size:16px;margin-top:6px">↩ Reprendre mon Tourbillon</button>' : '<div class="tm" style="font-size:12px;color:var(--mute);margin-top:4px">Si tu ne changes rien, tu gardes ton Tourbillon.</div>'}</div>`;
+}
+function bindMySwitch(after){
+  document.querySelectorAll('.mySel').forEach(el => el.onchange = () => { save.myChar = el.value === 'tourb' ? null : el.value; persist(); after(); });
+  document.querySelectorAll('.myBack').forEach(el => el.onclick = () => { save.myChar = null; persist(); after(); });
+}
 function versus(r){ showVs(opponent(r)); }
 function showVs(o){
   curOpp = o; const r = o.rank;
+  if (myId() !== 'tourb'){ const D = myData(); $('vsA').innerHTML = `<b style="color:var(--red)">🎮 ${nameOf(D)}</b>Toi (combattant choisi) · <b style="display:inline;font-size:16px;color:var(--gold)">NOTE ${overall(D.s)}</b><br>${D.h ? D.h.toFixed(2).replace('.',',') + ' m · ' + D.w + ' kg' : ''}`; } else
   $('vsA').innerHTML = `<b style="color:var(--red)">🌀 ${PLAYER.name}</b>Toi · ${save.rank>NOPP?'non classé':'#'+save.rank} · <b style="display:inline;font-size:16px;color:var(--gold)">NOTE ${overall(me().s)}</b><br>Physique : sans importance, sa force vient de tout ce qu'il sait${sheetHTML(me())}`;
   $('vsB').innerHTML = `<b style="color:var(--blue)">${curOpp.person}</b>${r?'#'+r+' · ':''}${curOpp.title} · <b style="display:inline;font-size:16px;color:var(--gold)">NOTE ${overall(curOpp.s)}</b><br>${curOpp.h.toFixed(2).replace('.',',')} m · ${curOpp.w} kg · ❤ ${curOpp.life||100} · 🛡 ${Math.round((curOpp.resist||0)*100)} % · ${curOpp.health||'En forme'}<br>${lookBadge(curOpp.look)}${sheetHTML(curOpp)}`;
   $('vsTact').innerHTML = `<div class="tact"><b>${curOpp.custom ? 'Ses techniques choisies' : 'Ses arts fusionnés'} :</b> ${curOpp.custom && curOpp.arts.length > 12 ? curOpp.arts.length + ' techniques (' + curOpp.arts.slice(0,8).join(', ') + '…)' : curOpp.arts.join(' + ')}<br><b>Ses techniques de combat :</b> ${curOpp.moves.map(m => curOpp.pmoves && curOpp.pmoves[m] ? `${curOpp.pmoves[m].name} (${curOpp.pmoves[m].n})` : (MOVE_FR[m]||m)).join(' · ')}</div>
@@ -631,6 +654,7 @@ function showVs(o){
     <button class="big alt" id="bLearn" style="font-size:20px;margin-top:10px">📹 Apprendre sa technique en vrai</button>
     <div class="tact" style="margin-top:8px"><b style="color:var(--red)">⚡ Ta technique : Technique Fusion</b><br>${SPECIALS.fusion.desc}</div>
     <div class="tact" style="margin-top:8px;color:var(--mute)">Astuce : contre les lutteurs, garde tes distances et frappe en Vrille. Contre les frappeurs, Pas du Vent, puis Faux.</div>`;
+  $('vsTact').insertAdjacentHTML('afterbegin', mySwitchHTML()); bindMySwitch(() => showVs(curOpp));
   go('sVs'); $('bLearn').onclick = () => startLesson(curOpp);
 }
 $('bFight').onclick = () => startFight(false);
@@ -945,7 +969,7 @@ function buildCustom(c){
     h:c.h, w:c.w, title:'Créé par toi', person:c.name, idleP:'guard', life: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life, resist: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).res, healBonus: bonusOf(c.techs).heal, health: c.health || 'En forme', look: lookOf(c), m: c.m};
 }
 const byName = n => TECHS.find(t => t[8]===n)[0];
-let cInv = null, cPers = [], pq = '';
+let cInv = null, cPers = [], pq = '', cPersDone = false;
 let cT = ['Jab','Direct','Low kick','Double-leg'].map(byName), cSp = ['Jab','Direct','Double-leg'].map(byName), showAll = false, tq = '', tcat = 'Tout';
 function readCustom(){
   return {id: Date.now(), name: ($('cName').value.trim() || 'Adversaire mystère'), h:+$('cH').value/100, w:+$('cW').value, m:+$('cM').value, level:+$('cL').value,
@@ -1006,7 +1030,7 @@ function preset(kind){
     c.spec = ['Jab','Direct','Crochet'].map(byName);
   }
   const LH = {worst:[50,'Malade'], avg:[100,'En forme'], best:[1000,'Pleine forme']}[kind];
-  cGear = kind==='best' ? ['mma','dents','tibias','coquille','chaussures'] : ['nues']; cMood = kind==='worst' ? 'Triste' : kind==='best' ? 'Confiant' : 'Calme';
+  cGear = kind==='best' ? [...BEST_GEAR] : kind==='avg' ? ['mma','dents'] : ['nues']; cMood = kind==='worst' ? 'Triste' : kind==='best' ? 'Confiant' : 'Calme';
   cBody = kind==='worst' ? {age:68, os:10, mains:10, poumons:10} : kind==='best' ? {age:28, os:99, mains:99, poumons:99} : {...BODY0};
   cTr = kind==='worst' ? {agr:10, iq:10, calme:10, patience:10, ruse:10, courage:10} : kind==='best' ? {agr:80, iq:99, calme:99, patience:85, ruse:99, courage:99} : {...T50}; $('cLife').value = LH[0]; cLook.health = LH[1];
   $('cName').value = c.name; $('cH').value = Math.round(c.h*100); $('cW').value = c.w; $('cM').value = c.m; $('cL').value = c.level; $('cTN').value = c.tn;
@@ -1042,8 +1066,9 @@ $('cName').oninput = preview;
 $('cTN').oninput = seqUI;
 function myOppsUI(){
   const list = (save.customs || []).filter(c => c.techs && c.techs.every(id => TT(id)));
-  $('myOpps').innerHTML = list.length ? '<div class="tact" style="margin-bottom:6px"><b>Mes adversaires créés</b> <span style="color:var(--mute)">(🧪 tester · 📹 apprendre · 🥊 combattre)</span></div>' + list.map((c,i) => { const o = buildCustom(c);
-    return `<div class="myo"><div><b>${c.name}</b> · note ${o.level}<br><span>${c.h.toFixed(2).replace('.',',')} m · ${c.w} kg · ${MUSC(c.m)} · ❤ ${vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life} · 🛡 ${Math.round(vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).res*100)} % · ${c.health||'En forme'} · ${c.techs.length} techniques</span></div><button data-l="${i}" style="background:#2b2b35">📹</button><button data-t="${i}" style="background:#2b2b35">🧪</button><button data-f="${i}">🥊</button><button class="del" data-d="${i}">✕</button></div>`; }).join('') : '';
+  $('myOpps').innerHTML = list.length ? '<div class="tact" style="margin-bottom:6px"><b>Mes adversaires créés</b> <span style="color:var(--mute)">(🧪 tester · 📹 apprendre · 🥊 combattre · 🎮 le jouer moi)</span></div>' + list.map((c,i) => { const o = buildCustom(c);
+    return `<div class="myo"><div><b>${c.name}</b> · note ${o.level}<br><span>${c.h.toFixed(2).replace('.',',')} m · ${c.w} kg · ${MUSC(c.m)} · ❤ ${vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life} · 🛡 ${Math.round(vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).res*100)} % · ${c.health||'En forme'} · ${c.techs.length} techniques</span></div><button data-l="${i}" style="background:#2b2b35">📹</button><button data-t="${i}" style="background:#2b2b35">🧪</button><button data-f="${i}">🥊</button><button data-me="${i}" title="Le jouer moi">🎮</button><button class="del" data-d="${i}">✕</button></div>`; }).join('') : '';
+  $('myOpps').querySelectorAll('[data-me]').forEach(b => b.onclick = () => { const c = list[+b.dataset.me]; save.myChar = 'c'+c.id; persist(); menu(); go('sOpp'); bannerLocal('TU JOUES ' + c.name.toUpperCase(), 2000); });
   $('myOpps').querySelectorAll('[data-f]').forEach(b => b.onclick = () => showVs(buildCustom(list[+b.dataset.f])));
   $('myOpps').querySelectorAll('[data-t]').forEach(b => b.onclick = () => { curOpp = buildCustom(list[+b.dataset.t]); startFight(true); });
   $('myOpps').querySelectorAll('[data-l]').forEach(b => b.onclick = () => startLesson(buildCustom(list[+b.dataset.l])));
@@ -1073,7 +1098,7 @@ function lookUI(){
   document.querySelectorAll('#cHealth [data-health]').forEach(b => b.onclick = () => { cLook.health = b.dataset.health; lookUI(); seqUI(); });
   document.querySelectorAll('#cHands [data-bare]').forEach(b => b.onclick = () => { cLook.bare = b.dataset.bare==='1'; lookUI(); });
   $('cMood').innerHTML = Object.keys(MOODS).map(m => `<button class="${cMood===m?'on':''}" data-mood="${m}">${m}</button>`).join('');
-  $('cGear').innerHTML = Object.entries(GEAR).map(([k,g]) => `<button class="${cGear.includes(k)?'on':''}" data-gear="${k}">${g.n}</button>`).join('');
+  $('cGear').innerHTML = Object.entries(GEAR).map(([k,g]) => `<button class="${cGear.includes(k)?'on':''}" data-gear="${k}" title="${gearFx(k).join(', ')}">${g.n}<br><small style="opacity:.75">${gearFx(k).slice(0,2).join(' · ')}</small></button>`).join('');
   document.querySelectorAll('#cMood [data-mood]').forEach(b => b.onclick = () => { cMood = b.dataset.mood; lookUI(); seqUI(); });
   document.querySelectorAll('#cGear [data-gear]').forEach(b => b.onclick = () => { const k = b.dataset.gear; if (cGear.includes(k)) cGear = cGear.filter(x => x!==k); else { if (GEAR[k].g) cGear = cGear.filter(x => GEAR[x].g !== GEAR[k].g); cGear.push(k); } lookUI(); seqUI(); });
   const h = healthOf(cLook.health);
@@ -1086,20 +1111,23 @@ function candidates(){
   const list = [];
   (save.customs || []).filter(c => c.techs && c.techs.every(id => TT(id))).forEach((c,i) => list.push({id:'c'+c.id, label:c.name, sub:`créé · ${c.techs.length} techniques`, c}));
   for (let r=1; r<=NOPP; r++){ const o = opponent(r); list.push({id:'r'+r, label:`#${r} ${o.person}`, sub:o.arts.join(' + '), o}); }
+  const T = {person:'Le Tourbillon', arts: save.playerAll ? [...new Set(TECHS.map(t => t[7]))] : ['Boxe','Wing Chun','Capoeira','Judo','Muay Thai','Karaté','Aïkido'], h:1.80, w:PLAYER.w, level:86, body:PLAYER.body, traits:PLAYER.traits, m:PLAYER.m};
+  list.push({id:'tourb', label:'🌀 Moi (Le Tourbillon)', sub:'ton style à toi', o:T});
   return list;
 }
 function persUI(){
   const all = candidates(), q = pq.toLowerCase();
   const shown = all.filter(x => !q || (x.label+' '+x.sub).toLowerCase().includes(q));
   $('persList').innerHTML = shown.map(x => `<div class="tc ${cPers.includes(x.id)?'on':''}" data-p="${x.id}"><div class="ck">${cPers.includes(x.id)?'✓':''}</div><div><div class="tn">${x.label}</div><div class="tm">${x.sub}</div></div></div>`).join('');
-  $('persList').querySelectorAll('.tc').forEach(el => el.onclick = () => { const id = el.dataset.p; cPers = cPers.includes(id) ? cPers.filter(x=>x!==id) : cPers.concat([id]); persUI(); });
+  $('persList').querySelectorAll('.tc').forEach(el => el.onclick = () => { const id = el.dataset.p; cPers = cPers.includes(id) ? cPers.filter(x=>x!==id) : cPers.concat([id]); cPersDone = false; persUI(); });
   $('persSel').innerHTML = cPers.length ? `<b>${cPers.length} choisi(s) :</b> ` + cPers.map(id => all.find(x=>x.id===id)).filter(Boolean).map(x=>x.label).join(' + ') : '<span style="color:var(--mute)">Aucun combattant choisi.</span>';
-  $('bPersFuse').disabled = cPers.length < 2;
-  $('bPersFuse').textContent = cPers.length < 2 ? '👥 Choisis au moins 2 combattants' : `👥 FUSIONNER LES ${cPers.length} COMBATTANTS`;
+  $('bPersFuse').disabled = cPers.length < 2 || cPersDone;
+  $('bPersFuse').textContent = cPersDone ? `✅ LES ${cPers.length} COMBATTANTS SONT FUSIONNÉS` : cPers.length < 2 ? '👥 Choisis au moins 2 combattants' : `👥 FUSIONNER LES ${cPers.length} COMBATTANTS`;
+  if (cPersDone) $('persSel').innerHTML = `<b style="color:var(--gold)">✅ Fusion faite : ${cPers.length} combattants</b> · tout est au maximum et sa technique parfaite est créée.`;
 }
 function fusePersons(){
   const all = candidates(), sel = cPers.map(id => all.find(x=>x.id===id)).filter(Boolean);
-  if (sel.length < 2) return;
+  if (sel.length < 2) return; cPersDone = true;
   const techs = new Set(); let h = 0, w = 0, lv = 0;
   const names = [];
   sel.forEach(x => {
@@ -1119,13 +1147,16 @@ function fusePersons(){
 }
 $('pq').oninput = e => { pq = e.target.value; persUI(); };
 $('bPersFuse').onclick = fusePersons;
-$('bPersAll').onclick = () => { cPers = candidates().map(x => x.id); persUI(); };
+$('bPersAll').onclick = () => { cPers = candidates().map(x => x.id); cPersDone = false; persUI(); };
 $('bCreate').onclick = () => go('sCreate');
 $('bFuse').onclick = () => { const rc = readCustom(); const f = fusedMove(cT, '', {h:rc.h, w:rc.w, m:rc.m, s:customStats(rc), life:vitals(rc.life, rc.techs, rc.health, rc.w, rc.m, rc.traits, customStats(rc), rc.body).life, health:rc.health, traits:rc.traits, body:rc.body}); if (f && !$('cTN').value.trim()) $('cTN').value = f.name; seqUI(); };
 function fillAll(ids, tn, nm){ cT = ids; cSp = []; cInv = inventTechnique(ids, tn); $('cTN').value = tn; if (!$('cName').value.trim() || ["L'Ultime","Le Vert","Le Rouge"].includes($('cName').value)) $('cName').value = nm; createUI(); }
 $('pGreen').onclick = () => fillAll(TECHS.filter(t => t[6].every(v => v >= 0)).map(t => t[0]), 'Technique Verte', 'Le Vert');
 $('pRed').onclick = () => fillAll(TECHS.filter(t => t[6].some(v => v < 0)).map(t => t[0]), 'Technique Rouge', 'Le Rouge');
-$('pAll').onclick = () => { cGear = ['mma','dents','tibias','coquille','chaussures','kimono']; cMood = 'Confiant'; cBody = {age:28, os:99, mains:99, poumons:99}; cTr = {agr:99, iq:99, calme:99, patience:99, ruse:99, courage:99}; $('cLife').value = 1000; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); createUI(); };
+$('pAll').onclick = () => { cGear = [...ALL_GEAR]; cMood = 'Confiant'; cBody = {age:28, os:99, mains:99, poumons:99}; cTr = {agr:99, iq:99, calme:99, patience:99, ruse:99, courage:99}; $('cLife').value = 1000; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); cPers = candidates().map(x => x.id); cPersDone = true; if (typeof persUI === 'function') persUI(); if ($('cName').value === "L'Ultime") $('cName').value = 'La Fusion de Tous'; createUI(); };
+$('bSaveMe').onclick = () => { if (!cT.length) return;
+  if (!cSp.length && !cInv) $('bFuse').onclick();
+  const c = readCustom(); save.customs = (save.customs||[]).filter(x=>x.techs).concat([c]); save.myChar = 'c'+c.id; persist(); menu(); go('sOpp'); bannerLocal('TU JOUES ' + c.name.toUpperCase() + ' · CHOISIS TON ADVERSAIRE', 2500); };
 $('pWorst').onclick = () => preset('worst'); $('pAvg').onclick = () => preset('avg'); $('pBest').onclick = () => preset('best');
 $('bSaveOpp').onclick = () => { if (!cT.length) return;
   if (!cSp.length && !cInv) $('bFuse').onclick();
@@ -1236,14 +1267,14 @@ function startFight(test){
   if (L) endLesson();
   lastTest = !!test; twoSel = null; $('pad2').style.display = 'none'; document.querySelector('.pad').style.display = ''; $('ctl').style.display = '';
   $('fight').classList.add('on'); resize();
-  const M = me();
+  const M = myData();
   A = makeFighter(M, -1.4, 1, false); B = makeFighter(curOpp, 1.4, -1, true);
-  A.aiMoves = ['tjab','vrille','fouet','faux','vent'].concat(M.all ? ['fused'] : []);
+  if (isTourb(M)) A.aiMoves = ['tjab','vrille','fouet','faux','vent'].concat(M.all ? ['fused'] : []);
   paint(MA, A.data.look, true); paint(MB, B.data.look, false);
   F = {round:1, time:60, phase:'intro', phaseT:1.6, test:!!test};
   $('testTag').style.display = test ? 'block' : 'none';
   P = A; setControl(A);
-  $('spB').textContent = '⚠ ' + SPECIALS[curOpp.sps[0]].name; $('nA').textContent = PLAYER.name; $('nB').textContent = (curOpp.rank?`#${curOpp.rank} `:'') + curOpp.person;
+  $('spB').textContent = '⚠ ' + SPECIALS[curOpp.sps[0]].name; $('nA').textContent = nameOf(A.data); $('spA').textContent = '⚡ ' + SPECIALS[A.data.sps[0]].name; $('nB').textContent = (curOpp.rank?`#${curOpp.rank} `:'') + curOpp.person;
   resize();
   $('endBox').classList.remove('on'); banner(test ? 'TEST' : 'ROUND 1');
   if (!running){ running = true; last = performance.now(); requestAnimationFrame(loop); }
@@ -1254,16 +1285,16 @@ function setControl(f){
   for (const k in keys) keys[k] = false;
   $('sw').classList.toggle('me', P===A);
   $('ctlR').classList.toggle('on', P===A); $('ctlL').classList.toggle('on', P===B);
-  $('nA').innerHTML = (P===A?'🎮 ':'') + PLAYER.name; $('nB').innerHTML = (P===B?'🎮 ':'') + (curOpp.rank?`#${curOpp.rank} `:'') + curOpp.person;
+  $('nA').innerHTML = (P===A?'🎮 ':'') + nameOf(A.data); $('nB').innerHTML = (P===B?'🎮 ':'') + (curOpp.rank?`#${curOpp.rank} `:'') + curOpp.person;
   const famBtns = f => [...new Set(f.data.moves ? f.data.moves.filter(m => m!=='slip') : [])].slice(0,13).map(m => { return [m, m==='fused' ? '🥊 ' + f.data.fusedMove.name.toUpperCase() : MOVE_FR[m].toUpperCase()]; });
-  const moves = (P===A ? TOURB_MOVES.concat(A.data.all ? famBtns(A) : []) : [...new Set(B.data.moves.filter(m => m!=='slip'))].slice(0,7).map(m => { return [m, B.data.pmoves && B.data.pmoves[m] ? B.data.pmoves[m].short + ' (' + B.data.pmoves[m].n + ')' : m==='fused' ? '🥊 ' + B.data.fusedMove.name.toUpperCase() : (MOVE_FR[m]||m).toUpperCase()]; })).concat([['acro','🤸 ACRO']]);
+  const moves = (P===A && isTourb(A.data) ? TOURB_MOVES.concat(A.data.all ? famBtns(A) : []) : P===A ? movesOf(A.data) : [...new Set(B.data.moves.filter(m => m!=='slip'))].slice(0,7).map(m => { return [m, B.data.pmoves && B.data.pmoves[m] ? B.data.pmoves[m].short + ' (' + B.data.pmoves[m].n + ')' : m==='fused' ? '🥊 ' + B.data.fusedMove.name.toUpperCase() : (MOVE_FR[m]||m).toUpperCase()]; })).concat([['acro','🤸 ACRO']]);
   const spName = SPECIALS[P.data.sps[0]].name;
   $('padR').style.gridTemplateColumns = `repeat(${moves.length > 12 ? 5 : moves.length > 9 ? 4 : moves.length > 4 ? 3 : Math.max(2, moves.length)},minmax(0,1fr))`;
   $('padR').innerHTML = moves.map(([k,l]) => `<button class="b" data-k="${k}">${l}</button>`).join('') + `<div class="spRow">${P.data.sps.map((k,i) => `<button class="b spc" data-sp="${i}" style="font-size:14px">${i?'🌍':'⚡'} ${SPECIALS[k].name.toUpperCase()}</button>`).join('')}</div>`;
-  $('dodgeBtn').textContent = P===A ? '🌬 PAS DU VENT' : '↯ ESQUIVE';
+  $('dodgeBtn').textContent = P===A && isTourb(A.data) ? '🌬 PAS DU VENT' : '↯ ESQUIVE';
   bindPad();
 }
-$('ctl').onclick = () => { if (F && !F.lesson) { setControl(P===A ? B : A); banner(P===A ? 'TU CONTRÔLES LE TOURBILLON' : 'TU CONTRÔLES ' + curOpp.person.toUpperCase(), 1000); } };
+$('ctl').onclick = () => { if (F && !F.lesson) { setControl(P===A ? B : A); banner(P===A ? 'TU CONTRÔLES ' + nameOf(A.data).toUpperCase() : 'TU CONTRÔLES ' + curOpp.person.toUpperCase(), 1000); } };
 function newRound(){
   A.x=-1.4; B.x=1.4; for (const f of [A,B]){ f.hp=Math.round(f.hpMax*healthOf(f.data.health)[2]); f.st=100; f.zone={head:100, body:100, leg:100}; f.bal=100; f.dazed=0; f.kds=0; f.ribs=false; f.handHurt=false; f.acro=null; f.lift=0; f.q=[]; f.cur=null; f.state='idle'; f.pose={...G}; f.from={...G}; f.armor=0; f.invuln=0; }
   F.time = 60; F.phase='intro'; F.phaseT=1.4; banner('ROUND '+F.round);
@@ -1319,7 +1350,7 @@ function hitQuality(att, def){
     - (def.def-70)*.004 - (def.A.vue-60)*.002
     + (def.dazed > 0 ? .2 : 0) + (def.bal < 40 ? .1 : 0) + (def.state==='stun' ? .1 : 0)
     - (att.st < 20 ? .15 : 0) - (att.dazed > 0 ? .15 : 0) - (att.bal < 40 ? .1 : 0)
-    + (att.special ? .15 : 0) + (moodOf(att.data).q||0) - (moodOf(def.data).q||0)*.5 - gearVal(def.data,'vue',0)*.002 + rnd(.22));
+    + (att.special ? .15 : 0) + (moodOf(att.data).q||0) - (moodOf(def.data).q||0)*.5 + rnd(.22));
 }
 function guardQuality(def, att){
   return clamp01(.5 + gearVal(def.data,'guard',0) + (def.def-70)*.005 + (def.A.vue-60)*.003 + (def.A.reflexes-60)*.003 + (def.A.timing-60)*.002 - (att.pow-70)*.004 - (def.st < 20 ? .25 : 0) - (def.dazed > 0 ? .3 : 0) + rnd(.18));
@@ -1379,6 +1410,7 @@ function onEvent(f, ev){
     const punch = ['jab','cross','hook','chainL','chainR','fz4','vrille','palm'].includes(f.cur && f.cur.p);
     if (punch) mult *= (.8 + fb.mains/250) * (f.handHurt ? .8 : 1) * gearVal(f.data,'punch',1);
     if (['lowHit','highHit','spinHit','teepHit','faux'].includes(f.cur && f.cur.p)) mult *= gearVal(f.data,'kick',1);
+    if ((f.cur && f.cur.p) === 'elbow') mult *= gearVal(o.data, 'elbow', 1);
     mult *= gearVal(o.data, {head:'head', body:'body', leg:'leg'}[Z], 1) * (moodOf(f.data).dmg || 1);
     mult *= 1.1 - ob.os/500;
     mult *= .9 + f.A.explosivite/500;
@@ -1727,7 +1759,7 @@ function bindPad(){
 function press(k){
   if (!P) return;
   if (k==='acro'){ startAcro(P); return; }
-  if (k==='dodge') { act(P, P===A ? 'vent' : 'slip'); return; }
+  if (k==='dodge') { act(P, isTourb(P.data) ? 'vent' : 'slip'); return; }
   if ((MOVES[k] || k==='fused' || (P.data.pmoves && P.data.pmoves[k])) && !['left','right','guard'].includes(k)) act(P,k);
 }
 const KB = {ArrowLeft:'left',ArrowRight:'right',a:'left',d:'right',q:'left',s:'guard',ArrowDown:'guard',w:'dodge',z:'dodge',ArrowUp:'dodge'};
