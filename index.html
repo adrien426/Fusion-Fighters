@@ -446,7 +446,7 @@ function me(){
   if (!save.playerAll) return PLAYER;
   if (!SPECIALS.ultP) SPECIALS.ultP = invSpecial(inventTechnique(TECHS.map(t => t[0]), 'Technique Ultime'));
   const variants = {}; TECHS.filter(t => t[3]).forEach(t => (variants[t[3]] = variants[t[3]] || []).push([t[8], t[6][0]]));
-  return Object.assign({}, PLAYER, {s:[99,99,99,99,99], sps:['fusion','ultP'], variants, all:true, moves:['jab','cross','hook','palm','chain','kick','teep','high','spin','elbow','knee','grab','throw'], tmoves:PLAYER.moves});
+  return Object.assign({}, PLAYER, {s:[99,99,99,99,99], sps:['fusion','ultP'], variants, fused: fuseMoves(TECHS.map(t=>t[0])), all:true, moves:['jab','cross','hook','palm','chain','kick','teep','high','spin','elbow','knee','grab','throw'], tmoves:PLAYER.moves});
 }
 function menu(){
   $('myRank').textContent = save.rank>NOPP ? 'Non classé' : '#'+save.rank;
@@ -626,6 +626,18 @@ function inventTechnique(ids, nameHint){
   const name = nameHint || (INV_TITLE[h % INV_TITLE.length] + ' ' + topArts(ids,1).join(''));
   return {name, steps, n: ids.length};
 }
+function fuseMoves(ids){
+  const by = {};
+  ids.map(TT).filter(t => t && t[3]).forEach(t => (by[t[3]] = by[t[3]] || []).push(t));
+  const out = {};
+  for (const a in by){ const L = by[a], n = L.length;
+    const arts = {}; L.forEach(t => { const k = t[7].split(' (')[0]; arts[k] = (arts[k]||0)+1; });
+    const top = Object.entries(arts).sort((x,y)=>y[1]-x[1]).slice(0,2).map(e=>e[0]);
+    const avgPow = L.reduce((x,t)=>x+t[6][0],0)/n;
+    out[a] = {name: INV_NOUN[a] + ' ' + top.join('-'), n, mul: 1 + avgPow*.04 + Math.min(.3, (n-1)*.012)};
+  }
+  return out;
+}
 function invSpecial(inv){
   const seq = inv.steps.flatMap(st => STEPS[st.k].seq()); const tail = seq[seq.length-1];
   if (!(tail.ev && tail.ev.grab)) seq.push(ST('guard',300));
@@ -649,7 +661,7 @@ function buildCustom(c){
     SPECIALS[key] = invSpecial(c.inv);
     const moves = fuseActives(c.techs).map(t => t[3]);
     const variants = {}; c.techs.map(TT).filter(t => t && t[3]).forEach(t => (variants[t[3]] = variants[t[3]] || []).push([t[8], t[6][0]]));
-    return {rank:null, custom:c.id, variants, level:overall(s), s, moves: moves.length ? moves : ['jab','cross'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]), h:c.h, w:c.w, title:'Créé par toi', person:c.name, idleP:'guard'};
+    return {rank:null, custom:c.id, variants, fused: fuseMoves(c.techs), level:overall(s), s, moves: moves.length ? moves : ['jab','cross'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]), h:c.h, w:c.w, title:'Créé par toi', person:c.name, idleP:'guard'};
   }
   const steps = specialSeq(c);
   const seq = steps.flatMap(k => STEPS[k].seq()); const tail = seq[seq.length-1];
@@ -659,7 +671,7 @@ function buildCustom(c){
   SPECIALS[key] = {name: c.tn || ('La Technique de '+c.name), seq, evade: steps.some(k => STEPS[k].evade) ? .35 : 0, desc: steps.map(k => STEPS[k].n).join(' → '), steps: lsteps};
   const moves = fuseActives(c.techs).map(t => t[3]);
   const variants = {}; c.techs.map(TT).filter(t => t && t[3]).forEach(t => (variants[t[3]] = variants[t[3]] || []).push([t[8], t[6][0]]));
-  return {rank:null, custom:c.id, variants, level:overall(s), s, moves: moves.length ? moves : ['jab','cross'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]), h:c.h, w:c.w, title:'Créé par toi', person:c.name, idleP:'guard'};
+  return {rank:null, custom:c.id, variants, fused: fuseMoves(c.techs), level:overall(s), s, moves: moves.length ? moves : ['jab','cross'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]), h:c.h, w:c.w, title:'Créé par toi', person:c.name, idleP:'guard'};
 }
 const byName = n => TECHS.find(t => t[8]===n)[0];
 let cInv = null, cPers = [], pq = '';
@@ -681,7 +693,7 @@ function createUI(){
     + (showAll ? `<div class="pager"><input id="tq" placeholder="Rechercher (ex : judo, coude, Taekwondo…)" value="${tq}"></div><div class="artChips" style="margin-bottom:6px">${cats.map(c=>`<button class="${c===tcat?'on':''}" data-c="${c}">${c}</button>`).join('')}</div>` : '')
     + groups.map(g => `<div class="tg">${g}</div>` + list.filter(t=>t[2]===g).map(techRow).join('')).join('')
     + (showAll ? `<button class="big alt" id="bLess" style="font-size:20px">− Moins de techniques</button>` : `<button class="big" id="bMore" style="font-size:20px">＋ Plus de techniques (les ${TECHS.length} du monde)</button>`)
-    + `<div class="tm" style="font-size:12px;color:var(--mute);margin-top:6px">Mets-en autant que tu veux, il les garde toutes. En combat, chaque bouton fait tourner toutes ses variantes : 40 jabs, ce sont 40 jabs différents, avec leur nom affiché. Les entraînements donnent des bonus, qui se cumulent de moins en moins.</div>`;
+    + `<div class="tm" style="font-size:12px;color:var(--mute);margin-top:6px">Mets-en autant que tu veux, il les garde toutes. En combat, chaque bouton fond toutes les techniques de sa famille en une seule technique à lui : 40 jabs deviennent un seul jab fusionné, plus fort. Les entraînements donnent des bonus, qui se cumulent de moins en moins.</div>`;
   $('cTechs').querySelectorAll('.tc').forEach(el => el.onclick = () => { const id = el.dataset.t;
     if (cT.includes(id)){ cT = cT.filter(x=>x!==id); cSp = cSp.filter(x=>x!==id); } else cT.push(id); createUI(); });
   if ($('bMore')) $('bMore').onclick = () => { showAll = true; createUI(); };
@@ -696,7 +708,7 @@ function createUI(){
     else if (cSp.length && isProj(cSp[cSp.length-1])) cSp.splice(cSp.length-1, 0, id); else cSp.push(id);
     seqUI(); });
   const act = fuseActives(cT);
-  $('cFuse').innerHTML = `<div class="tact" style="background:#0b0b0e;border-radius:10px;padding:10px;margin:6px 0"><b style="color:var(--gold)">Style fusionné</b> : ${cT.length} techniques, <b>toutes utilisées en combat</b>. ${cT.filter(id=>TT(id)[3]).length} techniques de combat réparties en ${act.length} familles : à chaque coup, une autre variante sort. Les ${cT.filter(id=>!TT(id)[3]).length} entraînements donnent des bonus.<br><span style="color:var(--mute)">${act.map(t => MOVE_FR[t[3]] + ' ×' + cT.filter(id=>TT(id)[3]===t[3]).length).join(' · ') || '—'}</span>
+  $('cFuse').innerHTML = `<div class="tact" style="background:#0b0b0e;border-radius:10px;padding:10px;margin:6px 0"><b style="color:var(--gold)">Style fusionné</b> : ${cT.length} techniques, <b>toutes utilisées en combat</b>. Ses ${cT.filter(id=>TT(id)[3]).length} techniques de combat sont fondues en ${act.length} techniques à lui, une par bouton. Les ${cT.filter(id=>!TT(id)[3]).length} entraînements donnent des bonus.<br><span style="color:var(--mute)">${Object.values(fuseMoves(cT)).map(fm => fm.name + ' (' + fm.n + ')').join(' · ') || '—'}</span>
     <details style="margin-top:6px"><summary style="cursor:pointer;color:var(--gold)">Voir les ${cT.length} techniques de son style</summary>
     ${[...new Set(cT.map(id=>TT(id)[2]))].map(g => `<div class="tg">${g} (${cT.filter(id=>TT(id)[2]===g).length})</div><div style="font-size:12px;color:var(--txt);line-height:1.5">${cT.filter(id=>TT(id)[2]===g).map(id=>TT(id)[8]).join(' · ')}</div>`).join('')}</details></div>`;
   seqUI(); myOppsUI(); persUI();
@@ -895,8 +907,8 @@ function setControl(f){
   $('sw').classList.toggle('me', P===A);
   $('ctlR').classList.toggle('on', P===A); $('ctlL').classList.toggle('on', P===B);
   $('nA').innerHTML = (P===A?'🎮 ':'') + PLAYER.name; $('nB').innerHTML = (P===B?'🎮 ':'') + (curOpp.rank?`#${curOpp.rank} `:'') + curOpp.person;
-  const famBtns = f => [...new Set(f.data.moves ? f.data.moves.filter(m => m!=='slip') : [])].slice(0,13).map(m => { const n = f.data.variants && f.data.variants[m] ? f.data.variants[m].length : 0; return [m, MOVE_FR[m].toUpperCase() + (n>1 ? ' ×'+n : '')]; });
-  const moves = P===A ? TOURB_MOVES.concat(A.data.all ? famBtns(A) : []) : [...new Set(B.data.moves.filter(m => m!=='slip'))].slice(0,13).map(m => { const n = B.data.variants && B.data.variants[m] ? B.data.variants[m].length : 0; return [m, MOVE_FR[m].toUpperCase() + (n>1 ? ' ×'+n : '')]; });
+  const famBtns = f => [...new Set(f.data.moves ? f.data.moves.filter(m => m!=='slip') : [])].slice(0,13).map(m => { const fm = f.data.fused && f.data.fused[m]; return [m, fm && fm.n > 1 ? fm.name.split(' ')[0].toUpperCase() + ' (' + fm.n + ')' : MOVE_FR[m].toUpperCase()]; });
+  const moves = P===A ? TOURB_MOVES.concat(A.data.all ? famBtns(A) : []) : [...new Set(B.data.moves.filter(m => m!=='slip'))].slice(0,13).map(m => { const fm = B.data.fused && B.data.fused[m]; return [m, fm && fm.n > 1 ? fm.name.split(' ')[0].toUpperCase() + ' (' + fm.n + ')' : MOVE_FR[m].toUpperCase()]; });
   const spName = SPECIALS[P.data.sps[0]].name;
   $('padR').style.gridTemplateColumns = `repeat(${moves.length > 12 ? 5 : moves.length > 9 ? 4 : moves.length > 4 ? 3 : Math.max(2, moves.length)},minmax(0,1fr))`;
   $('padR').innerHTML = moves.map(([k,l]) => `<button class="b" data-k="${k}">${l}</button>`).join('') + `<div class="spRow">${P.data.sps.map((k,i) => `<button class="b spc" data-sp="${i}" style="font-size:14px">${i?'🌍':'⚡'} ${SPECIALS[k].name.toUpperCase()}</button>`).join('')}</div>`;
@@ -930,8 +942,8 @@ function act(f, name){
   if (!canAct(f)) return false;
   const m = MOVES[name]; if (f.st < m.cost*.5) return false;
   f.st = Math.max(0, f.st - m.cost); play(f, m.seq, (name==='slip'||name==='vent') ? 'slip' : 'attack');
-  f.vmul = 1; const V = f.data.variants && f.data.variants[name];
-  if (V && V.length){ f.vi = f.vi || {}; const i = (f.vi[name] = ((f.vi[name]||0) + 1) % V.length); const v = V[i]; f.vmul = 1 + v[1]*.04; if (V.length > 1) pop(f, v[0], '#f4b942'); }
+  f.vmul = 1; const FM = f.data.fused && f.data.fused[name];
+  if (FM){ f.vmul = FM.mul; if (FM.n > 1) pop(f, FM.name, '#f4b942'); }
   if (name==='slip') f.slipT = .35; if (m.parry) f.parry = m.parry; if (m.evade) f.evade = m.evade; if (m.angle) f.angle = m.angle; return true;
 }
 function special(f, i){
@@ -1056,7 +1068,7 @@ const k1 = {}, k2 = {};
 let twoSel = null;
 function movesOf(d){
   if (isTourb(d)) return TOURB_MOVES;
-  return [...new Set((d.moves||[]).filter(m => m!=='slip'))].slice(0,4).map(m => { const n = d.variants && d.variants[m] ? d.variants[m].length : 0; return [m, MOVE_FR[m].toUpperCase() + (n>1 ? ' ×'+n : '')]; });
+  return [...new Set((d.moves||[]).filter(m => m!=='slip'))].slice(0,4).map(m => { const fm = d.fused && d.fused[m]; return [m, fm && fm.n > 1 ? fm.name.split(' ')[0].toUpperCase() + ' (' + fm.n + ')' : MOVE_FR[m].toUpperCase()]; });
 }
 function start2P(id1, id2){
   twoSel = [id1, id2];
