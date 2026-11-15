@@ -1671,65 +1671,88 @@ $('mpInviteTop').onclick = () => { if (MP && MP.code && !MP.matched){ const b = 
 // Opened from an invite link: go to multiplayer with the code ready
 (() => { const j = new URLSearchParams(location.search).get('join'); if (!j || !/^\d{6}$/.test(j)) return;
   setTimeout(() => { go('sMP'); $('mpCode').value = j; mpStatus(`📨 Tu es invité à la partie <b style="color:var(--gold)">${j}</b> !<br>Choisis ton personnage, puis appuie sur <b>Rejoindre</b>.`); $('mpJoin').style.background = '#2fa36b'; }, 50); })();
-// ---- Online play through Trystero: WebRTC, connected through many public Nostr relays ----
-// (no single server: if one relay is down or blocked, the others still work)
-const TRY_APP = 'adrien426-fusion-fighters-v1';
-let TRY = null;
+// ---- Online play through Trystero: WebRTC, players find each other through several public networks
+// at the same time (MQTT brokers, WebTorrent trackers, Nostr relays). One working network is enough.
+const TRY_APP = 'adrien426-fusion-fighters-v2';
+const TRY_NETS = [
+  ['mqtt', {}],
+  ['torrent', {relayUrls: ['wss://tracker.webtorrent.dev', 'wss://tracker.openwebtorrent.com', 'wss://tracker.btorrent.xyz']}],
+  ['nostr', {relayUrls: ['wss://relay.damus.io', 'wss://nos.lol', 'wss://relay.primal.net', 'wss://nostr.mom', 'wss://relay.nostr.band', 'wss://offchain.pub']}],
+];
+let TRYS = null;
 function loadTry(cb){
-  if (TRY) return cb(TRY);
-  if (window.FF_TRY){ TRY = window.FF_TRY; return cb(TRY); }
-  const urls = ['https://esm.run/trystero@0.21.8/nostr', 'https://esm.sh/trystero@0.21.8/nostr', 'https://cdn.jsdelivr.net/npm/trystero@0.21.8/+esm'];
-  const next = i => {
-    if (i >= urls.length){ mpStatus('❌ Impossible de charger le multijoueur. Ouvre le jeu sur le site, dans Chrome ou Safari.'); return; }
-    import(urls[i]).then(m => { if (!m.joinRoom) throw 0; TRY = {joinRoom: m.joinRoom, selfId: m.selfId, config: {}}; cb(TRY); }).catch(() => next(i+1));
+  if (TRYS) return cb(TRYS);
+  if (window.FF_TRYS){ TRYS = window.FF_TRYS; return cb(TRYS); }
+  const one = ([name, config]) => {
+    const urls = [`https://esm.run/trystero@0.21.8/${name}`, `https://esm.sh/trystero@0.21.8/${name}`];
+    const tryUrl = i => i >= urls.length ? Promise.resolve(null)
+      : import(urls[i]).then(m => m.joinRoom ? {name, joinRoom: m.joinRoom, selfId: m.selfId, config} : tryUrl(i+1)).catch(() => tryUrl(i+1));
+    return tryUrl(0);
   };
-  next(0);
+  Promise.all(TRY_NETS.map(one)).then(list => {
+    TRYS = list.filter(Boolean);
+    if (!TRYS.length){ TRYS = null; mpStatus('❌ Impossible de charger le multijoueur. Ouvre le jeu sur le site, dans Chrome ou Safari.'); return; }
+    cb(TRYS);
+  });
 }
-// Join a room and pair with one other free player in it.
+// Join the room on every network and pair with one other free player.
 // Free players announce themselves; in each pair the lower id asks, the other accepts.
+// The same person may be seen on several networks: the 'matched' flag keeps it to one match.
 function mpRoom(roomName, waitingHTML, code){
   mpClose(); mpStatus('🔌 Connexion…');
-  loadTry(T => {
-    const me = MP = {role:'guest', mine: mpPayload($('mpSel').value), matched:false, peers:{}, pending:null, partner:null, code};
-    let room;
-    try { room = T.joinRoom(Object.assign({appId: TRY_APP}, T.config || {}), roomName); }
-    catch(e){ mpStatus('❌ Ce navigateur ne permet pas le multijoueur. Ouvre le jeu dans Chrome ou Safari.'); return; }
-    me.room = room; me.peer = {destroy: () => { try { room.leave(); } catch(e){} }};
-    const [sendSt, getSt] = room.makeAction('st'), [sendPr, getPr] = room.makeAction('pr'), [sendM, getM] = room.makeAction('m');
-    const myId = T.selfId, free = () => !me.matched && !me.pending;
-    const waiting = () => { if (MP === me && !me.matched) mpStatus(waitingHTML()); bindWait(); };
-    const bindWait = () => { if ($('mpCancel')) $('mpCancel').onclick = () => { mpClose(); mpStatus('Recherche annulée.'); }; if (me.code) bindInvite(me.code); };
-    room.onPeerJoin(id => { me.peers[id] = false; sendSt({free: !me.matched}, id); });
-    room.onPeerLeave(id => { delete me.peers[id]; if (me.pending === id){ me.pending = null; clearTimeout(me.pt); }
-      if (me.partner === id && me.conn) me.conn._close(); });
-    getSt((d, id) => { me.peers[id] = !!d.free; tryPair(); });
-    getPr((d, id) => {
-      if (MP !== me) return;
-      if (d.t === 'ask'){ if (free()){ me.matched = true; sendPr({t:'ok'}, id); begin(id, 'guest'); } else sendPr({t:'no'}, id); return; }
-      if (d.t === 'ok'){ if (me.pending === id && !me.matched){ me.pending = null; clearTimeout(me.pt); me.matched = true; begin(id, 'host'); } else sendPr({t:'cancel'}, id); return; }
-      if (d.t === 'no' && me.pending === id){ me.pending = null; clearTimeout(me.pt); setTimeout(tryPair, 300 + Math.random()*900); return; }
-      if (d.t === 'cancel' && me.partner === id && !(F && F.mp)){ me.matched = false; me.partner = null; me.conn = null; sendSt({free:true}); waiting(); }
-    });
-    getM((d, id) => { if (me.conn && id === me.partner) me.conn._data(d); });
+  loadTry(list => {
+    const me = MP = {role:'guest', mine: mpPayload($('mpSel').value), matched:false, pending:null, partner:null, code, nets:[], rooms:[]};
+    me.peer = {destroy: () => me.rooms.forEach(r => { try { r.leave(); } catch(e){} })};
+    const seen = () => me.nets.reduce((n, x) => n + Object.keys(x.peers).length, 0);
+    const waiting = () => { if (MP !== me || me.matched) return;
+      mpStatus(waitingHTML() + `<div style="font-size:11px;color:var(--mute);margin-top:6px">📡 ${me.nets.length} réseau(x) · joueurs vus : ${seen()}</div>`);
+      if ($('mpCancel')) $('mpCancel').onclick = () => { mpClose(); mpStatus('Recherche annulée.'); };
+      if (me.code) bindInvite(me.code); };
+    const free = () => !me.matched && !me.pending;
     function tryPair(){
       if (MP !== me || !free()) return;
-      const c = Object.keys(me.peers).filter(id => me.peers[id] && id > myId).sort();
-      if (!c.length) return;
-      const id = c[0]; me.pending = id; sendPr({t:'ask'}, id);
-      me.pt = setTimeout(() => { if (me.pending === id){ me.pending = null; tryPair(); } }, 5000);
+      for (const N of me.nets){
+        const c = Object.keys(N.peers).filter(id => N.peers[id] && id > N.myId).sort();
+        if (!c.length) continue;
+        const id = c[0]; me.pending = {N, id}; N.sendPr({t:'ask'}, id);
+        me.pt = setTimeout(() => { if (me.pending && me.pending.id === id){ me.pending = null; tryPair(); } }, 5000);
+        return;
+      }
     }
-    function begin(id, role){
-      me.partner = id; me.role = role; sendSt({free:false});
+    function begin(N, id, role){
+      me.partner = {N, id}; me.role = role; me.nets.forEach(x => x.sendSt({free:false}));
       const h = {data:[], close:[]};
-      const conn = {open:true, send: d => { if (conn.open) sendM(d, id); }, on: (ev, cb) => (h[ev] = h[ev] || []).push(cb),
-        close: () => { conn.open = false; try { room.leave(); } catch(e){} },
+      const conn = {open:true, send: d => { if (conn.open) N.sendM(d, id); }, on: (ev, cb) => (h[ev] = h[ev] || []).push(cb),
+        close: () => { conn.open = false; me.peer.destroy(); },
         _close: () => { if (!conn.open) return; conn.open = false; h.close.forEach(f => f()); },
         _data: d => h.data.forEach(f => f(d))};
       mpWire(conn, role);
       mpStatus('✅ Adversaire trouvé ! Le combat commence…');
       if (role === 'guest') conn.send({t:'hello', p: me.mine});
     }
-    me.retry = setInterval(tryPair, 2000);
+    const isPartner = (N, id) => me.partner && me.partner.N === N && me.partner.id === id;
+    for (const S of list){
+      let room;
+      try { room = S.joinRoom(Object.assign({appId: TRY_APP + (S.appSuffix || '')}, S.config || {}), roomName); } catch(e){ continue; }
+      const [sendSt, getSt] = room.makeAction('st'), [sendPr, getPr] = room.makeAction('pr'), [sendM, getM] = room.makeAction('m');
+      const N = {name: S.name, myId: S.selfId, peers:{}, sendSt, sendPr, sendM};
+      me.rooms.push(room); me.nets.push(N);
+      room.onPeerJoin(id => { N.peers[id] = false; sendSt({free: !me.matched}, id); waiting(); });
+      room.onPeerLeave(id => { delete N.peers[id]; if (me.pending && me.pending.N === N && me.pending.id === id){ me.pending = null; clearTimeout(me.pt); }
+        if (isPartner(N, id) && me.conn) me.conn._close(); waiting(); });
+      getSt((d, id) => { N.peers[id] = !!d.free; tryPair(); });
+      getPr((d, id) => {
+        if (MP !== me) return;
+        const mine = me.pending && me.pending.N === N && me.pending.id === id;
+        if (d.t === 'ask'){ if (free()){ me.matched = true; sendPr({t:'ok'}, id); begin(N, id, 'guest'); } else sendPr({t:'no'}, id); return; }
+        if (d.t === 'ok'){ if (mine && !me.matched){ me.pending = null; clearTimeout(me.pt); me.matched = true; begin(N, id, 'host'); } else sendPr({t:'cancel'}, id); return; }
+        if (d.t === 'no' && mine){ me.pending = null; clearTimeout(me.pt); setTimeout(tryPair, 300 + Math.random()*900); return; }
+        if (d.t === 'cancel' && isPartner(N, id) && !(F && F.mp)){ me.matched = false; me.partner = null; me.conn = null; me.nets.forEach(x => x.sendSt({free:true})); waiting(); }
+      });
+      getM((d, id) => { if (me.conn && isPartner(N, id)) me.conn._data(d); });
+    }
+    if (!me.nets.length){ mpStatus('❌ Ce navigateur ne permet pas le multijoueur. Ouvre le jeu dans Chrome ou Safari.'); return; }
+    me.retry = setInterval(() => { tryPair(); waiting(); }, 2000);
     waiting();
   });
 }
