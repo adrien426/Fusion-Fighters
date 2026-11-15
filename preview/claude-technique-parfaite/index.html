@@ -138,6 +138,7 @@ h2{font-size:30px;margin:6px 0 4px}
 #pad2 .half.p1{border:1px solid var(--red)}#pad2 .half.p2{border:1px solid var(--blue)}
 #pad2 .b{min-height:42px;font-size:12px;letter-spacing:0;min-width:0;overflow:hidden;white-space:normal;line-height:1.05;padding:0 2px}
 #pad2 .b.spc{grid-column:span 2;font-size:11px}
+.zb{display:flex;gap:4px;font-size:9px;margin-top:2px}.right .zb{justify-content:flex-end}.zb span{display:flex;align-items:center;gap:1px}.zb i{display:inline-block;height:4px;border-radius:2px}
 .help{font-size:12px;color:var(--mute);line-height:1.6;background:var(--card);border-radius:12px;padding:12px;margin-top:12px}
 .help b{color:var(--txt)}
 </style>
@@ -197,7 +198,7 @@ h2{font-size:30px;margin:6px 0 4px}
     <div class="slid"><span>Poids</span><input type="range" id="cW" min="50" max="160" value="85"><b id="cWv"></b></div>
     <div class="slid"><span>Muscles</span><input type="range" id="cM" min="0" max="100" value="50"><b id="cMv"></b></div>
     <div class="slid"><span>Expérience</span><input type="range" id="cL" min="30" max="99" value="70"><b id="cLv"></b></div>
-    <div class="slid"><span>Vie</span><input type="range" id="cLife" min="50" max="300" step="10" value="100"><b id="cLifeV"></b></div>
+    <div class="slid"><span>Vie</span><input type="range" id="cLife" min="50" max="1000" step="10" value="100"><b id="cLifeV"></b></div>
     <div id="cStats"></div>
   </div>
   <div class="fusionCard">
@@ -250,9 +251,9 @@ h2{font-size:30px;margin:6px 0 4px}
 <div id="fight">
   <div id="view">
     <div class="hud">
-      <div><div class="pn" id="nA"></div><div class="hp"><i id="hpA"></i></div><div class="st"><i id="stA"></i></div><div class="gg" id="ggAw"><i id="ggA"></i></div><div class="spn" id="spA">⚡ Technique Fusion</div><div class="spn" id="lifeA"></div></div>
+      <div><div class="pn" id="nA"></div><div class="hp"><i id="hpA"></i></div><div class="st"><i id="stA"></i></div><div class="gg" id="ggAw"><i id="ggA"></i></div><div class="spn" id="spA">⚡ Technique Fusion</div><div class="spn" id="lifeA"></div><div class="zb" id="zA"></div></div>
       <div><div class="timer" id="timer">60</div><div class="rw" id="rounds"></div></div>
-      <div class="right"><div class="pn" id="nB"></div><div class="hp"><i id="hpB"></i></div><div class="st"><i id="stB"></i></div><div class="gg" id="ggBw"><i id="ggB"></i></div><div class="spn" id="spB"></div><div class="spn" id="lifeB"></div></div>
+      <div class="right"><div class="pn" id="nB"></div><div class="hp"><i id="hpB"></i></div><div class="st"><i id="stB"></i></div><div class="gg" id="ggBw"><i id="ggB"></i></div><div class="spn" id="spB"></div><div class="spn" id="lifeB"></div><div class="zb" id="zB"></div></div>
     </div>
     <button id="pause">⏸ Quitter</button>
     <div id="ctl" title="Changer de combattant"><span id="ctlL">Adversaire</span><div class="sw" id="sw"><i></i></div><span id="ctlR">Moi</span></div>
@@ -336,7 +337,7 @@ const SPECIALS = {
 };
 
 // ===================== PLAYER: LE TOURBILLON =====================
-const PLAYER = {name:'LE TOURBILLON', life:100, health:'Pleine forme', s:[86,86,86,84,76], sps:['fusion'], idleP:'vGuard',
+const PLAYER = {name:'LE TOURBILLON', life:100, health:'Pleine forme', m:65, w:80, resist:.1, s:[86,86,86,84,76], sps:['fusion'], idleP:'vGuard',
   moves:[['tjab','JAB',"Rapide, il mesure la distance."],['vrille','VRILLE',"Pendant une fraction de seconde, la main avant dévie son coup. Lancée au bon moment, elle fait double dégâts."],
          ['fouet','FOUET',"Coude court, très rapide."],['faux','FAUX',"Fauchage. Sur un adversaire sonné, il tombe."],['vent','PAS DU VENT',"Esquive totale. Pendant 1 seconde, tes coups font +30 % de dégâts (tu es sur son côté)."]]};
 
@@ -435,7 +436,7 @@ function opponent(r){
   const key = 'sig'+r; SPECIALS[key] = fusedSpecial(fmv);
   const title = r <= 10 ? 'Légende mondiale' : r <= 30 ? 'Champion du monde' : r <= 60 ? 'Champion' : 'Combattant';
   const look = {skin: SKINS[Math.floor(R()*7)][1], nails: NAILS[0][1], bare: R() < .3};
-  return oppCache[r] = {rank:r, level:Math.round(L), s, moves, sps:[key], fusedMove: fmv, arts:arts.map(a=>a.n), h, w, title, look, life: vitals(100, sigIds, 'En forme', w, 50 + (w-80)*.5).life, resist: vitals(100, sigIds, 'En forme', w, 50 + (w-80)*.5).res, health:'En forme',
+  return oppCache[r] = {rank:r, techIds: sigIds, m: Math.max(20, Math.min(95, 50 + (w-80)*.5)), level:Math.round(L), s, moves, sps:[key], fusedMove: fmv, arts:arts.map(a=>a.n), h, w, title, look, life: vitals(100, sigIds, 'En forme', w, 50 + (w-80)*.5).life, resist: vitals(100, sigIds, 'En forme', w, 50 + (w-80)*.5).res, health:'En forme',
     person: FIRST[Math.floor(R()*FIRST.length)] + ' « ' + nick + ' »', idleP:'guard'};
 }
 const STAT = ['Puissance','Vitesse','Défense','Endurance','Lutte'];
@@ -452,19 +453,53 @@ const $ = id => document.getElementById(id);
 function go(id){ document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id===id)); window.scrollTo(0,0);
   if (id==='sMenu') menu(); if (id==='sOpp') oppUI(); if (id==='sCreate') createUI(); if (id==='s2P') twoPUI(); }
 document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+// ---- Game-like attributes: sight, chin (head), body, legs + fight estimates ----
+const cl = v => Math.max(15, Math.min(99, Math.round(v)));
+function attrs(d){
+  if (d._attrs) return d._attrs;
+  const [pow, spd, def, end, grap] = d.s, w = d.w || 80, m = d.m || 50;
+  const ids = d.techIds || [];
+  const n = f => ids.filter(id => { const t = TT(id); return t && f(t); }).length;
+  const nDef = n(t => t[3]==='slip'), nMental = n(t => t[2].startsWith('Mental')), nNeck = n(t => /pont|cou|corps de fer|sanchin|kyokushin/i.test(t[8]+' '+t[7]));
+  const nLegs = n(t => ['kick','teep','high','spin'].includes(t[3]) || /course|marathon|squat|sprint|pliom|marche|trail|vélo|hindu/i.test(t[8]));
+  const res = d.resist || 0;
+  const a = {
+    vue:    cl(.5*spd + .3*def + 20*Math.tanh(nDef/8) + 10*Math.tanh(nMental/4) + (d.health==='Malade'||d.health==='Fatigué' ? -8 : 0)),
+    menton: cl(20 + .35*def + Math.max(0,w-70)*.2 + 25*Math.tanh(nNeck/3) + 12*Math.tanh(nMental/4)),
+    corps:  cl(30 + .3*end + (m-50)*.3 + res*60),
+    jambes: cl(15 + .35*spd + .25*end + 18*Math.tanh(nLegs/8) + (m-50)*.1 - Math.max(0,w-110)*.15),
+  };
+  return d._attrs = a;
+}
+// Rough estimates: how many average hits he survives / needs, like a video game sheet
+function estimate(d){
+  const a = attrs(d), [pow,,def] = d.s, life = d.life || 100, res = d.resist || 0;
+  const avgHit = 8 * (.6 + 80/100*.8);
+  const taken = z => avgHit * (1.2 - def/100*.5) * (1 - res) * ({head:1.25, body:1, leg:.8}[z]) * (1 - ({head:a.menton, body:a.corps, leg:a.jambes}[z]-50)/250);
+  const given = 8 * (.6 + pow/100*.8) * (1.2 - 80/100*.5) * .95;
+  const tech = d.fusedMove ? 24 * d.fusedMove.mul * (.6 + pow/100*.8) * .8 * .95 : given*2.5;
+  return {head: Math.ceil(life/taken('head')), body: Math.ceil(life/taken('body')), leg: Math.ceil(life/taken('leg')),
+    ko: Math.ceil(100/given), techDmg: Math.round(tech), hit: Math.round(given)};
+}
+function sheetHTML(d){
+  const a = attrs(d), e = estimate(d), row = (ic, n, v, c, max=99) => `<span>${ic} ${n}</span><div class="bar"><i style="width:${Math.min(100, v/max*100)}%;background:${c}"></i></div><b style="color:var(--txt)">${v}</b>`;
+  return `<div class="stats">${row('❤','Vie',d.life||100,'#e63946',Math.max(100,d.life||100))}${row('💪','Force',d.s[0],STC[0])}${row('⚡','Vitesse',d.s[1],STC[1])}${row('🛡','Défense',d.s[2],STC[2])}${row('🔋','Endurance',d.s[3],STC[3])}${row('🤼','Lutte',d.s[4],STC[4])}
+    ${row('👁','Vue',a.vue,'#9ad1ff')}${row('🧠','Menton',a.menton,'#f4a261')}${row('🫁','Corps',a.corps,'#e9c46a')}${row('🦵','Jambes',a.jambes,'#90be6d')}${row('🛡','Résistance',Math.round((d.resist||0)*100)+'%','#b0b0c0',100)}</div>
+    <div class="tact" style="font-size:12px">🩺 Santé : <b>${d.health||'En forme'}</b><br>🎯 Encaisse ≈ <b>${e.head}</b> coups à la tête · <b>${e.body}</b> au corps · <b>${e.leg}</b> aux jambes<br>💥 Met K.O. un adversaire moyen en ≈ <b>${e.ko}</b> coups (≈ ${e.hit} dégâts par coup, ${e.techDmg} avec sa technique)</div>`;
+}
 function statsHTML(s){ return `<div class="stats">${STAT.map((n,i)=>`<span>${n}</span><div class="bar"><i style="width:${s[i]}%;background:${STC[i]}"></i></div><b style="color:var(--txt)">${s[i]}</b>`).join('')}</div>`; }
 
 // ---- Player "everything" mode ----
 function me(){
-  if (!save.playerAll) return Object.assign({}, PLAYER, {look: save.look});
+  if (!save.playerAll) return Object.assign({}, PLAYER, {look: save.look, _attrs: null});
   const ALLF = fusedMove(TECHS.map(t => t[0]), 'Technique Ultime', {h:1.8, w:80, m:70, s:[99,99,99,99,99], life:100, health:'Pleine forme'});
   if (!SPECIALS.ultP) SPECIALS.ultP = fusedSpecial(ALLF);
-  return Object.assign({}, PLAYER, {s:[99,99,99,99,99], sps:['fusion','ultP'], fusedMove: ALLF, all:true, life: vitals(100, TECHS.map(t=>t[0]), 'Pleine forme', 80, 70).life, resist: vitals(100, TECHS.map(t=>t[0]), 'Pleine forme', 80, 70).res, healBonus: bonusOf(TECHS.map(t=>t[0])).heal, moves:['fused'], tmoves:PLAYER.moves, look: save.look});
+  return Object.assign({}, PLAYER, {s:[99,99,99,99,99], sps:['fusion','ultP'], _attrs: null, fusedMove: ALLF, techIds: TECHS.map(t=>t[0]), m:70, all:true, life: vitals(100, TECHS.map(t=>t[0]), 'Pleine forme', 80, 70).life, resist: vitals(100, TECHS.map(t=>t[0]), 'Pleine forme', 80, 70).res, healBonus: bonusOf(TECHS.map(t=>t[0])).heal, moves:['fused'], tmoves:PLAYER.moves, look: save.look});
 }
 function menu(){
   $('myRank').textContent = save.rank>NOPP ? 'Non classé' : '#'+save.rank;
   const M = me();
-  $('meCard').innerHTML = `<div style="font-size:12px;color:var(--mute)">TON COMBATTANT · TON STYLE${M.all?' · 🌍 TOUT MIS (${TECHS.length} techniques)':''}</div><div class="fn">🌀 ${PLAYER.name}</div>${statsHTML(M.s)}
+  $('meCard').innerHTML = `<div style="font-size:12px;color:var(--mute)">TON COMBATTANT · TON STYLE${M.all?' · 🌍 TOUT MIS (${TECHS.length} techniques)':''}</div><div class="fn">🌀 ${PLAYER.name}</div>${sheetHTML(M)}
     <div class="tact"><b>Tes techniques :</b><ul>${PLAYER.moves.map(m=>`<li><b>${m[1]}</b> : ${m[2]}</li>`).join('')}</ul></div>
     <div class="tact" style="margin-top:8px"><b style="color:var(--gold)">⚡ TA TECHNIQUE (fixe, rien que pour toi) : Technique Fusion</b><br>${SPECIALS.fusion.desc}<br><span style="color:var(--mute)">Bouton ⚡ TECHNIQUE FUSION quand la jauge est dorée.</span></div>${M.all ? `<div class="tact" style="margin-top:8px"><b style="color:var(--gold)">🌍 + TECHNIQUE ULTIME</b><br>${SPECIALS.ultP.desc}<br><span style="color:var(--mute)">Un seul coup en plus de tes techniques : 🥊 Technique Ultime.</span></div>` : ''}`;
   const L = save.look || {};
@@ -498,8 +533,8 @@ const lookBadge = L => L ? `<span style="font-size:11px"><i style="display:inlin
 function versus(r){ showVs(opponent(r)); }
 function showVs(o){
   curOpp = o; const r = o.rank;
-  $('vsA').innerHTML = `<b style="color:var(--red)">🌀 ${PLAYER.name}</b>Toi · ${save.rank>NOPP?'non classé':'#'+save.rank} · <b style="display:inline;font-size:16px;color:var(--gold)">NOTE ${overall(me().s)}</b><br>Physique : sans importance, sa force vient de tout ce qu'il sait${statsHTML(me().s)}`;
-  $('vsB').innerHTML = `<b style="color:var(--blue)">${curOpp.person}</b>${r?'#'+r+' · ':''}${curOpp.title} · <b style="display:inline;font-size:16px;color:var(--gold)">NOTE ${overall(curOpp.s)}</b><br>${curOpp.h.toFixed(2).replace('.',',')} m · ${curOpp.w} kg · ❤ ${curOpp.life||100} · 🛡 ${Math.round((curOpp.resist||0)*100)} % · ${curOpp.health||'En forme'}<br>${lookBadge(curOpp.look)}${statsHTML(curOpp.s)}`;
+  $('vsA').innerHTML = `<b style="color:var(--red)">🌀 ${PLAYER.name}</b>Toi · ${save.rank>NOPP?'non classé':'#'+save.rank} · <b style="display:inline;font-size:16px;color:var(--gold)">NOTE ${overall(me().s)}</b><br>Physique : sans importance, sa force vient de tout ce qu'il sait${sheetHTML(me())}`;
+  $('vsB').innerHTML = `<b style="color:var(--blue)">${curOpp.person}</b>${r?'#'+r+' · ':''}${curOpp.title} · <b style="display:inline;font-size:16px;color:var(--gold)">NOTE ${overall(curOpp.s)}</b><br>${curOpp.h.toFixed(2).replace('.',',')} m · ${curOpp.w} kg · ❤ ${curOpp.life||100} · 🛡 ${Math.round((curOpp.resist||0)*100)} % · ${curOpp.health||'En forme'}<br>${lookBadge(curOpp.look)}${sheetHTML(curOpp)}`;
   $('vsTact').innerHTML = `<div class="tact"><b>${curOpp.custom ? 'Ses techniques choisies' : 'Ses arts fusionnés'} :</b> ${curOpp.custom && curOpp.arts.length > 12 ? curOpp.arts.length + ' techniques (' + curOpp.arts.slice(0,8).join(', ') + '…)' : curOpp.arts.join(' + ')}<br><b>Ses techniques :</b> ${curOpp.moves.map(m=>MOVE_FR[m]).join(', ')}</div>
     <div class="tact" style="margin-top:8px"><b style="color:var(--gold)">Sa technique : ${SPECIALS[curOpp.sps[0]].name}</b><br>${SPECIALS[curOpp.sps[0]].desc}${SPECIALS[curOpp.sps[0]].why ? `<ul>${SPECIALS[curOpp.sps[0]].why.map(x=>`<li>${x}</li>`).join('')}</ul>` : ''}</div>
     <button class="big alt" id="bLearn" style="font-size:20px;margin-top:10px">📹 Apprendre sa technique en vrai</button>
@@ -752,7 +787,7 @@ function buildCustom(c){
   const prof = {h:c.h, w:c.w, m:c.m, s, life: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m).life, health:c.health||'En forme'};
   const fmv = fusedMove(c.techs, c.tn, prof) || fusedMove([byName('Direct')], c.tn, prof);
   SPECIALS[key] = fusedSpecial(fmv);
-  return {rank:null, custom:c.id, fusedMove: fmv, level:overall(s), s, moves:['fused'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]),
+  return {rank:null, custom:c.id, techIds: c.techs, fusedMove: fmv, level:overall(s), s, moves:['fused'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]),
     h:c.h, w:c.w, title:'Créé par toi', person:c.name, idleP:'guard', life: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m).life, resist: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m).res, healBonus: bonusOf(c.techs).heal, health: c.health || 'En forme', look: lookOf(c), m: c.m};
 }
 const byName = n => TECHS.find(t => t[8]===n)[0];
@@ -816,7 +851,7 @@ function preset(kind){
     c = {...base, name:'Monsieur Moyen', level:62, h:1.77, w:78, m:45, techs:['Jab','Direct','Crochet','Low kick','Esquive rotative','Single-leg','Sparring'].map(byName), tn:'Le Classique'};
     c.spec = ['Jab','Direct','Crochet'].map(byName);
   }
-  const LH = {worst:[50,'Malade'], avg:[100,'En forme'], best:[300,'Pleine forme']}[kind]; $('cLife').value = LH[0]; cLook.health = LH[1];
+  const LH = {worst:[50,'Malade'], avg:[100,'En forme'], best:[1000,'Pleine forme']}[kind]; $('cLife').value = LH[0]; cLook.health = LH[1];
   $('cName').value = c.name; $('cH').value = Math.round(c.h*100); $('cW').value = c.w; $('cM').value = c.m; $('cL').value = c.level; $('cTN').value = c.tn;
   cT = [...c.techs]; cSp = [...c.spec]; cInv = c.inv || null; createUI(); window.scrollTo({top:0,behavior:'smooth'});
 }
@@ -839,7 +874,7 @@ function preview(){
   const c = readCustom();
   if ($('cLookTxt')) lookUI();
   $('cHv').textContent = c.h.toFixed(2).replace('.',',')+' m'; $('cWv').textContent = c.w+' kg'; $('cMv').textContent = MUSC(c.m); $('cLv').textContent = c.level;
-  const s = customStats(c); $('cOvr').textContent = overall(s); $('cStats').innerHTML = statsHTML(s);
+  const s = customStats(c); $('cOvr').textContent = overall(s); $('cStats').innerHTML = sheetHTML(buildCustom(Object.assign({}, c, {id:'preview'})));
 }
 ['cH','cW','cM','cL','cLife'].forEach(id => $(id).oninput = seqUI);
 $('cName').oninput = preview;
@@ -917,7 +952,7 @@ $('bFuse').onclick = () => { const rc = readCustom(); const f = fusedMove(cT, ''
 function fillAll(ids, tn, nm){ cT = ids; cSp = []; cInv = inventTechnique(ids, tn); $('cTN').value = tn; if (!$('cName').value.trim() || ["L'Ultime","Le Vert","Le Rouge"].includes($('cName').value)) $('cName').value = nm; createUI(); }
 $('pGreen').onclick = () => fillAll(TECHS.filter(t => t[6].every(v => v >= 0)).map(t => t[0]), 'Technique Verte', 'Le Vert');
 $('pRed').onclick = () => fillAll(TECHS.filter(t => t[6].some(v => v < 0)).map(t => t[0]), 'Technique Rouge', 'Le Rouge');
-$('pAll').onclick = () => { $('cLife').value = 300; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); createUI(); };
+$('pAll').onclick = () => { $('cLife').value = 1000; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); createUI(); };
 $('pWorst').onclick = () => preset('worst'); $('pAvg').onclick = () => preset('avg'); $('pBest').onclick = () => preset('best');
 $('bSaveOpp').onclick = () => { if (!cT.length) return;
   if (!cSp.length && !cInv) $('bFuse').onclick();
@@ -944,6 +979,17 @@ function init3D(){
   floor.position.y = -.03; floor.receiveShadow = true; scene.add(floor);
   const ring = new THREE.Mesh(new THREE.RingGeometry(3.4,3.46,64), new THREE.MeshBasicMaterial({color:0xe63946,transparent:true,opacity:.35,side:THREE.DoubleSide}));
   ring.rotation.x = -Math.PI/2; ring.position.y = .005; scene.add(ring);
+  // Cage: chain-link style grid on the far panels only (never between camera and fighters)
+  const fencePts = [];
+  for (let i=0;i<8;i++){ const a=i/8*Math.PI*2+Math.PI/8, b=(i+1)/8*Math.PI*2+Math.PI/8;
+    const p1 = new THREE.Vector3(Math.cos(a)*6.5,0,Math.sin(a)*6.5), p2 = new THREE.Vector3(Math.cos(b)*6.5,0,Math.sin(b)*6.5);
+    if ((p1.z+p2.z)/2 > 1) continue;
+    const L = p1.distanceTo(p2), nV = Math.round(L/.25);
+    for (let k=0;k<=nV;k++){ const p = p1.clone().lerp(p2, k/nV); fencePts.push(p.x,0,p.z, p.x,1.8,p.z); }
+    for (let hgt=0; hgt<=1.8; hgt+=.25){ fencePts.push(p1.x,hgt,p1.z, p2.x,hgt,p2.z); }
+  }
+  const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute(fencePts, 3));
+  scene.add(new THREE.LineSegments(fg, new THREE.LineBasicMaterial({color:0x777788, transparent:true, opacity:.35})));
   for (let i=0;i<8;i++){ const a=i/8*Math.PI*2+Math.PI/8, b=(i+1)/8*Math.PI*2+Math.PI/8;
     const post = new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,1.6,8), new THREE.MeshStandardMaterial({color:0x333340})); post.position.set(Math.cos(a)*6.5,.8,Math.sin(a)*6.5); scene.add(post);
     for (const h of [.6,1.1,1.55]) scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(Math.cos(a)*6.5,h,Math.sin(a)*6.5),new THREE.Vector3(Math.cos(b)*6.5,h,Math.sin(b)*6.5)]), new THREE.LineBasicMaterial({color:0x44444f}))); }
@@ -1000,7 +1046,7 @@ let F = null, A, B, last = 0, running = false, shake = 0, slowmo = 0;
 function makeFighter(data, x, face, isAI){
   const [pow,spd,def,end,grap] = data.s;
   return {data, x, face, isAI, pow, spd, def, end, grap,
-    hpMax: data.life||100, hp: Math.round((data.life||100) * healthOf(data.health)[2]), heal: healthOf(data.health)[1] * (1 + (data.healBonus||0)), st:100, gauge:0, pose:{...G}, from:{...G}, cur:null, q:[], t:0, state:'idle', slipT:0, armor:0, invuln:0, counter:0,
+    zone:{head:100, body:100, leg:100}, A: attrs(data), hpMax: data.life||100, hp: Math.round((data.life||100) * healthOf(data.health)[2]), heal: healthOf(data.health)[1] * (1 + (data.healBonus||0)), st:100, gauge:0, pose:{...G}, from:{...G}, cur:null, q:[], t:0, state:'idle', slipT:0, armor:0, invuln:0, counter:0,
     tm: 1.2 - spd/100*.45, walk: 1.1 + spd/100*1.1, aiT:0, wins:0, idleP: data.idleP||'guard', parry:0, evade:0, angle:0, parried:0, sc:(data.h||1.8)/1.8};
 }
 let P = null, lastTest = false;
@@ -1039,9 +1085,10 @@ function setControl(f){
 }
 $('ctl').onclick = () => { if (F && !F.lesson) { setControl(P===A ? B : A); banner(P===A ? 'TU CONTRÔLES LE TOURBILLON' : 'TU CONTRÔLES ' + curOpp.person.toUpperCase(), 1000); } };
 function newRound(){
-  A.x=-1.4; B.x=1.4; for (const f of [A,B]){ f.hp=Math.round(f.hpMax*healthOf(f.data.health)[2]); f.st=100; f.q=[]; f.cur=null; f.state='idle'; f.pose={...G}; f.from={...G}; f.armor=0; f.invuln=0; }
+  A.x=-1.4; B.x=1.4; for (const f of [A,B]){ f.hp=Math.round(f.hpMax*healthOf(f.data.health)[2]); f.st=100; f.zone={head:100, body:100, leg:100}; f.q=[]; f.cur=null; f.state='idle'; f.pose={...G}; f.from={...G}; f.armor=0; f.invuln=0; }
   F.time = 60; F.phase='intro'; F.phaseT=1.4; banner('ROUND '+F.round);
 }
+function zoneHUD(id, f){ const c = v => v > 60 ? '#52b788' : v > 40 ? '#f4b942' : '#e63946'; $(id).innerHTML = [['🧠','head'],['🫁','body'],['🦵','leg']].map(([i,k]) => `<span>${i}<i style="width:${f.zone[k]*.22}px;background:${c(f.zone[k])}"></i></span>`).join(''); }
 function banner(t, ms=1300){ const b = $('banner'); b.textContent = t; b.style.opacity = 1; clearTimeout(b._t); b._t = setTimeout(()=>b.style.opacity=0, ms); }
 function pop(f, txt, col, big){
   const v = to3(f.pose, f.x, f.face, f.sc).head.clone(); v.y += .25;
@@ -1065,7 +1112,8 @@ function act(f, name){
   const m = name==='fused' ? {cost:10, seq: f.data.fusedMove.seq} : MOVES[name]; if (f.st < m.cost*.5) return false;
   f.st = Math.max(0, f.st - m.cost); play(f, m.seq, (name==='slip'||name==='vent') ? 'slip' : 'attack');
   f.vmul = 1; if (name==='fused'){ f.vmul = f.data.fusedMove.mul; pop(f, f.data.fusedMove.name, '#f4b942'); }
-  if (name==='slip') f.slipT = .35; if (m.parry) f.parry = m.parry; if (m.evade) f.evade = m.evade; if (m.angle) f.angle = m.angle; return true;
+  const vb = .8 + f.A.vue/250;
+  if (name==='slip') f.slipT = .35*vb; if (m.parry) f.parry = m.parry*vb; if (m.evade) f.evade = m.evade*vb; if (m.angle) f.angle = m.angle; return true;
 }
 function special(f, i){
   if (!canAct(f) || f.gauge < 100) return false;
@@ -1113,11 +1161,19 @@ function onEvent(f, ev){
     if (f.parried > 0){ mult *= 2; tag = 'VRILLE PARFAITE '; f.parried = 0; }
     if (f.angle > 0){ mult *= 1.3; if (!tag) tag = 'SUR LE CÔTÉ '; }
     const wasStun = o.state==='stun';
+    const Z = ev.target==='leg' ? 'leg' : ev.target==='body' ? 'body' : 'head';
+    const zA = {head:o.A.menton, body:o.A.corps, leg:o.A.jambes}[Z];
+    mult *= {head:1.25, body:1, leg:.8}[Z] * (1 - (zA-50)/250);
+    if (f.zone && f.zone.leg < 40 && ['lowHit','highHit','spinHit','teepHit','faux'].includes(f.cur && f.cur.p)) mult *= .7;
     const d = damage(f, o, ev.hit * mult, f.special);
+    const before = o.zone[Z]; o.zone[Z] = Math.max(0, o.zone[Z] - d*1.6*(100/o.hpMax)*(o.hpMax>150 ? 1.5 : 1));
+    if (before >= 40 && o.zone[Z] < 40) pop(o, {head:'VUE TROUBLE', body:'SOUFFLE COUPÉ', leg:'JAMBE TOUCHÉE'}[Z], '#f4b942', true);
+    if (Z==='body') o.st = Math.max(0, o.st - d*.8);
+    if (Z==='head') ev = Object.assign({}, ev, {stun: (ev.stun||300) * (1.3 - o.A.menton/100*.6) * (o.zone.head < 40 ? 1.4 : 1)});
     flash(f3[f.cur.p && POSES[f.cur.p].hit || 'rh'] || o3.head);
     if (ev.kdIfStun && wasStun) ev = Object.assign({}, ev, {kd:1});
     if (ev.count){ if (ev.count % 7 === 1) pop(f, ev.tag, '#f4b942'); $('banner').textContent = `${ev.count} / ${ev.total}`; $('banner').style.opacity = 1; clearTimeout($('banner')._t); $('banner')._t = setTimeout(()=>$('banner').style.opacity=0, 600); }
-    else pop(o, (ev.kiai ? 'KIAI ! ' : '') + tag + '-'+Math.round(d), ev.kd||tag ? '#f4b942' : '#e63946', ev.kd);
+    else pop(o, (ev.kiai ? 'KIAI ! ' : '') + tag + {head:'TÊTE ', body:'CORPS ', leg:'JAMBES '}[Z] + '-'+Math.round(d), ev.kd||tag ? '#f4b942' : '#e63946', ev.kd);
     if (ev.push) o.x += ev.push*f.face;
     shake = Math.max(shake, ev.shake || .35);
     if (!ev.noPush) o.x += .08*f.face;
@@ -1134,7 +1190,7 @@ function onEvent(f, ev){
     return 'replaced';
   }
   if (ev.slam){
-    const d = damage(f, o, ev.slam, f.special); shake = Math.max(shake, ev.shake||1); slowmo = .35;
+    const d = damage(f, o, ev.slam, f.special); shake = Math.max(shake, ev.shake||1); slowmo = .35; o.zone.body = Math.max(0, o.zone.body - d*1.6*(100/o.hpMax)); o.zone.head = Math.max(0, o.zone.head - d*.6*(100/o.hpMax));
     flash(to3(o.pose,o.x,o.face,o.sc).hip); pop(o, '-'+Math.round(d), '#f4b942', true);
     o.x += (ev.push||.35)*f.face; knockdown(o, 'downOut');
   }
@@ -1260,7 +1316,7 @@ function showStep(){
   $('lHow').innerHTML = L.full ? `<b>Enchaînement :</b> ${L.sp.steps.map(x=>x.name).join(' → ')}` : `<b>Comment la faire :</b> ${t[0]}`;
   $('lDrill').innerHTML = L.full ? `<b>Pour l'apprendre en vrai :</b> maîtrise chaque étape seule (au moins 2 à 4 semaines chacune), puis enchaîne-les lentement aux pattes d'ours, puis à vitesse réelle. Ensuite seulement, en sparring léger.` : `<b>Comment l'entraîner :</b> ${t[1]}`;
 }
-function resetPair(){ A.x = -.52; B.x = .52; for (const f of [A,B]){ f.hp = f.hpMax; f.q = []; f.cur = null; f.state = 'idle'; f.armor = 0; f.invuln = 0; f.pose = {...POSES[f.idleP]}; f.from = {...f.pose}; } $('pops').innerHTML = ''; }
+function resetPair(){ A.x = -.52; B.x = .52; for (const f of [A,B]){ f.hp = f.hpMax; f.zone = {head:100, body:100, leg:100}; f.q = []; f.cur = null; f.state = 'idle'; f.armor = 0; f.invuln = 0; f.pose = {...POSES[f.idleP]}; f.from = {...f.pose}; } $('pops').innerHTML = ''; }
 function playStep(){
   resetPair(); L.wait = 0;
   if (L.full){ B.tm = L.base; play(B, L.sp.seq, 'attack'); B.special = true; banner(L.sp.name.toUpperCase(), 1000); }
@@ -1283,7 +1339,7 @@ function ai(f, dt){
   f.aiT = .5 - L*.32 + Math.random()*.25;
   if (f.state==='guard' && o.state!=='attack') f.state = 'idle';
   if (!canAct(f)) return;
-  if (o.state==='attack' && d < 1.25 && Math.random() < L*.7){
+  if (o.state==='attack' && d < 1.25 && Math.random() < L*.7 * (f.A.vue/80) * (f.zone.head < 40 ? .6 : 1)){
     const r = Math.random(); if (r < .6) { f.state = 'guard'; f.aiT = .35; return; } if (r < .85) { act(f, f===A ? 'vent' : 'slip'); return; }
   }
   if (f.gauge >= 100){ if (d < 1.1 && special(f, 0)) return; f.move = -1; f.aiT = .08; return; }
@@ -1333,7 +1389,7 @@ function updateFighter(f, dt){
   f.parry = Math.max(0, f.parry - dt); f.evade = Math.max(0, f.evade - dt); f.angle = Math.max(0, f.angle - dt); f.parried = Math.max(0, f.parried - dt);
   if (f.cur){
     f.t += dt*1000;
-    const dur = f.cur.ms * f.tm;
+    const dur = f.cur.ms * f.tm * (f.zone && f.zone.head < 40 ? 1.15 : 1);
     const k = Math.min(1, f.t/dur);
     f.pose = lerp2(f.from, POSES[f.cur.p], ease(k));
     if (k >= 1){
@@ -1348,14 +1404,14 @@ function updateFighter(f, dt){
     const bob = Math.sin(performance.now()/260 + (f===A?0:1))*1.2;
     const t = {}; for (const k2 of KEYS) t[k2] = [target[k2][0], target[k2][1] + (k2==='lf'||k2==='rf'?0:bob)];
     f.pose = lerp2(f.pose, t, Math.min(1, dt*14));
-    if (F.phase==='fight' && !['down','ko','stun','thrown'].includes(f.state)) f.st = Math.min(100, f.st + dt*(8 + f.end/100*14) * (f.state==='guard'?.4:1) * (f.heal||1));
+    if (F.phase==='fight' && !['down','ko','stun','thrown'].includes(f.state)) f.st = Math.min(100, f.st + dt*(8 + f.end/100*14) * (f.state==='guard'?.4:1) * (f.heal||1) * (f.zone && f.zone.body < 40 ? .5 : 1));
   }
   // movement
   let mv = 0;
   const K = f.keys || keys;
   if (!f.isAI && !F.lesson){ if (canAct(f)){ f.state = K.guard ? 'guard' : 'idle'; mv = (K.right?1:0) - (K.left?1:0); } }
   else if (canAct(f) && f.state!=='guard') mv = f.move===-1 ? f.face : f.move===1 ? -f.face : 0;
-  if (mv && canAct(f) && f.state!=='guard'){ f.x += mv * f.walk * dt; f.state = 'walk'; }
+  if (mv && canAct(f) && f.state!=='guard'){ f.x += mv * f.walk * (f.zone && f.zone.leg < 40 ? .6 : 1) * (.85 + f.A.jambes/100*.3) * dt; f.state = 'walk'; }
 }
 function loop(now){
   const rdt = Math.min(.05, (now-last)/1000); last = now;
@@ -1373,7 +1429,7 @@ function loop(now){
     if (A.x > B.x - .3) A.x = B.x - .3;
     pose3(MA, to3(A.pose, A.x, A.face, A.sc)); pose3(MB, to3(B.pose, B.x, B.face, B.sc));
     // HUD
-    $('hpA').style.width = (A.hp/A.hpMax*100)+'%'; $('hpB').style.width = (B.hp/B.hpMax*100)+'%'; $('lifeA').textContent = '❤ '+Math.ceil(A.hp)+'/'+A.hpMax; $('lifeB').textContent = '❤ '+Math.ceil(B.hp)+'/'+B.hpMax; $('stA').style.width = A.st+'%'; $('stB').style.width = B.st+'%';
+    $('hpA').style.width = (A.hp/A.hpMax*100)+'%'; $('hpB').style.width = (B.hp/B.hpMax*100)+'%'; $('lifeA').textContent = '❤ '+Math.ceil(A.hp)+'/'+A.hpMax; zoneHUD('zA', A); zoneHUD('zB', B); $('lifeB').textContent = '❤ '+Math.ceil(B.hp)+'/'+B.hpMax; $('stA').style.width = A.st+'%'; $('stB').style.width = B.st+'%';
     $('ggA').style.width = A.gauge+'%'; $('ggB').style.width = B.gauge+'%';
     $('ggAw').classList.toggle('full', A.gauge>=100); $('ggBw').classList.toggle('full', B.gauge>=100);
     $('spA').classList.toggle('rdy', A.gauge>=100); $('spB').classList.toggle('rdy', B.gauge>=100);
