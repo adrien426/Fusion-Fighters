@@ -160,6 +160,7 @@ h2{font-size:30px;margin:6px 0 4px}
     <b>Comment jouer</b><br>
     ◀ ▶ : se déplacer · <b>GARDE</b> (maintenir) : bloque les coups<br>
     <b>JAB</b> : rapide · <b>VRILLE</b> : dévie son coup et frappe, double dégâts au bon moment · <b>FOUET</b> : coude · <b>FAUX</b> : fauchage, il tombe s'il est sonné · <b>PAS DU VENT</b> : esquive totale et +30 % de dégâts juste après<br>
+    <b>Réussite 0 à 100 %</b> : chaque coup, garde et esquive affiche sa réussite. À 100 %, c'est parfait et ça fait le plus de dégâts. La vitesse, la force, la vue et l'intelligence l'augmentent ; la fatigue, l'état sonné et le manque d'équilibre la baissent.<br>
     <b>⚡ TECHNIQUE FUSION</b> (jauge dorée) : ta technique, Vrille → Fouet → Pas du Vent → Faux → Coup Fusion. Chaque adversaire a aussi sa propre technique parfaite.<br>
     Enchaînement conseillé : <b>Vrille, Fouet, Faux</b>. Les saisies adverses passent à travers ta garde : esquive-les avec le Pas du Vent.<br>
     Clavier : ← → · S garde · W esquive · J K L U H G coups · I technique spéciale<br><b>🔘 Interrupteur</b> (en haut pendant le combat) : à droite tu joues le Tourbillon, à gauche tu contrôles l'adversaire avec ses techniques et sa spéciale.
@@ -1180,6 +1181,24 @@ function special(f, i){
 }
 const other = f => f===A ? B : A;
 const dist = () => Math.abs(A.x - B.x);
+// ---- Success rate 0-100% for strikes, guards and dodges ----
+const rnd = (a) => (Math.random()*2-1)*a;
+const clamp01 = v => Math.max(0, Math.min(1, v));
+function hitQuality(att, def){
+  const ta = traitsOf(att.data);
+  return clamp01(.45 + (att.spd-70)*.004 + (att.A.vue-60)*.003 + (att.pow-70)*.002 + (ta.iq-50)*.002
+    - (def.def-70)*.004 - (def.A.vue-60)*.002
+    + (def.dazed > 0 ? .2 : 0) + (def.bal < 40 ? .1 : 0) + (def.state==='stun' ? .1 : 0)
+    - (att.st < 20 ? .15 : 0) - (att.dazed > 0 ? .15 : 0) - (att.bal < 40 ? .1 : 0)
+    + (att.special ? .15 : 0) + rnd(.22));
+}
+function guardQuality(def, att){
+  return clamp01(.5 + (def.def-70)*.005 + (def.A.vue-60)*.003 - (att.pow-70)*.004 - (def.st < 20 ? .25 : 0) - (def.dazed > 0 ? .3 : 0) + rnd(.18));
+}
+function dodgeQuality(def, att){
+  return clamp01(.6 + (def.A.vue-60)*.005 + (def.spd-70)*.003 - (att.spd-70)*.004 - (def.dazed > 0 ? .3 : 0) - (def.bal < 40 ? .15 : 0) + rnd(.2));
+}
+const pct = q => Math.round(q*100) + ' %';
 function damage(att, def, raw, special){
   const d = raw * (1 - (def.data.resist||0)) * (att.vmul || 1) * (att.data.health==='Malade' ? .9 : 1) * (.6 + att.pow/100*.8) * (1.2 - def.def/100*.5) * (special ? 1.15 : 1);
   def.hp = Math.max(0, def.hp - d); att.gauge = Math.min(100, att.gauge + d*2.4); def.gauge = Math.min(100, def.gauge + d*1.2);
@@ -1202,12 +1221,16 @@ function onEvent(f, ev){
   if (ev.hit !== undefined){
     const o3 = to3(o.pose, o.x, o.face, o.sc), f3 = to3(f.pose, f.x, f.face, f.sc);
     if (dist() > ev.range*f.sc || ['down','ko','thrown'].includes(o.state) || o.invuln > 0){ return; }
-    if (o.evade > 0){ pop(o,'ESQUIVÉ','#52b788'); o.gauge = Math.min(100,o.gauge+10); return; }
-    if (o.slipT > 0 && ev.target==='head'){ pop(o,'ESQUIVÉ','#52b788'); o.gauge = Math.min(100,o.gauge+8); return; }
+    let dodgeFail = false;
+    if (o.evade > 0 || (o.slipT > 0 && ev.target==='head')){
+      const dq = dodgeQuality(o, f);
+      if (dq >= .35){ pop(o, (dq >= .95 ? 'ESQUIVE PARFAITE ' : 'ESQUIVÉ ') + pct(dq), '#52b788', dq >= .95); o.gauge = Math.min(100, o.gauge + 6 + dq*8); return; }
+      pop(o, 'ESQUIVE RATÉE ' + pct(dq), '#9a9aa8'); dodgeFail = true;
+    }
     if (o.parry > 0 && !f.special){ pop(o,'DÉVIÉ !','#f4b942'); o.parried = .7; o.gauge = Math.min(100,o.gauge+12); f.q=[ST('rHead',100),ST(f.idleP,280)]; f.state='stun'; f.armor=0; nextStep(f); return; }
     if (o.counter > 0 && !f.special){ pop(o,'CONTRÉ !','#f4b942'); return; }
     if (o.state==='guard' && !f.special){
-      const d = damage(f,o,ev.hit*.15); o.st = Math.max(0, o.st - 7); pop(o,'BLOQUÉ','#4ea8de'); o.x += .06*f.face;
+      const gq = guardQuality(o, f); const d = damage(f,o,ev.hit*(.03 + (1-gq)*.5)); o.st = Math.max(0, o.st - 4 - (1-gq)*8); pop(o, (gq >= .95 ? 'GARDE PARFAITE ' : 'BLOQUÉ ') + pct(gq), '#4ea8de', gq >= .95); if (gq >= .95) o.gauge = Math.min(100, o.gauge + 10); o.x += .06*f.face;
       if (o.st <= 0){ pop(o,'GARDE BRISÉE','#e63946'); o.q=[ST('rHead',120),ST(o.idleP,500)]; o.state='stun'; nextStep(o); }
       return;
     }
@@ -1219,6 +1242,9 @@ function onEvent(f, ev){
     const zA = {head:o.A.menton, body:o.A.corps, leg:o.A.jambes}[Z];
     mult *= {head:1.25, body:1, leg:.8}[Z] * (1 - (zA-50)/250);
     if (f.zone && f.zone.leg < 40 && ['lowHit','highHit','spinHit','teepHit','faux'].includes(f.cur && f.cur.p)) mult *= .7;
+    const q = clamp01(hitQuality(f, o) + (dodgeFail ? .15 : 0));
+    mult *= .4 + q*.9;
+    if (q >= .95) shake = Math.max(shake, 1);
     const d = damage(f, o, ev.hit * mult, f.special);
     const before = o.zone[Z]; o.zone[Z] = Math.max(0, o.zone[Z] - d*1.6*(100/o.hpMax)*(o.hpMax>150 ? 1.5 : 1));
     if (before >= 40 && o.zone[Z] < 40) pop(o, {head:'VUE TROUBLE', body:'SOUFFLE COUPÉ', leg:'JAMBE TOUCHÉE'}[Z], '#f4b942', true);
@@ -1229,7 +1255,7 @@ function onEvent(f, ev){
     flash(f3[f.cur.p && POSES[f.cur.p].hit || 'rh'] || o3.head);
     if (ev.kdIfStun && wasStun) ev = Object.assign({}, ev, {kd:1});
     if (ev.count){ if (ev.count % 7 === 1) pop(f, ev.tag, '#f4b942'); $('banner').textContent = `${ev.count} / ${ev.total}`; $('banner').style.opacity = 1; clearTimeout($('banner')._t); $('banner')._t = setTimeout(()=>$('banner').style.opacity=0, 600); }
-    else pop(o, (ev.kiai ? 'KIAI ! ' : '') + tag + {head:'TÊTE ', body:'CORPS ', leg:'JAMBES '}[Z] + '-'+Math.round(d), ev.kd||tag ? '#f4b942' : '#e63946', ev.kd);
+    else pop(o, (q >= .95 ? 'COUP PARFAIT ' : '') + (ev.kiai ? 'KIAI ! ' : '') + tag + {head:'TÊTE ', body:'CORPS ', leg:'JAMBES '}[Z] + '-'+Math.round(d) + ' (' + pct(q) + ')', ev.kd||tag||q >= .95 ? '#f4b942' : q < .35 ? '#9a9aa8' : '#e63946', ev.kd || q >= .95);
     if (ev.push) o.x += ev.push*f.face;
     shake = Math.max(shake, ev.shake || .35);
     if (!ev.noPush) o.x += .08*f.face;
@@ -1242,8 +1268,8 @@ function onEvent(f, ev){
     let p = .55 + (f.grap - o.grap)/220 + (o.state==='guard' ? .35 : 0) - (o.state==='attack' && !o.armor ? .35 : 0) + (o.bal < 40 ? .25 : 0) + (o.dazed > 0 ? .2 : 0);
     if (ev.force) p += .25;
     const ok = F.lesson ? true : dist() <= ev.range*f.sc && !['down','ko','thrown'].includes(o.state) && o.invuln<=0 && Math.random() < p;
-    if (ok){ pop(f, 'SAISIE !', '#f4b942'); o.armor = 0; o.state = 'thrown'; o.q = T.def.map(s=>({...s})).concat([ST('downOut',3000)]); nextStep(o); f.q = T.att.map(s=>({...s})); nextStep(f); }
-    else { pop(f, 'RATÉ', '#9a9aa8'); f.bal = Math.max(0, f.bal - 12); f.q = T.fail.map(s=>({...s})); nextStep(f); }
+    if (ok){ pop(f, 'SAISIE ' + pct(clamp01(p)), '#f4b942'); o.armor = 0; o.state = 'thrown'; o.q = T.def.map(s=>({...s})).concat([ST('downOut',3000)]); nextStep(o); f.q = T.att.map(s=>({...s})); nextStep(f); }
+    else { pop(f, 'SAISIE RATÉE ' + pct(clamp01(p)), '#9a9aa8'); f.bal = Math.max(0, f.bal - 12); f.q = T.fail.map(s=>({...s})); nextStep(f); }
     return 'replaced';
   }
   if (ev.slam){
