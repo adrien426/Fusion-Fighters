@@ -188,7 +188,7 @@ h2{font-size:30px;margin:6px 0 4px}
     <div id="persSel" style="font-size:13px;margin:6px 0"></div>
     <button class="big" id="bPersFuse" style="font-size:20px;background:var(--blue)">👥 FUSIONNER LES COMBATTANTS</button>
   </div>
-  <button class="big" id="pAll" style="font-size:22px;background:linear-gradient(90deg,#e63946,#f4b942)">🌍 TOUT METTRE : toutes les techniques du monde</button>
+  <button class="big" id="pAll" style="font-size:22px;background:linear-gradient(90deg,#e63946,#f4b942)">🌍 TOUT METTRE : toutes les techniques + tout au max</button>
   <div class="presets" style="grid-template-columns:1fr 1fr"><button id="pGreen" style="border-color:var(--green)">🟢 Tout le vert<br><span style="font:12px Inter;color:var(--mute)">que des bonus</span></button><button id="pRed" style="border-color:var(--red)">🔴 Tout le rouge<br><span style="font:12px Inter;color:var(--mute)">qui ont un malus</span></button></div>
   <div class="fusionCard">
     <div class="ovr"><div><div class="tact"><b>Nom</b></div><div class="pager" style="margin:4px 0"><input id="cName" maxlength="28" placeholder="Ex : Marco le Titan"></div></div><div class="note"><span>NOTE</span><b id="cOvr">--</b></div></div>
@@ -866,7 +866,7 @@ $('bFuse').onclick = () => { const f = fusedMove(cT, ''); if (f && !$('cTN').val
 function fillAll(ids, tn, nm){ cT = ids; cSp = []; cInv = inventTechnique(ids, tn); $('cTN').value = tn; if (!$('cName').value.trim() || ["L'Ultime","Le Vert","Le Rouge"].includes($('cName').value)) $('cName').value = nm; createUI(); }
 $('pGreen').onclick = () => fillAll(TECHS.filter(t => t[6].every(v => v >= 0)).map(t => t[0]), 'Technique Verte', 'Le Vert');
 $('pRed').onclick = () => fillAll(TECHS.filter(t => t[6].some(v => v < 0)).map(t => t[0]), 'Technique Rouge', 'Le Rouge');
-$('pAll').onclick = () => { $('cLife').value = 300; cLook.health = 'Pleine forme'; cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); createUI(); };
+$('pAll').onclick = () => { $('cLife').value = 300; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); createUI(); };
 $('pWorst').onclick = () => preset('worst'); $('pAvg').onclick = () => preset('avg'); $('pBest').onclick = () => preset('best');
 $('bSaveOpp').onclick = () => { if (!cT.length) return;
   if (!cSp.length && !cInv) $('bFuse').onclick();
