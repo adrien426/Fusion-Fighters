@@ -1459,11 +1459,27 @@ function charOf(d){
   let h = 0; for (const ch of d.person) h = (h*31 + ch.charCodeAt(0)) >>> 0;
   return CHARS[h % CHARS.length][0];
 }
-function loadRig(M, name){
+// fetch a GLB once (cached by name) and parse a fresh copy for each user
+function loadGLB(name, done){
   const go = () => { RIG_BUF[name] = RIG_BUF[name] || fetch('models/' + name + '.glb').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); });
-    RIG_BUF[name].then(buf => new THREE.GLTFLoader().parse(buf.slice(0), '', g => attachRig(M, g.scene, name), e => console.warn('Character model parse failed', name, e)))
-      .catch(e => { delete RIG_BUF[name]; console.warn('Character model load failed, keeping current fighter', name, e); }); };
+    RIG_BUF[name].then(buf => new THREE.GLTFLoader().parse(buf.slice(0), '', g => done(g.scene), e => console.warn('Model parse failed', name, e)))
+      .catch(e => { delete RIG_BUF[name]; console.warn('Model load failed', name, e); }); };
   if (THREE.GLTFLoader) go(); else loadScript2(['https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js', 'https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js'], go);
+}
+function loadRig(M, name){ loadGLB(name, root => attachRig(M, root, name)); }
+// ---- 3D weapons held in the right hand (models: tip along +Y, edge / pistol grip along +X, origin at the hand) ----
+const weaponType = w => /couteau|kukri|saï|kama/i.test(w || '') ? 'knife' : /batte|club|crosse|chaise|échelle|pelle|râteau|balai/i.test(w || '') ? 'bat' : /bâton|bo|bois|lance/i.test(w || '') ? 'bokken' : 'katana';
+function weaponShow(X, type, o, f){
+  X.wm = X.wm || {};
+  for (const k in X.wm) if (X.wm[k].obj) X.wm[k].obj.visible = k === type;
+  if (!type) return;
+  if (!X.wm[type]){ const slot = X.wm[type] = {obj: null};
+    loadGLB('w_' + type, root => { root.traverse(m => { if (m.isMesh) m.castShadow = true; }); root.visible = false; scene.add(root); slot.obj = root; if (save.anime) setTimeout(refreshToon, 0); }); }
+  const obj = X.wm[type].obj; if (!obj) return;   // the simple stick stays visible while the model loads
+  X.weapon.visible = false;
+  const y = o.rh.clone().sub(o.re).normalize(), z = new THREE.Vector3(0, 0, f.face), x = y.clone().cross(z);
+  if (x.lengthSq() < 1e-6) x.set(0, -1, 0); x.normalize(); z.crossVectors(x, y);
+  obj.quaternion.setFromRotationMatrix(_rm.makeBasis(x, y, z)); obj.position.copy(o.rh); obj.scale.setScalar(f.sc);
 }
 // when both fighters use the same character, the second one is tinted red
 function rigTint(){
@@ -1578,6 +1594,7 @@ function fxUpdate(f, o, other, dt){
   X.weapon.visible = !!(wpn || gun);
   if (X.weapon.visible){ const dir = o.rh.clone().sub(o.re).normalize(), len = wpn ? (/couteau|kukri|saï|kama/i.test(wpn.weapon || '') ? .3 : /lance|bâton|bo|échelle|crosse|club|batte|pelle|râteau|balai/i.test(wpn.weapon || '') ? .95 : .65) : .16;
     place(X.weapon, o.rh, o.rh.clone().addScaledVector(dir, len), wpn ? .022 : .035, wpn ? .022 : .05); X.weapon.material.color.set(wpn ? (/bâton|bo|batte|balai|bois|crosse|chaise|échelle/i.test(wpn.weapon || '') ? 0x8a5a2b : 0xb8c2cc) : 0x2b2f36); }
+  weaponShow(X, !(wpn || gun) ? null : (gun && (!wpn || (f.cur && (f.cur.fx === 'aim' || f.cur.fx === 'shot')))) ? 'gun' : weaponType(wpn.weapon), o, f);
   const st = f.cur, kind = st && st.fx, k = st && f.curDur ? Math.min(1, f.t / f.curDur) : 0;
   const hand = o.lh.clone().lerp(o.rh, .5).addScaledVector(new THREE.Vector3(f.face, 0, 0), .08);
   if (kind){ const c = st.col || 0x6ad8ff; X.ball.material.color.set(c); X.trail.material.color.set(c); }
