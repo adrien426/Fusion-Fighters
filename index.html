@@ -157,7 +157,7 @@ body.anime #banner{font-family:'Bangers','Impact',sans-serif;-webkit-text-stroke
   <div class="rankbox">Ton classement<b id="myRank">Non classé</b></div>
   <div class="fusionCard" id="meCard"></div>
   <div class="fusionCard" id="meLook" style="padding:10px 14px"></div>
-  <button class="big" id="bEverything" style="font-size:24px;padding:16px 10px;background:linear-gradient(90deg,#e63946,#f4b942,#ff4fa3,#7b5cff,#2fa36b);border:3px solid #fff">🌍 TOUT CE QU'IL Y A<br><span style="font-size:13px">ton Tourbillon et ton adversaire ont tout, puis combat</span></button>
+  <button class="big" id="bEverything" style="font-size:24px;padding:16px 10px;background:linear-gradient(90deg,#e63946,#f4b942,#ff4fa3,#7b5cff,#2fa36b);border:3px solid #fff">🌍 METTRE TOUT CE QU'IL Y A<br><span style="font-size:13px">ton Tourbillon et ton adversaire ont tout, puis combat</span></button>
   <button class="big alt" id="bMeAll" style="font-size:19px;border-color:var(--gold)"></button>
   <button class="big" id="bOpp">🏆 Classement : choisir un adversaire</button>
   <button class="big alt" id="bCreate">🛠 Créer mon propre adversaire</button>
@@ -190,7 +190,7 @@ body.anime #banner{font-family:'Bangers','Impact',sans-serif;-webkit-text-stroke
 <section class="screen" id="sCreate">
   <h2>Créer un adversaire</h2>
   <p class="sub">Choisis son physique et ses techniques. Chaque choix fait monter ou baisser ses stats et sa note.</p>
-  <button class="big" id="pAll" style="font-size:26px;padding:18px 10px;background:linear-gradient(90deg,#e63946,#f4b942,#ff4fa3,#7b5cff,#2fa36b);border:3px solid #fff">🌍 TOUT CE QU'IL Y A</button>
+  <button class="big" id="pAll" style="font-size:26px;padding:18px 10px;background:#d62839;border:3px solid #fff;color:#fff">😀 METTRE TOUT CE QU'IL Y A</button>
   <p class="sub" style="text-align:center;margin-top:-4px">Vraiment tout : combat, armes, pistolets, couteaux, films, dessins animés, tout au max.</p>
   <div id="myOpps"></div>
   <div class="fusionCard" id="cTop" style="border:2px solid var(--gold);background:linear-gradient(135deg,#2a2210,#16161c)"></div>
@@ -722,7 +722,7 @@ function menu(){
   document.querySelectorAll('[data-mb]').forEach(b => b.onclick = () => setL('bare', b.dataset.mb==='1'));
   document.querySelectorAll('[data-mn]').forEach(b => b.onclick = () => { setL('nails', b.dataset.mn); setL('bare', true); });
   $('meCard').insertAdjacentHTML('afterbegin', mySwitchHTML()); bindMySwitch(menu);
-  $('bMeAll').textContent = M.all ? '↩ Revenir au Tourbillon normal' : `🌍 TOUT CE QU'IL Y A à mon Tourbillon (${TECHS.length} techniques)`;
+  $('bMeAll').textContent = M.all ? '↩ Revenir au Tourbillon normal' : `🌍 METTRE TOUT CE QU'IL Y A à mon Tourbillon (${TECHS.length} techniques)`;
 }
 $('bOpp').onclick = () => go('sOpp');
 document.querySelectorAll('[data-arena]').forEach(b => b.onclick = () => setArena(b.dataset.arena));
