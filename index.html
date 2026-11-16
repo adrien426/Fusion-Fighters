@@ -200,6 +200,9 @@ body.anime #banner{font-family:'Bangers','Impact',sans-serif;-webkit-text-stroke
     <div id="persSel" style="font-size:13px;margin:6px 0"></div>
     <button class="big" id="bPersFuse" style="font-size:20px;background:var(--blue)">👥 FUSIONNER LES COMBATTANTS</button>
   </div>
+  <button class="big" id="pMix" style="font-size:18px;background:linear-gradient(90deg,#e63946,#ff4fa3,#7b5cff)">⚔️🌸 COMBAT + DESSIN ANIMÉ : toutes les techniques de combat et tous les pouvoirs</button>
+  <button class="big" id="pWorld" style="font-size:18px;background:linear-gradient(90deg,#2f80c9,#2fa36b)">🌍 TOUT LE MONDE : armes, pistolet, couteau, objets, sports, métiers, nature…</button>
+  <button class="big" id="p3" style="font-size:22px;background:linear-gradient(90deg,#f4b942,#e63946,#7b5cff,#2fa36b)">💥 TOUT DES TROIS : combat + dessin animé + tout le monde</button>
   <button class="big" id="pAnime" style="font-size:20px;background:linear-gradient(90deg,#ff4fa3,#7b5cff)">🌸 TOUT LE DESSIN ANIMÉ : tous les pouvoirs des dessins animés du monde + tout au max</button>
   <button class="big" id="pAll" style="font-size:22px;background:linear-gradient(90deg,#e63946,#f4b942)">🌍 TOUT METTRE : toutes les techniques + tout au max</button>
   <div class="presets" style="grid-template-columns:1fr 1fr"><button id="pGreen" style="border-color:var(--green)">🟢 Tout le vert<br><span style="font:12px Inter;color:var(--mute)">que des bonus</span></button><button id="pRed" style="border-color:var(--red)">🔴 Tout le rouge<br><span style="font:12px Inter;color:var(--mute)">qui ont un malus</span></button></div>
@@ -332,6 +335,8 @@ const ST = (p,ms,ev) => ({p,ms,ev});
 const H = (hit,o={}) => Object.assign({hit,range:1.08,target:'head',react:'rHead',stun:300},o);
 const FXS = (p, ms, ev, fx, col) => { const s = ST(p, ms, ev); s.fx = fx; s.col = col; return s; };
 const MOVES = {
+  shot:   {cost:12, seq:[FXS('jab',220,null,'aim'), FXS('jab',140,H(9,{range:9,target:'body',react:'rBody',stun:260}),'shot',0xffd34a), ST('guard',220)]},
+  swing:  {cost:11, seq:[ST('fz1',140), ST('fz4',140,H(11,{range:1.5,react:'rHead',stun:320})), ST('guard',220)]},
   beam:   {cost:16, seq:[FXS('fz2',300,null,'charge'), FXS('fz4',330,H(10,{range:9,target:'body',react:'rBody',stun:300}),'beam'), ST('guard',240)]},
   // --- Tourbillon (player) ---
   vrille: {cost:10, parry:.3, seq:[ST('vrille',140,H(9)),ST('vGuard',200)]},
@@ -415,6 +420,10 @@ const ARTS = [
 
 // ---- Signature technique builder (each opponent fuses his own perfect technique) ----
 const STEPS = {
+  shot:{n:'Tir',seq:()=>[FXS('jab',180,null,'aim'), FXS('jab',120,H(9,{range:9,target:'body',react:'rBody'}),'shot',0xffd34a)]},
+  kdShot:{n:'Rafale de tirs',seq:()=>[FXS('jab',160,null,'aim'), FXS('jab',110,H(7,{range:9}),'shot',0xffd34a), FXS('jab',110,H(7,{range:9}),'shot',0xffd34a), FXS('jab',120,H(12,{range:9,kd:1,shake:1.3}),'shot',0xffd34a), ST('guard',260)]},
+  swing:{n:"Coup d'arme",seq:()=>[ST('fz1',120), ST('fz4',130,H(12,{range:1.5}))]},
+  kdSwing:{n:"Coup d'arme final",seq:()=>[ST('fz1',150), ST('fz4',150,H(20,{range:1.55,kd:1,shake:1.4})), ST('guard',280)]},
   beam:{n:"Vague d'énergie",seq:()=>[FXS('fz2',260,null,'charge'), FXS('fz4',300,H(11,{range:9,target:'body',react:'rBody'}),'beam')]},
   kdBeam:{n:"Canon d'énergie",seq:()=>[FXS('fz2',420,null,'charge'), FXS('fz4',360,H(20,{range:9,kd:1,shake:1.6}),'beam'), ST('guard',300)]},
   jab:{n:'Jab',seq:()=>[ST('jab',90,H(4))]},
@@ -470,6 +479,9 @@ const NICK = ['le Roc','la Foudre',"l'Enclume",'le Cobra','la Tempête','le Gran
 
 // ---- Fighting style: each ranked fighter gets his own way of fighting ----
 const STY = {
+  toon:   ['🌸','Héros de dessin animé',"pouvoirs, énergie et accessoires de dessin animé"],
+  arsenal:['🗡','Guerrier armé',"armes et objets du monde entier"],
+  ultime: ['💥','Le Tout des Trois',"combat, dessin animé et armes du monde réunis"],
   combo:  ['🥊','Mitrailleur',"plein de coups très vite, en rafale"],
   throw:  ['🤼','Projeteur',"il t'attrape et te jette au sol"],
   ground: ['⬇','Plaqueur',"il te plaque et frappe au sol"],
@@ -511,6 +523,10 @@ function customStyle(c, s){
     counter:(tr.patience + tr.iq + tr.calme)/110 + def/45,
     acro:   spd/40 + Math.max(0, 80-w)/12 - Math.max(0, w-90)/10 + share(t => /capoeira|lucha|parkour|gymn|wushu|540|tornado|saut|volant/i.test(t[7]+' '+t[8]))*6,
   };
+  const toonN = cnt(t => /^Dessins animés/.test(t[2])), worldN = cnt(t => /^Tout le monde/.test(t[2])), normN = N - toonN - worldN;
+  if (toonN >= 5 && worldN >= 5 && normN >= 5) return 'ultime';
+  if (toonN >= 5 && toonN >= worldN) return 'toon';
+  if (worldN >= 5) return 'arsenal';
   return Object.entries(sc).sort((a,b) => b[1]-a[1])[0][0];
 }
 function styleSpecial(style, fmv){
@@ -523,7 +539,11 @@ function styleSpecial(style, fmv){
     clinch: () => [...S('knee'),...S('elbow'),...S('knee'),...S('kdKnee')],
     power:  () => [...S('slip'),...S('kdPalm')],
     counter:() => [...S('slip'),...S('kdCross')],
+    toon:   () => [...S('chain'),...S('beam'),...S('kdBeam')],
+    arsenal:() => [...S('swing'),...S('swing'),...S('kdShot')],
+    ultime: () => [...S('chain'),...S('swing'),...S('shot'),...S('beam'),...S('kdBeam')],
   };
+  if (style === 'toon' || style === 'ultime') sp.power = 1.25;
   if (seqs[style]) sp.seq = seqs[style]();
   if (style === 'acro') sp.acro = true;
   if (style === 'counter'){ sp.counter = .8; sp.evade = .5; }
@@ -559,7 +579,7 @@ function opponent(r){
 }
 const STAT = ['Puissance','Vitesse','Défense','Endurance','Lutte'];
 const STC = ['#e63946','#4ea8de','#52b788','#f4b942','#b07cf0'];
-const MOVE_FR = {beam:"Vague d'énergie",fused:'Technique',jab:'Jab',cross:'Direct',hook:'Crochet',kick:'Low kick',high:'Coup de pied haut',spin:'Retourné',teep:'Teep',knee:'Genou',elbow:'Coude',chain:'Rafale',palm:'Paume',grab:'Plaquage',throw:'Projection',slip:'Esquive'};
+const MOVE_FR = {beam:"Vague d'énergie",shot:'Tir',swing:"Coup d'arme",fused:'Technique',jab:'Jab',cross:'Direct',hook:'Crochet',kick:'Low kick',high:'Coup de pied haut',spin:'Retourné',teep:'Teep',knee:'Genou',elbow:'Coude',chain:'Rafale',palm:'Paume',grab:'Plaquage',throw:'Projection',slip:'Esquive'};
 
 // ===================== SAVE =====================
 let save = {rank:NOPP+1, beaten:{}};
@@ -804,7 +824,7 @@ Object.assign(EXTRA, {"Méditation Zen": {"res": 0.03, "heal": 0.03}, "Vipassana
 for (const [n,v] of Object.entries({"Corps de fer": 0.08, "Tibias d'acier": 0.05, "Ma Bu (cavalier)": 0.03, "Sanchin kata": 0.05, "Misogi (eau froide)": 0.02, "Résistance au froid": 0.03, "Hell Week": 0.04, "Combat fatigué": 0.03, "Inoculation au stress": 0.03, "Ponts de lutte": 0.03, "Shiko": 0.03, "Endurance du Sumo": 0.05, "Pont de fer": 0.04, "Relâchement": 0.05, "Blocage tibia": 0.04, "Garde haute": 0.03, "Gainage": 0.02, "Sparring": 0.02, "Sac lourd": 0.02, "Bains froids": 0.02, "Strongman": 0.03, "Highland Games (tronc, pierre)": 0.02, "Sanchin-dachi": 0.03})) EXTRA[n] = Object.assign({}, EXTRA[n]||{}, {res:v});
 CAT.push(...[["Frappe Teukgong", "Teukgong Moosul (Corée)", "Poings", "cross", [3, 0, 0, 0, 1]], ["Projection Teukgong", "Teukgong Moosul (Corée)", "Projections", "throw", [1, 1, 1, 0, 4]], ["Coup de pied Teukgong", "Teukgong Moosul (Corée)", "Pieds", "high", [4, -1, -1, 0, 0]], ["Frappe Jieitai", "Jieitai kakutōjutsu (Japon)", "Poings", "palm", [4, 0, 2, -1, 0]], ["Projection Jieitai", "Jieitai kakutōjutsu (Japon)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Clinch Combatives", "Combatives (US Army)", "Coudes et genoux", "knee", [4, 0, 0, 1, 1]], ["Takedown Combatives", "Combatives (US Army)", "Projections", "grab", [0, -1, 0, 2, 5]], ["Frappe Combatives", "Combatives (US Army)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Frappe du légionnaire", "Légion étrangère (France)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Amenée au sol légionnaire", "Légion étrangère (France)", "Projections", "grab", [0, -1, 1, 2, 5]], ["Clé d'intervention GIGN", "GIGN (France)", "Projections", "throw", [1, 1, 1, 0, 4]], ["Frappe de dégagement GIGN", "GIGN (France)", "Poings", "palm", [4, 0, 1, -1, 1]], ["Coup de genou commando", "Commandos Marine (France)", "Coudes et genoux", "knee", [3, 0, 0, 1, 1]], ["Coude commando", "Commandos Marine (France)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Frappe SAS", "SAS (Royaume-Uni)", "Poings", "cross", [4, 0, 0, 0, 0]], ["Projection SAS", "SAS (Royaume-Uni)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Frappe Gurkha", "Gurkhas (Népal)", "Poings", "hook", [3, 1, -1, 0, 0]], ["Coude Gurkha", "Gurkhas (Népal)", "Coudes et genoux", "elbow", [3, 1, 0, 1, 0]], ["Frappe BOPE", "BOPE (Brésil)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Contrôle BOPE", "BOPE (Brésil)", "Projections", "grab", [0, -1, 1, 2, 5]], ["Riposte Shayetet", "Shayetet 13 (Israël)", "Poings", "chain", [-1, 4, 0, -1, 1]], ["Défense Shayetet", "Shayetet 13 (Israël)", "Défense", "slip", [0, 3, 3, 0, 0]], ["Frappe Spetsnaz", "Spetsnaz (Russie)", "Poings", "palm", [4, 0, 1, -1, 1]], ["Projection Spetsnaz", "Spetsnaz (Russie)", "Projections", "throw", [1, 0, 1, 0, 5]], ["Coup de pied Spetsnaz", "Spetsnaz (Russie)", "Pieds", "kick", [3, 0, 0, 1, 0]], ["Combo militaire chinois", "Armée chinoise (Chine)", "Poings", "chain", [-1, 4, 0, 0, 0]], ["Saisie militaire chinoise", "Armée chinoise (Chine)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coude des Marines thaï", "Marines thaïlandais", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Genou des Marines thaï", "Marines thaïlandais", "Coudes et genoux", "knee", [3, 0, 0, 1, 2]], ["Sélection de la Légion étrangère", "France", "Militaire", null, [1, 1, 1, 3, 0]], ["Stage commando (Commandos Marine)", "France", "Militaire", null, [1, 1, 1, 3, 1]], ["Sélection GIGN", "France", "Militaire", null, [1, 1, 2, 2, 1]], ["Sélection SAS (Brecon Beacons)", "Royaume-Uni", "Militaire", null, [0, 0, 1, 4, 0]], ["Doko race (Gurkhas)", "Népal", "Militaire", null, [1, 0, 0, 4, 1]], ["BUD/S (Navy SEAL)", "USA", "Militaire", null, [0, 0, 1, 4, 0]], ["Ranger School", "USA", "Militaire", null, [0, 0, 1, 3, 0]], ["Sélection Spetsnaz", "Russie", "Militaire", null, [1, 0, 1, 3, 1]], ["Sélection Shayetet 13", "Israël", "Militaire", null, [0, 1, 1, 3, 0]], ["Entraînement Teukgong", "Corée", "Militaire", null, [1, 1, 1, 2, 1]], ["Entraînement BOPE", "Brésil", "Militaire", null, [1, 0, 1, 3, 0]], ["Survie en milieu hostile", "Monde", "Militaire", null, [0, 0, 1, 3, 0]], ["Combat en armure (lesté)", "Monde", "Militaire", null, [2, -1, 1, 2, 0]], ["Résistance à la douleur", "Forces spéciales", "Militaire", null, [0, 0, 2, 1, 0]]]);
 Object.assign(EXTRA, {"Sélection de la Légion étrangère": {"res": 0.03, "life": 15}, "Stage commando (Commandos Marine)": {"res": 0.03, "life": 15}, "Sélection GIGN": {"res": 0.03}, "Sélection SAS (Brecon Beacons)": {"life": 20}, "Doko race (Gurkhas)": {"life": 25}, "BUD/S (Navy SEAL)": {"res": 0.03, "life": 20}, "Ranger School": {"res": 0.02, "life": 15}, "Sélection Spetsnaz": {"res": 0.04}, "Sélection Shayetet 13": {"res": 0.03}, "Entraînement Teukgong": {"res": 0.02}, "Entraînement BOPE": {"res": 0.02, "life": 10}, "Survie en milieu hostile": {"life": 15}, "Combat en armure (lesté)": {"res": 0.02}, "Résistance à la douleur": {"res": 0.04}});
-const ANIM = {beam:['beam','beam','kdBeam'],jab:['jab','jab',null],cross:['cross','cross','kdCross'],hook:['hook','hook','kdHook'],chain:['chain','chain',null],palm:['palm','palm','kdPalm'],
+const ANIM = {beam:['beam','beam','kdBeam'],shot:['shot','shot','kdShot'],swing:['swing','swing','kdSwing'],jab:['jab','jab',null],cross:['cross','cross','kdCross'],hook:['hook','hook','kdHook'],chain:['chain','chain',null],palm:['palm','palm','kdPalm'],
   kick:['kick','low',null],teep:['teep','teep',null],high:['high','high','kdHigh'],spin:['spin','spin',null],elbow:['elbow','elbow','kdElbow'],knee:['knee','knee','kdKnee'],
   grab:['grab',null,'titan'],throw:['throw',null,'ippon'],slip:['slip','slip',null]};
 // TECHS rows: [id, label, category, AI move, step, KO step, mods, art]
@@ -826,6 +846,16 @@ CAT.push(...[
   ["Cri de guerre", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [2,0,1,1,0]], ["Bouclier d'aura", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [0,0,5,1,0]],
   ["Endurance sans fin", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [0,0,1,5,0]], ["Coup final de l'étoile", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'palm', [5,1,-1,-1,0]],
 ]);
+// Accessories of cartoon heroes and everything in the world (weapons, objects, sports, jobs, nature)
+{ const C = (cat, art, list) => list.forEach(([n, a, m]) => CAT.push([n, art, cat, a, m]));
+  C('Dessins animés : accessoires', 'Accessoires de héros', [["Cape de héros", null, [0,1,2,1,0]], ["Bâton magique", 'swing', [3,1,1,0,0]], ["Anneau de pouvoir", null, [3,1,1,1,0]], ["Bottes de vitesse", 'slip', [0,5,1,1,0]], ["Ceinture de champion", null, [1,0,2,2,0]], ["Gants d'énergie", 'beam', [4,1,0,0,0]], ["Masque de héros", null, [0,1,3,0,0]], ["Épée lumineuse", 'swing', [4,2,0,0,0]], ["Bouclier du héros", null, [0,0,5,0,0]], ["Bandeau de combattant", null, [1,1,1,2,0]], ["Nuage volant", 'slip', [0,4,2,1,0]], ["Bâton qui s'allonge", 'swing', [3,2,1,0,0]], ["Haricot de force", null, [1,0,1,5,0]], ["Fusée dorsale", 'slip', [1,4,1,0,0]]]);
+  C('Tout le monde : armes blanches', 'Armes du monde', [["Couteau", 'swing', [3,3,0,0,0]], ["Épée", 'swing', [4,2,1,0,0]], ["Katana", 'swing', [4,3,0,0,0]], ["Sabre", 'swing', [4,2,0,0,0]], ["Lance", 'swing', [3,2,1,0,0]], ["Hache", 'swing', [5,-1,0,0,0]], ["Bâton (bo)", 'swing', [2,2,2,0,0]], ["Nunchaku", 'swing', [3,4,0,0,0]], ["Tonfa", 'swing', [2,2,3,0,0]], ["Kama (faucille)", 'swing', [3,3,0,0,0]], ["Saï", 'swing', [2,3,2,0,0]], ["Fouet", 'swing', [2,4,0,0,0]], ["Masse d'armes", 'swing', [5,-1,0,0,0]], ["Machette", 'swing', [4,2,0,0,0]], ["Kukri", 'swing', [4,2,0,0,0]], ["Escrima (bâtons)", 'swing', [2,4,1,0,0]], ["Chaîne", 'swing', [3,2,0,0,1]], ["Bouclier", null, [0,-1,5,0,0]]]);
+  C('Tout le monde : armes à distance', 'Armes du monde', [["Pistolet", 'shot', [4,3,0,0,0]], ["Revolver", 'shot', [5,1,0,0,0]], ["Fusil", 'shot', [5,0,0,0,0]], ["Arc et flèches", 'shot', [3,2,0,0,0]], ["Arbalète", 'shot', [4,0,0,0,0]], ["Fronde", 'shot', [2,3,0,0,0]], ["Shuriken", 'shot', [2,4,0,0,0]], ["Couteaux de lancer", 'shot', [3,3,0,0,0]], ["Boomerang", 'shot', [2,3,1,0,0]], ["Sarbacane", 'shot', [1,4,0,0,0]], ["Lance-pierre", 'shot', [2,3,0,0,0]], ["Pistolet à eau", 'shot', [0,4,1,0,0]], ["Paintball", 'shot', [1,4,0,0,0]], ["Lasso", 'grab', [0,2,0,0,4]]]);
+  C('Tout le monde : objets', 'Objets du quotidien', [["Chaise", 'swing', [4,-1,1,0,0]], ["Poêle à frire", 'swing', [4,0,1,0,0]], ["Balai", 'swing', [2,2,1,0,0]], ["Parapluie", 'swing', [2,2,2,0,0]], ["Rouleau à pâtisserie", 'swing', [3,1,0,0,0]], ["Casserole", 'swing', [3,0,1,0,0]], ["Pelle", 'swing', [4,0,0,0,0]], ["Râteau", 'swing', [3,1,0,0,0]], ["Clé à molette", 'swing', [4,1,0,0,0]], ["Sac à main", 'swing', [2,2,0,0,0]], ["Oreiller", 'swing', [0,3,1,0,0]], ["Livre très lourd", 'swing', [3,0,0,0,0]], ["Casque de moto", null, [0,-1,4,0,0]], ["Gilet pare-balles", null, [0,-2,5,1,0]], ["Corde", 'grab', [0,1,0,1,4]], ["Échelle", 'swing', [4,-1,1,0,0]]]);
+  C('Tout le monde : sports', 'Sports du monde', [["Batte de baseball", 'swing', [5,0,0,0,0]], ["Crosse de hockey", 'swing', [4,1,0,0,0]], ["Raquette de tennis", 'swing', [3,2,0,0,0]], ["Club de golf", 'swing', [4,1,0,0,0]], ["Lancer de ballon", 'shot', [2,3,0,0,0]], ["Placage de rugby", 'grab', [3,1,0,1,4]], ["Tir de footballeur", 'kick', [4,2,0,0,0]], ["Dunk de basket", 'palm', [4,2,0,0,0]], ["Skateboard", 'swing', [3,3,0,0,0]], ["Haltère", 'swing', [5,-1,0,1,0]], ["Kettlebell", 'swing', [5,-1,0,1,0]], ["Lancer de poids", 'shot', [4,-1,0,0,0]]]);
+  C('Tout le monde : métiers', 'Métiers du monde', [["Lance à incendie (pompier)", 'shot', [2,1,2,0,0]], ["Matraque (police)", 'swing', [3,2,2,0,0]], ["Menottes", 'grab', [0,2,1,0,4]], ["Marteau du forgeron", 'swing', [5,-1,0,1,0]], ["Clé de mécanicien", 'swing', [4,1,0,0,0]], ["Sifflet de l'arbitre", null, [0,1,2,0,0]], ["Force du bûcheron", null, [3,0,1,3,0]], ["Endurance du mineur", null, [0,0,2,4,0]], ["Agilité du couvreur", 'slip', [0,4,2,0,0]], ["Poigne du déménageur", 'grab', [3,0,0,1,4]]]);
+  C('Tout le monde : nature', 'Nature', [["Lancer de pierre", 'shot', [3,1,0,0,0]], ["Bâton de bois", 'swing', [3,1,1,0,0]], ["Noix de coco", 'shot', [3,1,0,0,0]], ["Boule de neige", 'shot', [1,3,0,0,0]], ["Force du gorille", null, [5,0,1,1,0]], ["Vitesse du guépard", 'slip', [0,5,1,0,0]], ["Peau de l'éléphant", null, [0,-1,4,3,0]]]);
+}
 // Powers in the style of cartoons from all over the world (original names, no existing character)
 { const C = (cat, art, list) => list.forEach(([n, a, m]) => CAT.push([n, art, 'Dessins animés : ' + cat, a, m]));
   C('énergie et arts martiaux', 'Animé japonais', [["Transformation de puissance", null, [5,3,1,1,0]], ["Explosion d'aura", 'beam', [5,0,0,-2,0]], ["Rayon des deux mains", 'beam', [5,0,-1,-2,0]], ["Disque d'énergie tranchant", 'beam', [4,2,-1,-1,0]], ["Coup de la comète", 'cross', [5,1,-1,0,0]], ["Vol supersonique", 'slip', [1,5,2,0,0]]]);
@@ -844,7 +874,7 @@ CAT.push(...[
 const TECHS = CAT.map((c,i) => { const a = c[3] ? ANIM[c[3]] : [null,null,null]; return ['t'+i, c[0]+' ('+c[1]+')', c[2], a[0], a[1], a[2], c[4], c[1], c[0]]; });
 const BASIC = ['Jab','Direct','Crochet','Low kick','Teep','High kick','Ushiro-geri','Coude horizontal','Genou droit','Double-leg','O-goshi','Esquive rotative','Paume de fer','Rafale en chaîne'];
 const TT = id => TECHS.find(t => t[0]===id);
-function bonusOf(ids){ let life = 0, heal = 0, res = 0; ids.forEach(id => { const t = TT(id); const e = t && EXTRA[t[8]]; if (e){ life += e.life||0; heal += e.heal||0; res += e.res||0; } }); return {life: Math.min(400, life), heal: Math.min(.8, heal), res}; }
+function bonusOf(ids){ let life = 0, heal = 0, res = 0; ids.forEach(id => { const t = TT(id); const e = t && EXTRA[t[8]]; if (e){ life += e.life||0; heal += e.heal||0; res += e.res||0; } if (t && /^Dessins animés/.test(t[2])){ life += 3; res += .004; } if (t && /^Tout le monde/.test(t[2]) && !t[3]){ res += .003; } }); return {life: Math.min(400, life), heal: Math.min(.8, heal), res}; }
 const HEALTH_LIFE = {'Pleine forme':20,'En forme':0,'Fatigué':-10,'Blessé':-20,'Malade':-30};
 const HEALTH_RES = {'Pleine forme':.05,'En forme':0,'Fatigué':-.05,'Blessé':-.1,'Malade':-.1};
 // Total life and hit resistance from everything: base, practices, health, muscles, weight
@@ -962,7 +992,7 @@ function invSpecial(inv){
 }
 
 // ---- ONE technique: every chosen technique melted into a single strike ----
-const FAM_GROUP = {beam:'punch',jab:'punch',cross:'punch',hook:'punch',chain:'punch',palm:'punch',slip:'punch',kick:'kick',teep:'kick',high:'kick',spin:'kick',elbow:'elbow',knee:'knee',grab:'proj',throw:'proj'};
+const FAM_GROUP = {beam:'punch',shot:'punch',swing:'punch',jab:'punch',cross:'punch',hook:'punch',chain:'punch',palm:'punch',slip:'punch',kick:'kick',teep:'kick',high:'kick',spin:'kick',elbow:'elbow',knee:'knee',grab:'proj',throw:'proj'};
 const GROUP_NOUN = {punch:'La Paume',kick:'Le Fouet',elbow:'La Lame',knee:'Le Bélier',proj:"L'Avalanche"};
 const GROUP_STEP = {punch:'palm',kick:'high',elbow:'elbow',knee:'knee',proj:'titan'};
 const SUFFIX = ['du Dragon','de la Tempête','du Phénix','de la Foudre','du Séisme','du Tonnerre','du Cyclone','de la Comète','du Volcan','de l\'Orage'];
@@ -1059,6 +1089,8 @@ function personalMoves(ids){
   if (en){ const names = enL.map(t => t[8]).join(' ');
     const col = /feu|soleil|phénix|dynamite|comète/i.test(names) ? 0xff6a2a : /glac|hiver|neige|eau/i.test(names) ? 0x8fe8ff : /foudre|éclair|laser/i.test(names) ? 0xffe14a : /jade|étoile/i.test(names) ? 0x6dff9a : 0x6ad8ff;
     out.pm_beam = Object.assign(en, {name:'Énergie · ' + en.top, short:'⚡ VAGUE', seq:[FXS('fz2',280,null,'charge',col), FXS('fz4',320,H(10,{range:9,target:'body',react:'rBody',stun:300}),'beam',col), ST('guard',240)]}); }
+  const shL = pick(t => t[3]==='shot'), sh = fuse(shL); if (sh) out.pm_shot = Object.assign(sh, {name:'Tir · ' + sh.top, short:'🔫 TIR', seq:[FXS('jab',200,null,'aim'), FXS('jab',130,H(9,{range:9,target:'body',react:'rBody',stun:260}),'shot',0xffd34a), ST('guard',220)]});
+  const swL = pick(t => t[3]==='swing'), sw = fuse(swL); if (sw) out.pm_swing = Object.assign(sw, {name:'Arme · ' + sw.top, short:'🗡 ARME', weapon: swL[0][8], seq:[ST('fz1',140), ST('fz4',140,H(11,{range:1.5,react:'rHead',stun:320})), ST('guard',220)]});
   const e = fuse(pick(t => t[3]==='elbow')); if (e) out.pm_elbow = Object.assign(e, {name:'Coude · ' + e.top, short:'COUDE', seq:[ST('elbow',120,H(9,{range:.98})),ST('guard',200)]});
   const projL = pick(t => t[3]==='grab' || t[3]==='throw');
   const p = fuse(projL); if (p) out.pm_proj = Object.assign(p, {name:'Projection · ' + p.top, short:'PROJECTION', seq:[ST('grab',150,{grab: projL.filter(t=>t[3]==='throw').length >= projL.length/2 ? 'ippon' : 'plaquage', range:.98})]});
@@ -1272,8 +1304,14 @@ $('bFuse').onclick = () => { const rc = readCustom(); const f = fusedMove(cT, ''
 function fillAll(ids, tn, nm){ cT = ids; cSp = []; cInv = inventTechnique(ids, tn); $('cTN').value = tn; if (!$('cName').value.trim() || ["L'Ultime","Le Vert","Le Rouge"].includes($('cName').value)) $('cName').value = nm; createUI(); }
 $('pGreen').onclick = () => fillAll(TECHS.filter(t => t[6].every(v => v >= 0)).map(t => t[0]), 'Technique Verte', 'Le Vert');
 $('pRed').onclick = () => fillAll(TECHS.filter(t => t[6].some(v => v < 0)).map(t => t[0]), 'Technique Rouge', 'Le Rouge');
+const catOf = re => TECHS.filter(t => re.test(t[2])).map(t => t[0]);
+const NORMAL_RE = /^(?!Dessins animés|Tout le monde)/;
+const bigPreset = (ids, name, tech) => { $('pAll').onclick(); cT = ids; cInv = inventTechnique(cT, tech); $('cTN').value = tech; $('cName').value = name; cPers = []; cPersDone = false; if (typeof persUI === 'function') persUI(); createUI(); };
+$('pMix').onclick = () => bigPreset(catOf(/^(?!Tout le monde)/), 'Le Combattant des Dessins Animés', 'Technique Combat-Animé');
+$('pWorld').onclick = () => bigPreset(catOf(/^Tout le monde/), 'Le Guerrier du Monde', 'Technique du Monde');
+$('p3').onclick = () => bigPreset(TECHS.map(t => t[0]), 'Le Tout des Trois', 'Technique des Trois');
 $('pAnime').onclick = () => { $('pAll').onclick(); cT = TECHS.filter(t => /^Dessins animés/.test(t[2])).map(t => t[0]); cInv = inventTechnique(cT, 'Technique Dessin Animé'); $('cTN').value = 'Technique Dessin Animé'; $('cName').value = 'Le Héros des Dessins Animés'; cPers = []; cPersDone = false; if (typeof persUI === 'function') persUI(); createUI(); };
-$('pAll').onclick = () => { cGear = [...ALL_GEAR]; cMood = 'Confiant'; cBody = {age:28, os:99, mains:99, poumons:99}; cTr = {agr:99, iq:99, calme:99, patience:99, ruse:99, courage:99}; $('cLife').value = 1000; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); cPers = candidates().map(x => x.id); cPersDone = true; if (typeof persUI === 'function') persUI(); if ($('cName').value === "L'Ultime") $('cName').value = 'La Fusion de Tous'; createUI(); };
+$('pAll').onclick = () => { cGear = [...ALL_GEAR]; cMood = 'Confiant'; cBody = {age:28, os:99, mains:99, poumons:99}; cTr = {agr:99, iq:99, calme:99, patience:99, ruse:99, courage:99}; $('cLife').value = 1000; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.filter(t => NORMAL_RE.test(t[2])).map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); cPers = candidates().map(x => x.id); cPersDone = true; if (typeof persUI === 'function') persUI(); if ($('cName').value === "L'Ultime") $('cName').value = 'La Fusion de Tous'; createUI(); };
 $('bSaveMe').onclick = () => { if (!cT.length) return;
   if (!cSp.length && !cInv) $('bFuse').onclick();
   const c = readCustom(); save.customs = (save.customs||[]).filter(x=>x.techs).concat([c]); save.myChar = 'c'+c.id; persist(); menu(); go('sOpp'); bannerLocal('TU JOUES ' + c.name.toUpperCase() + ' · CHOISIS TON ADVERSAIRE', 2500); };
@@ -1384,11 +1422,19 @@ function fxUpdate(f, o, other, dt){
   if (!f.fx) f.fx = {ball: fxMesh(0x6ad8ff), core: fxMesh(0xffffff), trail: new THREE.Mesh(UC, new THREE.MeshBasicMaterial({color:0x6ad8ff, transparent:true, opacity:.55, blending:THREE.AdditiveBlending, depthWrite:false})), aura: fxMesh(0xffd23f)};
   f.fx.trail.material.userData.outlineParameters = NO_OUTLINE;
   const X = f.fx; if (!X.trail.parent) scene.add(X.trail);
+  if (!X.weapon){ X.weapon = new THREE.Mesh(UC, new THREE.MeshStandardMaterial({color:0x9aa3ad, metalness:.6, roughness:.35})); X.weapon.castShadow = true; scene.add(X.weapon); }
+  const wpn = f.data.pmoves && f.data.pmoves.pm_swing, gun = f.data.pmoves && f.data.pmoves.pm_shot;
+  X.weapon.visible = !!(wpn || gun);
+  if (X.weapon.visible){ const dir = o.rh.clone().sub(o.re).normalize(), len = wpn ? (/couteau|kukri|saï|kama/i.test(wpn.weapon || '') ? .3 : /lance|bâton|bo|échelle|crosse|club|batte|pelle|râteau|balai/i.test(wpn.weapon || '') ? .95 : .65) : .16;
+    place(X.weapon, o.rh, o.rh.clone().addScaledVector(dir, len), wpn ? .022 : .035, wpn ? .022 : .05); X.weapon.material.color.set(wpn ? (/bâton|bo|batte|balai|bois|crosse|chaise|échelle/i.test(wpn.weapon || '') ? 0x8a5a2b : 0xb8c2cc) : 0x2b2f36); }
   const st = f.cur, kind = st && st.fx, k = st && f.curDur ? Math.min(1, f.t / f.curDur) : 0;
   const hand = o.lh.clone().lerp(o.rh, .5).addScaledVector(new THREE.Vector3(f.face, 0, 0), .08);
   if (kind){ const c = st.col || 0x6ad8ff; X.ball.material.color.set(c); X.trail.material.color.set(c); }
-  X.ball.visible = X.core.visible = !!kind; X.trail.visible = kind === "beam";
+  X.ball.visible = X.core.visible = !!kind && kind !== 'aim'; X.trail.visible = kind === 'beam' || kind === 'shot';
   if (kind === 'charge'){ const r = .05 + .13*k + Math.sin(performance.now()/40)*.01; X.ball.position.copy(hand); X.ball.scale.setScalar(r); X.core.position.copy(hand); X.core.scale.setScalar(r*.45); }
+  if (kind === 'aim'){ X.ball.visible = X.core.visible = false; }
+  if (kind === 'shot'){ const tx = other.x - f.face*.25, p = hand.clone(); p.x += (tx - hand.x) * k; p.y = hand.y + (1.15*other.sc - hand.y) * k * .5;
+    X.ball.position.copy(p); X.ball.scale.setScalar(.05); X.core.position.copy(p); X.core.scale.setScalar(.025); X.trail.visible = true; place(X.trail, p.clone().addScaledVector(new THREE.Vector3(-f.face, 0, 0), .35), p, .012, .012); }
   if (kind === 'beam'){
     const tx = other.x - f.face*.25, p = hand.clone(); p.x += (tx - hand.x) * k; p.y = hand.y + (1.15*other.sc - hand.y) * k * .6;
     X.ball.position.copy(p); X.ball.scale.setScalar(.19); X.core.position.copy(p); X.core.scale.setScalar(.09);
