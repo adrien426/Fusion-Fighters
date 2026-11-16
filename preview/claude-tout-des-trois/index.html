@@ -141,6 +141,11 @@ h2{font-size:30px;margin:6px 0 4px}
 .zb{display:flex;gap:4px;font-size:9px;margin-top:2px}.right .zb{justify-content:flex-end}.zb span{display:flex;align-items:center;gap:1px}.zb i{display:inline-block;height:4px;border-radius:2px}
 .help{font-size:12px;color:var(--mute);line-height:1.6;background:var(--card);border-radius:12px;padding:12px;margin-top:12px}
 .help b{color:var(--txt)}
+#speed{position:absolute;inset:0;pointer-events:none;opacity:0;z-index:4;
+  background:repeating-conic-gradient(from 0deg at 50% 45%, rgba(255,255,255,.0) 0deg 2.2deg, rgba(255,255,255,.75) 2.6deg 3deg, rgba(255,255,255,0) 3.4deg 6deg);
+  -webkit-mask:radial-gradient(circle at 50% 45%, transparent 22%, #000 62%); mask:radial-gradient(circle at 50% 45%, transparent 22%, #000 62%)}
+body.anime .pop{font-family:'Bangers','Impact',sans-serif;letter-spacing:1px;-webkit-text-stroke:1.5px #000;text-shadow:3px 3px 0 #000}
+body.anime #banner{font-family:'Bangers','Impact',sans-serif;-webkit-text-stroke:2px #000;letter-spacing:2px}
 </style>
 </head>
 <body>
@@ -155,7 +160,9 @@ h2{font-size:30px;margin:6px 0 4px}
   <button class="big alt" id="bMeAll" style="font-size:19px;border-color:var(--gold)"></button>
   <button class="big" id="bOpp">🏆 Classement : choisir un adversaire</button>
   <button class="big alt" id="bCreate">🛠 Créer mon propre adversaire</button>
-  <button class="big alt" id="b2P" style="border-color:var(--blue)">👥 Mode 2 joueurs</button>
+  <button class="big" id="bAnime" style="background:linear-gradient(90deg,#ff4fa3,#7b5cff);font-size:18px"></button>
+  <button class="big" id="bMP" style="background:var(--blue)">🌐 Multijoueur (chacun son téléphone)</button>
+  <button class="big alt" id="b2P" style="border-color:var(--blue)">👥 2 joueurs sur le même téléphone</button>
   <div class="help">
     <b>Comment jouer</b><br>
     ◀ ▶ : se déplacer · <b>GARDE</b> (maintenir) : bloque les coups<br>
@@ -188,10 +195,15 @@ h2{font-size:30px;margin:6px 0 4px}
   <div class="fusionCard" style="border-color:var(--blue)">
     <div class="tact"><b>👥 Fusionner des combattants</b> <span style="color:var(--mute)">(choisis-en au moins 2 : classement ou tes créations)</span></div>
     <div class="pager"><input id="pq" placeholder="Rechercher un nom, un rang, un art…"></div>
+    <button class="big alt" id="bPersAll" style="font-size:18px">✅ Prendre tout le top 100 (et mes créations)</button>
     <div id="persList" style="max-height:230px;overflow:auto"></div>
     <div id="persSel" style="font-size:13px;margin:6px 0"></div>
     <button class="big" id="bPersFuse" style="font-size:20px;background:var(--blue)">👥 FUSIONNER LES COMBATTANTS</button>
   </div>
+  <button class="big" id="pMix" style="font-size:18px;background:linear-gradient(90deg,#e63946,#ff4fa3,#7b5cff)">⚔️🌸 COMBAT + DESSIN ANIMÉ : toutes les techniques de combat et tous les pouvoirs</button>
+  <button class="big" id="pWorld" style="font-size:18px;background:linear-gradient(90deg,#2f80c9,#2fa36b)">🌍 TOUT LE MONDE : armes, pistolet, couteau, objets, sports, métiers, nature…</button>
+  <button class="big" id="p3" style="font-size:22px;background:linear-gradient(90deg,#f4b942,#e63946,#7b5cff,#2fa36b)">💥 TOUT DES TROIS : combat + dessin animé + tout le monde</button>
+  <button class="big" id="pAnime" style="font-size:20px;background:linear-gradient(90deg,#ff4fa3,#7b5cff)">🌸 TOUT LE DESSIN ANIMÉ : tous les pouvoirs des dessins animés du monde + tout au max</button>
   <button class="big" id="pAll" style="font-size:22px;background:linear-gradient(90deg,#e63946,#f4b942)">🌍 TOUT METTRE : toutes les techniques + tout au max</button>
   <div class="presets" style="grid-template-columns:1fr 1fr"><button id="pGreen" style="border-color:var(--green)">🟢 Tout le vert<br><span style="font:12px Inter;color:var(--mute)">que des bonus</span></button><button id="pRed" style="border-color:var(--red)">🔴 Tout le rouge<br><span style="font:12px Inter;color:var(--mute)">qui ont un malus</span></button></div>
   <div class="fusionCard">
@@ -218,6 +230,8 @@ h2{font-size:30px;margin:6px 0 4px}
     <div class="tg">Mains</div><div class="artChips" id="cHands"></div>
     <div class="tg">Ongles</div><div class="artChips" id="cNails"></div>
     <div class="tg">État de santé</div><div class="artChips" id="cHealth"></div>
+    <div class="tg">Humeur</div><div class="artChips" id="cMood"></div>
+    <div class="tg">Équipement</div><div class="artChips" id="cGear"></div>
     <div class="tm" id="cLookTxt" style="font-size:13px;margin-top:8px"></div>
   </div>
   <div class="fusionCard">
@@ -234,7 +248,26 @@ h2{font-size:30px;margin:6px 0 4px}
     <div class="artChips" id="cAdd" style="display:none"></div>
   </div>
   <button class="big" id="bSaveOpp">💾 Créer et combattre</button>
+  <button class="big alt" id="bSaveMe">🎮 Créer et le jouer moi-même</button>
   <button class="big alt" data-go="sMenu">← Retour</button>
+</section>
+
+<!-- ONLINE MULTIPLAYER -->
+<section class="screen" id="sMP">
+  <h2>🌐 Multijoueur</h2>
+  <p class="sub">Chacun sur son téléphone. Un joueur crée la partie et donne le code à l'autre. L'autre entre le code. Chacun choisit son personnage.</p>
+  <div class="fusionCard"><div class="tact"><b>Ton personnage</b></div><select id="mpSel" class="sel2"></select><div id="mpInfo" class="tm" style="font-size:12px;color:var(--mute);margin-top:4px"></div></div>
+  <div class="artChips" style="margin:6px 0"><button data-arena="cage">🔷 Cage MMA</button><button data-arena="ring">🥊 Ring à 3 cordes</button></div>
+  <button class="big" id="mpAuto" style="background:#f4b942;color:#111">⚡ COMBAT AUTOMATIQUE</button>
+  <div class="tm" style="font-size:12px;color:var(--mute);margin:-4px 0 8px;text-align:center">Pas de code : dès que quelqu'un d'autre appuie aussi, vous êtes mis ensemble.</div>
+  <div class="tg" style="margin-top:10px">Ou avec un code (pour jouer avec un ami précis)</div>
+  <button class="big" id="mpHost">➕ Créer une partie</button>
+  <button class="big" id="mpInviteTop" style="background:#2fa36b">📨 Inviter des gens</button>
+  <div class="fusionCard" style="border-color:var(--blue)"><div class="tact"><b>Rejoindre une partie</b></div>
+    <div class="pager"><input id="mpCode" maxlength="6" inputmode="numeric" placeholder="Code à 6 chiffres"><button id="mpJoin">Rejoindre</button></div></div>
+  <div class="fusionCard" id="mpStatus" style="text-align:center;font-size:15px">Pas encore connecté.</div>
+  <div class="help">Le multijoueur marche sur le site <b>adrien426.github.io/Fusion-Fighters</b>, avec Internet sur les deux téléphones. Il ne marche pas dans l'appli Claude.</div>
+  <button class="big alt" id="mpBack">← Retour</button>
 </section>
 
 <!-- TWO PLAYERS -->
@@ -243,6 +276,7 @@ h2{font-size:30px;margin:6px 0 4px}
   <p class="sub">Sur le même téléphone, de préférence à l'horizontale : le joueur 1 joue à gauche de l'écran, le joueur 2 à droite. Chacun choisit son combattant.</p>
   <div class="fusionCard"><div class="tact"><b style="color:var(--red)">Joueur 1</b></div><select id="j1" class="sel2"></select><div id="j1i" class="tm" style="font-size:12px;color:var(--mute);margin-top:4px"></div></div>
   <div class="fusionCard" style="border-color:var(--blue)"><div class="tact"><b style="color:var(--blue)">Joueur 2</b></div><select id="j2" class="sel2"></select><div id="j2i" class="tm" style="font-size:12px;color:var(--mute);margin-top:4px"></div></div>
+  <div class="artChips" style="margin:6px 0"><button data-arena="cage">🔷 Cage MMA</button><button data-arena="ring">🥊 Ring à 3 cordes</button></div>
   <button class="big" id="b2Go">🥊 COMBATTRE À 2</button>
   <div class="help">Clavier : <b>J1</b> A/D bouger · S garde · W esquive · F G H J coups · R spéciale. <b>J2</b> ← → bouger · ↓ garde · ↑ esquive · 1 2 3 4 coups · 0 spéciale.</div>
   <button class="big alt" data-go="sMenu">← Retour</button>
@@ -253,6 +287,7 @@ h2{font-size:30px;margin:6px 0 4px}
   <h2>Prêt ?</h2>
   <div class="vs"><div class="side" id="vsA"></div><div class="x">VS</div><div class="side" id="vsB"></div></div>
   <div class="fusionCard" id="vsTact"></div>
+  <div class="artChips" style="margin:6px 0"><button data-arena="cage">🔷 Cage MMA</button><button data-arena="ring">🥊 Ring à 3 cordes</button></div>
   <button class="big" id="bFight">🥊 COMBATTRE</button>
   <button class="big alt" id="bTest">🧪 TESTER (sans chrono, sans K.O.)</button>
   <button class="big alt" data-go="sOpp">← Autre adversaire</button>
@@ -260,7 +295,7 @@ h2{font-size:30px;margin:6px 0 4px}
 
 <!-- FIGHT -->
 <div id="fight">
-  <div id="view">
+  <div id="view"><div id="speed"></div>
     <div class="hud">
       <div><div class="pn" id="nA"></div><div class="hp"><i id="hpA"></i></div><div class="st"><i id="stA"></i></div><div class="gg" id="ggAw"><i id="ggA"></i></div><div class="spn" id="spA">⚡ Technique Fusion</div><div class="spn" id="lifeA"></div><div class="spn" id="stsA"></div><div class="zb" id="zA"></div></div>
       <div><div class="timer" id="timer">60</div><div class="rw" id="rounds"></div></div>
@@ -298,7 +333,11 @@ const G = POSES.guard;
 // ===================== MOVES =====================
 const ST = (p,ms,ev) => ({p,ms,ev});
 const H = (hit,o={}) => Object.assign({hit,range:1.08,target:'head',react:'rHead',stun:300},o);
+const FXS = (p, ms, ev, fx, col) => { const s = ST(p, ms, ev); s.fx = fx; s.col = col; return s; };
 const MOVES = {
+  shot:   {cost:12, seq:[FXS('jab',220,null,'aim'), FXS('jab',140,H(9,{range:9,target:'body',react:'rBody',stun:260}),'shot',0xffd34a), ST('guard',220)]},
+  swing:  {cost:11, seq:[ST('fz1',140), ST('fz4',140,H(11,{range:1.5,react:'rHead',stun:320})), ST('guard',220)]},
+  beam:   {cost:16, seq:[FXS('fz2',300,null,'charge'), FXS('fz4',330,H(10,{range:9,target:'body',react:'rBody',stun:300}),'beam'), ST('guard',240)]},
   // --- Tourbillon (player) ---
   vrille: {cost:10, parry:.3, seq:[ST('vrille',140,H(9)),ST('vGuard',200)]},
   fouet:  {cost:7,  seq:[ST('fouet',110,H(7,{range:1.0})),ST('vGuard',170)]},
@@ -381,6 +420,12 @@ const ARTS = [
 
 // ---- Signature technique builder (each opponent fuses his own perfect technique) ----
 const STEPS = {
+  shot:{n:'Tir',seq:()=>[FXS('jab',180,null,'aim'), FXS('jab',120,H(9,{range:9,target:'body',react:'rBody'}),'shot',0xffd34a)]},
+  kdShot:{n:'Rafale de tirs',seq:()=>[FXS('jab',160,null,'aim'), FXS('jab',110,H(7,{range:9}),'shot',0xffd34a), FXS('jab',110,H(7,{range:9}),'shot',0xffd34a), FXS('jab',120,H(12,{range:9,kd:1,shake:1.3}),'shot',0xffd34a), ST('guard',260)]},
+  swing:{n:"Coup d'arme",seq:()=>[ST('fz1',120), ST('fz4',130,H(12,{range:1.5}))]},
+  kdSwing:{n:"Coup d'arme final",seq:()=>[ST('fz1',150), ST('fz4',150,H(20,{range:1.55,kd:1,shake:1.4})), ST('guard',280)]},
+  beam:{n:"Vague d'énergie",seq:()=>[FXS('fz2',260,null,'charge'), FXS('fz4',300,H(11,{range:9,target:'body',react:'rBody'}),'beam')]},
+  kdBeam:{n:"Canon d'énergie",seq:()=>[FXS('fz2',420,null,'charge'), FXS('fz4',360,H(20,{range:9,kd:1,shake:1.6}),'beam'), ST('guard',300)]},
   jab:{n:'Jab',seq:()=>[ST('jab',90,H(4))]},
   teep:{n:'Teep',seq:()=>[ST('teepCh',110),ST('teepHit',130,H(6,{range:1.18,target:'body',react:'rBody'}))]},
   chain:{n:'Rafale',seq:()=>[ST('chainL',70,H(2.5,{stun:200})),ST('chainR',70,H(2.5,{stun:200})),ST('chainL',70,H(2.5,{stun:200}))]},
@@ -431,6 +476,82 @@ function artTechs(art){ const k = art.toLowerCase().split(' ')[0]; return TECHS.
 function rng(seed){ let a = (seed*2654435761)>>>0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a>>>15, 1 | a); t = t + Math.imul(t ^ t>>>7, 61 | t) ^ t; return ((t ^ t>>>14)>>>0)/4294967296; }; }
 const FIRST = ['Aldo','Brann','Cyrus','Dario','Esko','Faris','Goran','Hiro','Ilan','Jaro','Kemal','Lior','Malo','Nilo','Oskar','Pavel','Quinn','Rafi','Soren','Taro','Ugo','Vasco','Wim','Xan','Yanis','Zoltan','Amara','Bea','Cleo','Dalia','Elsa','Freya','Ines','Kira','Lena','Maya','Nora','Rina','Sana','Tia','Bako','Dmitri','Emeka','Joaquin','Kenji','Luka','Mateo','Nikos','Omari','Ravi','Sami','Tomas','Viggo','Yusuf'];
 const NICK = ['le Roc','la Foudre',"l'Enclume",'le Cobra','la Tempête','le Granit','le Faucon','la Lame','le Bulldozer',"l'Éclair",'le Volcan','la Panthère','le Marteau',"l'Acier",'le Typhon','la Vipère','le Bison','le Sabre','la Comète','le Mur','le Chacal','le Givre','le Dragon','la Mante',"l'Ours",'le Scorpion','le Cyclone','le Fantôme','la Hache','le Lion'];
+
+// ---- Fighting style: each ranked fighter gets his own way of fighting ----
+const STY = {
+  toon:   ['🌸','Héros de dessin animé',"pouvoirs, énergie et accessoires de dessin animé"],
+  arsenal:['🗡','Guerrier armé',"armes et objets du monde entier"],
+  ultime: ['💥','Le Tout des Trois',"combat, dessin animé et armes du monde réunis"],
+  combo:  ['🥊','Mitrailleur',"plein de coups très vite, en rafale"],
+  throw:  ['🤼','Projeteur',"il t'attrape et te jette au sol"],
+  ground: ['⬇','Plaqueur',"il te plaque et frappe au sol"],
+  kick:   ['🦵','Kickeur',"des coups de pied de partout"],
+  clinch: ['🐘','Clinch',"genoux et coudes, collé à toi"],
+  power:  ['💥','Cogneur',"un seul coup, mais énorme"],
+  counter:['🛡','Contreur',"il attend ton coup et te contre"],
+  acro:   ['🤸','Acrobate',"acrobaties et coups volants"],
+};
+function pickStyle(arts, s, w, traits, R){
+  const mv = arts.flatMap(a => a.m), c = (...k) => mv.filter(m => k.includes(m)).length, nm = arts.map(a => a.n).join(' ');
+  const [pow, spd, def, , grap] = s;
+  const sc = {
+    combo: c('jab','cross','hook','chain') + spd/45,
+    throw: c('throw','grab')*1.3 + grap/45,
+    ground: c('grab')*.8 + (/lutte|jiu|sambo|grappling|catch/i.test(nm) ? 2.5 : 0) + grap/55,
+    kick: c('kick','teep','high','spin','low')*1.1,
+    clinch: c('elbow','knee')*1.3,
+    power: pow/30 + Math.max(0, w-85)/15,
+    counter: (traits.patience + traits.iq)/65 + def/60,
+    acro: (/capoeira|lucha|wushu|kung|taekwondo|parkour|kalari|silat|ninjutsu|gymn/i.test(nm) ? 3 : 0) + spd/50 - Math.max(0, w-80)/20,
+  };
+  const bias = {combo:-.6, throw:-.9, ground:-.5, kick:.4, clinch:1.3, power:.6, counter:.7, acro:1.0};
+  for (const k in sc) sc[k] += bias[k] + R()*2.6;
+  return Object.entries(sc).sort((a,b) => b[1]-a[1])[0][0];
+}
+// Style for a created fighter: from his body, stats, character and chosen techniques (no randomness)
+function customStyle(c, s){
+  const [pow, spd, def, , grap] = s, w = c.w || 78, h = (c.h || 1.78)*100, m = c.m || 50, tr = c.traits || T50;
+  const an = (c.techs || []).map(id => TT(id)).filter(Boolean), cnt = f => an.filter(f).length, N = Math.max(1, an.length);
+  const share = f => cnt(f) / N;
+  const sc = {
+    combo:  spd/30 + share(t => ['jab','cross','hook','chain','palm'].includes(t[3]))*4 - Math.max(0, w-90)/25,
+    throw:  grap/30 + share(t => t[3] && t[4] === null)*5 + share(t => t[3]==='grab')*3,
+    ground: grap/35 + Math.max(0, w-85)/20 + (m-50)/40 + share(t => /lutte|jiu|sambo|double|plaqu/i.test(t[7]+' '+t[8]))*4,
+    kick:   spd/45 + Math.max(0, h-178)/9 + share(t => ['kick','teep','high','spin','low'].includes(t[3]))*5,
+    clinch: (m-50)/25 + pow/60 + share(t => ['elbow','knee'].includes(t[3]))*5,
+    power:  pow/28 + Math.max(0, w-90)/18,
+    counter:(tr.patience + tr.iq + tr.calme)/110 + def/45,
+    acro:   spd/40 + Math.max(0, 80-w)/12 - Math.max(0, w-90)/10 + share(t => /capoeira|lucha|parkour|gymn|wushu|540|tornado|saut|volant/i.test(t[7]+' '+t[8]))*6,
+  };
+  const toonN = cnt(t => /^Dessins animés/.test(t[2])), worldN = cnt(t => /^Tout le monde/.test(t[2])), normN = N - toonN - worldN;
+  if (toonN >= 5 && worldN >= 5 && normN >= 5) return 'ultime';
+  if (toonN >= 5 && toonN >= worldN) return 'toon';
+  if (worldN >= 5) return 'arsenal';
+  return Object.entries(sc).sort((a,b) => b[1]-a[1])[0][0];
+}
+function styleSpecial(style, fmv){
+  const S = k => STEPS[k].seq(), sp = fusedSpecial(fmv), lab = STY[style];
+  const seqs = {
+    combo:  () => [...S('jab'),...S('cross'),...S('hook'),...S('chain'),...S('cross'),...S('hook'),...S('kdHook')],
+    throw:  () => [...S('jab'),...S('ippon')],
+    ground: () => [...S('jab'),...S('loup')],
+    kick:   () => [...S('low'),...S('teep'),...S('high'),...S('spin'),...S('kdHigh')],
+    clinch: () => [...S('knee'),...S('elbow'),...S('knee'),...S('kdKnee')],
+    power:  () => [...S('slip'),...S('kdPalm')],
+    counter:() => [...S('slip'),...S('kdCross')],
+    toon:   () => [...S('chain'),...S('beam'),...S('kdBeam')],
+    arsenal:() => [...S('swing'),...S('swing'),...S('kdShot')],
+    ultime: () => [...S('chain'),...S('swing'),...S('shot'),...S('beam'),...S('kdBeam')],
+  };
+  if (style === 'toon' || style === 'ultime') sp.power = 1.25;
+  if (seqs[style]) sp.seq = seqs[style]();
+  if (style === 'acro') sp.acro = true;
+  if (style === 'counter'){ sp.counter = .8; sp.evade = .5; }
+  if (style === 'power') sp.power = 1.5;
+  sp.desc = `${lab[0]} Style ${lab[1]} : ${lab[2]}. ` + (sp.desc || '');
+  sp.why = [`Son style à lui : ${lab[1]} (${lab[2]})`].concat(sp.why || []);
+  return sp;
+}
 const NOPP = 100, oppCache = {};
 function opponent(r){
   if (oppCache[r]) return oppCache[r];
@@ -447,16 +568,18 @@ function opponent(r){
   const traits = {}; TRAITS.forEach(([k]) => traits[k] = Math.round(25 + R()*70));
   const body = {age: Math.round(19 + R()*20), os: Math.round(35 + R()*60), mains: Math.round(35 + R()*60), poumons: Math.round(35 + R()*60)};
   const fmv = fusedMove(sigIds.length ? sigIds : [TECHS[1][0]], null, {h, w, m: Math.max(20, Math.min(95, 50 + (w-80)*.5)), s, life:100, health:'En forme', traits, body});
-  const key = 'sig'+r; SPECIALS[key] = fusedSpecial(fmv);
+  const style = pickStyle(arts, s, w, traits, R);
+  const key = 'sig'+r; SPECIALS[key] = styleSpecial(style, fmv);
   const title = r <= 10 ? 'Légende mondiale' : r <= 30 ? 'Champion du monde' : r <= 60 ? 'Champion' : 'Combattant';
   const look = {skin: SKINS[Math.floor(R()*7)][1], nails: NAILS[0][1], bare: R() < .3};
   const pmv = personalMoves(sigIds);
-  return oppCache[r] = {rank:r, traits, body, pmoves: pmv, techIds: sigIds, m: Math.max(20, Math.min(95, 50 + (w-80)*.5)), level:Math.round(L), s, moves: Object.keys(pmv).filter(k => k!=='pm_dodge').concat(moves.filter(m => m==='slip')), sps:[key], fusedMove: fmv, arts:arts.map(a=>a.n), h, w, title, look, life: vitals(100, sigIds, 'En forme', w, 50 + (w-80)*.5, traits, s).life, resist: vitals(100, sigIds, 'En forme', w, 50 + (w-80)*.5, traits, s).res, health:'En forme',
+  const gl = ['nues','bandes','mma','boxe'][Math.floor(R()*4)], extras = ['dents','tibias','coquille','kimono','chaussures'].filter(() => R() < .3), mood = Object.keys(MOODS)[Math.floor(R()*6)];
+  return oppCache[r] = {rank:r, style, gear:[gl, ...extras], mood, traits, body, pmoves: pmv, techIds: sigIds, m: Math.max(20, Math.min(95, 50 + (w-80)*.5)), level:Math.round(L), s, moves: Object.keys(pmv).filter(k => k!=='pm_dodge').concat(moves.filter(m => m==='slip')), sps:[key], fusedMove: fmv, arts:arts.map(a=>a.n), h, w, title, look, life: vitals(100, sigIds, 'En forme', w, 50 + (w-80)*.5, traits, s).life, resist: vitals(100, sigIds, 'En forme', w, 50 + (w-80)*.5, traits, s).res, health:'En forme',
     person: FIRST[Math.floor(R()*FIRST.length)] + ' « ' + nick + ' »', idleP:'guard'};
 }
 const STAT = ['Puissance','Vitesse','Défense','Endurance','Lutte'];
 const STC = ['#e63946','#4ea8de','#52b788','#f4b942','#b07cf0'];
-const MOVE_FR = {fused:'Technique',jab:'Jab',cross:'Direct',hook:'Crochet',kick:'Low kick',high:'Coup de pied haut',spin:'Retourné',teep:'Teep',knee:'Genou',elbow:'Coude',chain:'Rafale',palm:'Paume',grab:'Plaquage',throw:'Projection',slip:'Esquive'};
+const MOVE_FR = {beam:"Vague d'énergie",shot:'Tir',swing:"Coup d'arme",fused:'Technique',jab:'Jab',cross:'Direct',hook:'Crochet',kick:'Low kick',high:'Coup de pied haut',spin:'Retourné',teep:'Teep',knee:'Genou',elbow:'Coude',chain:'Rafale',palm:'Paume',grab:'Plaquage',throw:'Projection',slip:'Esquive'};
 
 // ===================== SAVE =====================
 let save = {rank:NOPP+1, beaten:{}};
@@ -466,8 +589,38 @@ const persist = () => { try { localStorage.setItem('ff2_save', JSON.stringify(sa
 // ===================== UI =====================
 const $ = id => document.getElementById(id);
 function go(id){ document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id===id)); window.scrollTo(0,0);
+  if (id==='sMP') mpUI();
   if (id==='sMenu') menu(); if (id==='sOpp') oppUI(); if (id==='sCreate') createUI(); if (id==='s2P') twoPUI(); }
 document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => go(b.dataset.go));
+
+// ---- Equipment & mood ----
+const GEAR = {
+  nues:   {n:'✋ Mains nues', g:'gloves', punch:1.1, at:{precision:3}},
+  mma:    {n:'🥊 Gants MMA (4 oz)', g:'gloves', punch:1.0, grab:.05, noHand:1, at:{precision:2}},
+  boxe:   {n:'🥊 Gants de boxe (10 oz)', g:'gloves', punch:.85, guard:.1, grab:-.1, noHand:1, at:{menton:5, precision:-5, acrobatie:-3}},
+  bandes: {n:'🩹 Bandages', punch:1.03, noHand:1, at:{douleur:2}},
+  dents:  {n:'🦷 Protège-dents', ko:.5, at:{menton:10}},
+  casque: {n:'⛑ Casque', head:.8, at:{menton:12, vue:-8, reflexes:-3}},
+  tibias: {n:'🦵 Protège-tibias', leg:.8, kick:.95, at:{jambes:10, acrobatie:-2}},
+  coquille:{n:'🛡 Coquille', body:.95, at:{corps:3, douleur:3}},
+  plastron:{n:'🦺 Plastron', body:.8, at:{corps:15, acrobatie:-8, souplesse:-6}},
+  coudes: {n:'💪 Coudières', at:{precision:-1, douleur:3}, elbow:.9},
+  genoux: {n:'🦿 Genouillères', at:{jambes:4, acrobatie:2}},
+  kimono: {n:'🥋 Kimono', grab:.1, at:{souplesse:-2}},
+  chaussures:{n:'👟 Chaussures de lutte', grab:.05, bal:10, at:{coordination:4, acrobatie:3}},
+};
+const AT_FR = {precision:'précision', mains:'mains', menton:'menton', acrobatie:'acrobatie', vue:'vue', reflexes:'réflexes', jambes:'jambes', corps:'corps', douleur:'douleur', souplesse:'souplesse', coordination:'coordination'};
+const gearFx = k => { const G = GEAR[k], fx = Object.entries(G.at||{}).map(([a,v]) => `${v>0?'+':''}${v} ${AT_FR[a]}`);
+  if (G.punch && G.punch !== 1) fx.push(`${G.punch>1?'+':''}${Math.round((G.punch-1)*100)} % coups de poing`);
+  if (G.guard) fx.push(`+${Math.round(G.guard*100)} % garde`); if (G.grab) fx.push(`${G.grab>0?'+':''}${Math.round(G.grab*100)} % prises`);
+  if (G.ko) fx.push(`-${Math.round((1-G.ko)*100)} % risque K.O.`); for (const [z,l] of [['head','tête'],['body','corps'],['leg','jambes']]) if (G[z]) fx.push(`-${Math.round((1-G[z])*100)} % dégâts ${l}`);
+  if (G.noHand) fx.push('mains protégées'); if (G.bal) fx.push(`+${G.bal} équilibre`); return fx; };
+const BEST_GEAR = ['mma','bandes','dents','tibias','coquille','genoux','chaussures'];
+const ALL_GEAR = ['mma','bandes','dents','casque','tibias','coquille','plastron','coudes','genoux','kimono','chaussures'];
+const MOODS = {'Motivé':{regen:1.15, q:.02}, 'Calme':{q:.05}, 'En colère':{dmg:1.1, q:-.05}, 'Stressé':{q:-.07, regen:.9}, 'Confiant':{q:.04}, 'Triste':{dmg:.92, regen:.9}};
+const gearOf = d => d.gear || ['nues'];
+const gearVal = (d, k, def) => gearOf(d).reduce((v, g) => GEAR[g] && GEAR[g][k] !== undefined ? (def===1 ? v*GEAR[g][k] : v + GEAR[g][k]) : v, def);
+const moodOf = d => MOODS[d.mood] || {};
 // ---- Character traits ----
 const TRAITS = [['agr','🔥','Agressivité'],['iq','🧠','Intelligence de combat'],['calme','🧊','Sang-froid'],['patience','⏳','Patience'],['ruse','🦊','Ruse'],['courage','🦁','Courage']];
 const T50 = {agr:50, iq:50, calme:50, patience:50, ruse:50, courage:50};
@@ -504,7 +657,9 @@ function attrs(d){
     douleur: cl(30 + (tr.courage-50)*.3 + 20*Math.tanh(nMil/4) + 10*Math.tanh(nCond/3) + (B.os-50)*.2),
     coordination: cl(.3*spd + .2*lvl + 15*Math.tanh(nAll/40) + (tr.calme-50)*.1),
     squelette: Math.round(250 + B.os*5 + Math.max(0,w-60)*1.5 - ageP*4),
+    acrobatie: cl(15 + 35*Math.tanh(n(t => /capoeira|lucha|parkour|gymnast|calisthenics|mallakhamb|tornado|540|ninjutsu|wushu|kalari|taekkyon|engolo|ngolo|saut|volant|sauté/i.test(t[8]+' '+t[7]))/4) + .3*(spd||50) - Math.max(0,w-85)*.4 - ageP*.8 + (d.name===PLAYER.name ? 25 : 0) + (d.all ? 99 : 0)),
   });
+  for (const g of (d.gear||[])) for (const [k,v] of Object.entries((GEAR[g]||{}).at||{})) if (a[k] !== undefined) a[k] = cl(a[k] + v);
   return d._attrs = a;
 }
 // Rough estimates: how many average hits he survives / needs, like a video game sheet
@@ -523,20 +678,21 @@ function sheetHTML(d){
     ${row('👁','Vue',a.vue,'#9ad1ff')}${row('🧠','Menton',a.menton,'#f4a261')}${row('🫁','Corps',a.corps,'#e9c46a')}${row('🦵','Jambes',a.jambes,'#90be6d')}${row('🛡','Résistance',Math.round((d.resist||0)*100)+'%','#b0b0c0',100)}</div>
     <div class="stats">${row('🎂','Âge',bodyOf(d).age,'#adb5bd',70)}${row('🦴','Os',bodyOf(d).os,'#e9ecef')}${row('✋','Mains',bodyOf(d).mains,'#ffb4a2')}${row('🫁','Poumons',bodyOf(d).poumons,'#8ecae6')}</div>
     <div class="tg" style="margin-top:6px">Qualités de combattant</div>
-    <div class="stats">${row('📏','Allonge',a.allonge,'#adb5bd',230)}${row('⚡','Réflexes',a.reflexes,'#4cc9f0')}${row('💥','Explosivité',a.explosivite,'#f72585')}${row('🤸','Souplesse',a.souplesse,'#b5e48c')}${row('🎯','Précision',a.precision,'#ffd166')}${row('⏱','Timing',a.timing,'#06d6a0')}${row('🧱','Douleur',a.douleur,'#ef476f')}${row('🧩','Coordination',a.coordination,'#a0c4ff')}</div>
+    <div class="stats">${row('📏','Allonge',a.allonge,'#adb5bd',230)}${row('⚡','Réflexes',a.reflexes,'#4cc9f0')}${row('💥','Explosivité',a.explosivite,'#f72585')}${row('🤸','Souplesse',a.souplesse,'#b5e48c')}${row('🎯','Précision',a.precision,'#ffd166')}${row('⏱','Timing',a.timing,'#06d6a0')}${row('🧱','Douleur',a.douleur,'#ef476f')}${row('🧩','Coordination',a.coordination,'#a0c4ff')}${row('🤸','Acrobatie',a.acrobatie,'#ff9f1c')}</div>
     <div class="tact" style="font-size:12px">🦴 Squelette : résiste à un choc d'environ <b>${a.squelette} kg</b> avant fracture <span style="color:var(--mute)">(estimation)</span></div>
     <div class="tact" style="font-size:12px">💥 Force de frappe ≈ <b>${punchForce(d)} kg</b> <span style="color:var(--mute)">(un boxeur pro tourne autour de 300 à 600 kg)</span></div>
     <div class="stats">${TRAITS.map(([k,ic,n]) => row(ic, n, traitsOf(d)[k], '#c77dff')).join('')}</div>
+    <div class="tact" style="font-size:12px">🎒 Équipement :<br>${gearOf(d).filter(g => GEAR[g]).map(g => `<b>${GEAR[g].n}</b> <span style="color:var(--mute)">${gearFx(g).map(x => `<span style="color:${x[0]==='-' && !/risque|dégâts/.test(x) ? '#e63946' : '#52b788'}">${x}</span>`).join(' · ')}</span>`).join('<br>')}<br>😶 Humeur : <b>${d.mood || 'Calme'}</b></div>
     <div class="tact" style="font-size:12px">🩺 Santé : <b>${d.health||'En forme'}</b><br>🎯 Encaisse ≈ <b>${e.head}</b> coups à la tête · <b>${e.body}</b> au corps · <b>${e.leg}</b> aux jambes<br>💥 Met K.O. un adversaire moyen en ≈ <b>${e.ko}</b> coups (≈ ${e.hit} dégâts par coup, ${e.techDmg} avec sa technique)</div>`;
 }
 function statsHTML(s){ return `<div class="stats">${STAT.map((n,i)=>`<span>${n}</span><div class="bar"><i style="width:${s[i]}%;background:${STC[i]}"></i></div><b style="color:var(--txt)">${s[i]}</b>`).join('')}</div>`; }
 
 // ---- Player "everything" mode ----
 function me(){
-  if (!save.playerAll) return Object.assign({}, PLAYER, {look: save.look, _attrs: null});
+  if (!save.playerAll) return Object.assign({}, PLAYER, {look: save.look, gear: save.gear || ['nues'], mood: save.mood || 'Calme', _attrs: null});
   const ALLF = fusedMove(TECHS.map(t => t[0]), 'Technique Ultime', {h:1.8, w:80, m:70, s:[99,99,99,99,99], life:100, health:'Pleine forme', traits:PLAYER.traits});
   if (!SPECIALS.ultP) SPECIALS.ultP = fusedSpecial(ALLF);
-  return Object.assign({}, PLAYER, {s:[99,99,99,99,99], sps:['fusion','ultP'], _attrs: null, fusedMove: ALLF, techIds: TECHS.map(t=>t[0]), m:70, all:true, life: vitals(100, TECHS.map(t=>t[0]), 'Pleine forme', 80, 70, PLAYER.traits, [99,99,99,99,99]).life, resist: vitals(100, TECHS.map(t=>t[0]), 'Pleine forme', 80, 70, PLAYER.traits, [99,99,99,99,99]).res, healBonus: bonusOf(TECHS.map(t=>t[0])).heal, moves:['fused'], tmoves:PLAYER.moves, look: save.look});
+  return Object.assign({}, PLAYER, {s:[99,99,99,99,99], sps:['fusion','ultP'], gear: save.gear || ['nues'], mood: save.mood || 'Calme', _attrs: null, fusedMove: ALLF, techIds: TECHS.map(t=>t[0]), m:70, all:true, life: vitals(100, TECHS.map(t=>t[0]), 'Pleine forme', 80, 70, PLAYER.traits, [99,99,99,99,99]).life, resist: vitals(100, TECHS.map(t=>t[0]), 'Pleine forme', 80, 70, PLAYER.traits, [99,99,99,99,99]).res, healBonus: bonusOf(TECHS.map(t=>t[0])).heal, moves:['fused'], tmoves:PLAYER.moves, look: save.look});
 }
 function menu(){
   $('myRank').textContent = save.rank>NOPP ? 'Non classé' : '#'+save.rank;
@@ -547,15 +703,22 @@ function menu(){
   const L = save.look || {};
   $('meLook').innerHTML = `<div class="tg">Apparence de ton Tourbillon</div><div class="artChips">${SKINS.map(([n,v]) => `<button class="${(L.skin||'#d8d4cf')===v?'on':''}" data-ms="${v}"><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${v};vertical-align:-2px;margin-right:4px"></i>${n}</button>`).join('')}</div>
     <div class="artChips" style="margin-top:6px"><button class="${!L.bare?'on':''}" data-mb="0">🥊 Gants</button><button class="${L.bare?'on':''}" data-mb="1">✋ Mains nues</button>${NAILS.map(([n,v]) => `<button class="${L.bare && L.nails===v?'on':''}" data-mn="${v}"><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${v};vertical-align:-2px;margin-right:4px"></i>${n}</button>`).join('')}</div>
+    <div class="tg" style="margin-top:6px">Équipement de ton Tourbillon</div><div class="artChips">${Object.entries(GEAR).map(([k,g]) => `<button class="${(save.gear||['nues']).includes(k)?'on':''}" data-mg="${k}">${g.n}</button>`).join('')}</div>
+    <div class="tg" style="margin-top:6px">Humeur</div><div class="artChips">${Object.keys(MOODS).map(m => `<button class="${(save.mood||'Calme')===m?'on':''}" data-mm="${m}">${m}</button>`).join('')}</div>
     <div class="tm" style="font-size:12px;color:var(--mute);margin-top:4px">❤ Vie ${M.life || 100} · 🛡 Résistance ${Math.round((M.resist||0)*100)} % · Santé : pleine forme${M.healBonus ? ' · récupération +' + Math.round(M.healBonus*100) + ' %' : ''}</div>`;
   const setL = (k,v) => { save.look = Object.assign({skin:'#d8d4cf', nails:NAILS[0][1], bare:false}, save.look||{}, {[k]:v}); persist(); menu(); };
   document.querySelectorAll('[data-ms]').forEach(b => b.onclick = () => setL('skin', b.dataset.ms));
+  document.querySelectorAll('[data-mg]').forEach(b => b.onclick = () => { const k = b.dataset.mg; let g = save.gear || ['nues']; if (g.includes(k)) g = g.filter(x => x!==k); else { if (GEAR[k].g) g = g.filter(x => GEAR[x].g !== GEAR[k].g); g.push(k); } save.gear = g; persist(); menu(); });
+  document.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => { save.mood = b.dataset.mm; persist(); menu(); });
   document.querySelectorAll('[data-mb]').forEach(b => b.onclick = () => setL('bare', b.dataset.mb==='1'));
   document.querySelectorAll('[data-mn]').forEach(b => b.onclick = () => { setL('nails', b.dataset.mn); setL('bare', true); });
+  $('meCard').insertAdjacentHTML('afterbegin', mySwitchHTML()); bindMySwitch(menu);
   $('bMeAll').textContent = M.all ? '↩ Revenir au Tourbillon normal' : `🌍 TOUT METTRE à mon Tourbillon (${TECHS.length} techniques)`;
 }
 $('bOpp').onclick = () => go('sOpp');
-$('bMeAll').onclick = () => { save.playerAll = !save.playerAll; persist(); menu(); };
+document.querySelectorAll('[data-arena]').forEach(b => b.onclick = () => setArena(b.dataset.arena));
+setTimeout(() => setArena(save.arena || 'cage'), 0);
+$('bMeAll').onclick = () => { save.playerAll = !save.playerAll; if (save.playerAll) save.gear = [...ALL_GEAR]; persist(); menu(); };
 let page = -1;
 function oppUI(){
   if (page<0) page = save.rank<=NOPP && save.rank>50 ? 1 : save.rank>NOPP ? 1 : 0;
@@ -563,7 +726,7 @@ function oppUI(){
   $('pInfo').textContent = `Rangs ${from} à ${to}`;
   let h = '';
   for (let r=from; r<=to; r++){ const o = opponent(r);
-    h += `<div class="opp ${save.beaten[r]?'beat':''}" data-r="${r}"><div class="r">#${r}</div><div><div class="nm">${o.person}</div><div class="ost">${o.title} · ${o.h.toFixed(2).replace('.',',')} m · ${o.w} kg<br>${o.arts.join(' + ')}</div></div><div class="lv">NOTE ${overall(o.s)}${save.beaten[r]?'<br><span style="font-size:12px;color:var(--green)">BATTU</span>':''}</div></div>`; }
+    h += `<div class="opp ${save.beaten[r]?'beat':''}" data-r="${r}"><div class="r">#${r}</div><div><div class="nm">${o.person}</div><div class="ost">${STY[o.style] ? '<b>' + STY[o.style][0] + ' ' + STY[o.style][1] + '</b> · ' : ''}${o.title} · ${o.h.toFixed(2).replace('.',',')} m · ${o.w} kg<br>${o.arts.join(' + ')}</div></div><div class="lv">NOTE ${overall(o.s)}${save.beaten[r]?'<br><span style="font-size:12px;color:var(--green)">BATTU</span>':''}</div></div>`; }
   $('oppList').innerHTML = h;
   $('oppList').querySelectorAll('.opp').forEach(el => el.onclick = () => versus(+el.dataset.r));
 }
@@ -572,16 +735,27 @@ $('pNext').onclick = () => { page = Math.min(Math.ceil(NOPP/50)-1,page+1); oppUI
 $('bGo').onclick = () => { const r = Math.max(1,Math.min(NOPP,+$('goRank').value||1)); page = Math.floor((r-1)/50); oppUI(); };
 let curOpp = null;
 const lookBadge = L => L ? `<span style="font-size:11px"><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.skin};vertical-align:-1px"></i> peau · ${L.bare ? `<i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.nails};vertical-align:-1px"></i> mains nues` : '🥊 gants'}</span>` : '';
+const myId = () => save.myChar || 'tourb';
+const myData = () => myId() === 'tourb' ? me() : fighterData(myId());
+function mySwitchHTML(){
+  return `<div class="fusionCard" style="margin:8px 0"><div class="tact"><b style="color:var(--red)">🎮 Ton combattant pour ce combat</b></div><select class="sel2 mySel">${fighterOptions().map(([v,l]) => `<option value="${v}" ${v===myId()?'selected':''}>${l}</option>`).join('')}</select>${myId()!=='tourb' ? '<button class="big alt myBack" style="font-size:16px;margin-top:6px">↩ Reprendre mon Tourbillon</button>' : '<div class="tm" style="font-size:12px;color:var(--mute);margin-top:4px">Si tu ne changes rien, tu gardes ton Tourbillon.</div>'}</div>`;
+}
+function bindMySwitch(after){
+  document.querySelectorAll('.mySel').forEach(el => el.onchange = () => { save.myChar = el.value === 'tourb' ? null : el.value; persist(); after(); });
+  document.querySelectorAll('.myBack').forEach(el => el.onclick = () => { save.myChar = null; persist(); after(); });
+}
 function versus(r){ showVs(opponent(r)); }
 function showVs(o){
   curOpp = o; const r = o.rank;
+  if (myId() !== 'tourb'){ const D = myData(); $('vsA').innerHTML = `<b style="color:var(--red)">🎮 ${nameOf(D)}</b>Toi (combattant choisi) · <b style="display:inline;font-size:16px;color:var(--gold)">NOTE ${overall(D.s)}</b><br>${D.h ? D.h.toFixed(2).replace('.',',') + ' m · ' + D.w + ' kg' : ''}`; } else
   $('vsA').innerHTML = `<b style="color:var(--red)">🌀 ${PLAYER.name}</b>Toi · ${save.rank>NOPP?'non classé':'#'+save.rank} · <b style="display:inline;font-size:16px;color:var(--gold)">NOTE ${overall(me().s)}</b><br>Physique : sans importance, sa force vient de tout ce qu'il sait${sheetHTML(me())}`;
-  $('vsB').innerHTML = `<b style="color:var(--blue)">${curOpp.person}</b>${r?'#'+r+' · ':''}${curOpp.title} · <b style="display:inline;font-size:16px;color:var(--gold)">NOTE ${overall(curOpp.s)}</b><br>${curOpp.h.toFixed(2).replace('.',',')} m · ${curOpp.w} kg · ❤ ${curOpp.life||100} · 🛡 ${Math.round((curOpp.resist||0)*100)} % · ${curOpp.health||'En forme'}<br>${lookBadge(curOpp.look)}${sheetHTML(curOpp)}`;
+  $('vsB').innerHTML = `<b style="color:var(--blue)">${curOpp.person}</b>${r?'#'+r+' · ':''}${STY[curOpp.style] ? STY[curOpp.style][0] + ' ' + STY[curOpp.style][1] + ' · ' : ''}${curOpp.title} · <b style="display:inline;font-size:16px;color:var(--gold)">NOTE ${overall(curOpp.s)}</b><br>${curOpp.h.toFixed(2).replace('.',',')} m · ${curOpp.w} kg · ❤ ${curOpp.life||100} · 🛡 ${Math.round((curOpp.resist||0)*100)} % · ${curOpp.health||'En forme'}<br>${lookBadge(curOpp.look)}${sheetHTML(curOpp)}`;
   $('vsTact').innerHTML = `<div class="tact"><b>${curOpp.custom ? 'Ses techniques choisies' : 'Ses arts fusionnés'} :</b> ${curOpp.custom && curOpp.arts.length > 12 ? curOpp.arts.length + ' techniques (' + curOpp.arts.slice(0,8).join(', ') + '…)' : curOpp.arts.join(' + ')}<br><b>Ses techniques de combat :</b> ${curOpp.moves.map(m => curOpp.pmoves && curOpp.pmoves[m] ? `${curOpp.pmoves[m].name} (${curOpp.pmoves[m].n})` : (MOVE_FR[m]||m)).join(' · ')}</div>
     <div class="tact" style="margin-top:8px"><b style="color:var(--gold)">Sa technique : ${SPECIALS[curOpp.sps[0]].name}</b><br>${SPECIALS[curOpp.sps[0]].desc}${SPECIALS[curOpp.sps[0]].why ? `<ul>${SPECIALS[curOpp.sps[0]].why.map(x=>`<li>${x}</li>`).join('')}</ul>` : ''}</div>
     <button class="big alt" id="bLearn" style="font-size:20px;margin-top:10px">📹 Apprendre sa technique en vrai</button>
     <div class="tact" style="margin-top:8px"><b style="color:var(--red)">⚡ Ta technique : Technique Fusion</b><br>${SPECIALS.fusion.desc}</div>
     <div class="tact" style="margin-top:8px;color:var(--mute)">Astuce : contre les lutteurs, garde tes distances et frappe en Vrille. Contre les frappeurs, Pas du Vent, puis Faux.</div>`;
+  $('vsTact').insertAdjacentHTML('afterbegin', mySwitchHTML()); bindMySwitch(() => showVs(curOpp));
   go('sVs'); $('bLearn').onclick = () => startLesson(curOpp);
 }
 $('bFight').onclick = () => startFight(false);
@@ -644,20 +818,63 @@ const CAT = [
 ];
 CAT.push(...[["Hiza-guruma", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Sasae-tsurikomi-ashi", "Judo", "Projections", "throw", [2, 0, 1, 0, 4]], ["Uki-goshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["O-uchi-gari", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Ko-soto-gari", "Judo", "Projections", "throw", [1, 0, 1, 1, 4]], ["Ko-uchi-gari", "Judo", "Projections", "throw", [1, 0, 1, 1, 4]], ["Koshi-guruma", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Tsurikomi-goshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 5]], ["Okuri-ashi-harai", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Tai-otoshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Ko-soto-gake", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Tsuri-goshi", "Judo", "Projections", "throw", [1, 0, 2, 0, 4]], ["Yoko-otoshi", "Judo", "Projections", "throw", [1, 0, 1, 1, 4]], ["Ashi-guruma", "Judo", "Projections", "throw", [1, 0, 1, 1, 4]], ["Hane-goshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Harai-tsurikomi-ashi", "Judo", "Projections", "throw", [1, 0, 1, 1, 4]], ["Kata-guruma", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Sumi-gaeshi", "Judo", "Projections", "throw", [1, 0, 1, 1, 4]], ["Tani-otoshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Hane-makikomi", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Sukui-nage", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Utsuri-goshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["O-guruma", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Soto-makikomi", "Judo", "Projections", "throw", [2, 0, 1, 0, 4]], ["Uki-otoshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["O-soto-guruma", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Uki-waza", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Yoko-wakare", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Yoko-guruma", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Ushiro-goshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Ura-nage", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Sumi-otoshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Yoko-gake", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Obi-otoshi", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Seoi-otoshi", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Yama-arashi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["O-soto-otoshi", "Judo", "Projections", "throw", [2, 0, 1, 0, 4]], ["Daki-wakare", "Judo", "Projections", "throw", [1, 0, 1, 1, 4]], ["Hikikomi-gaeshi", "Judo", "Projections", "throw", [2, 0, 1, 0, 4]], ["Tawara-gaeshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Uchi-makikomi", "Judo", "Projections", "throw", [1, 0, 1, 0, 5]], ["Morote-gari", "Judo", "Projections", "throw", [1, 0, 1, 0, 5]], ["Kuchiki-taoshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Kibisu-gaeshi", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Ippon-seoi-nage", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Sode-tsurikomi-goshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Obi-tori-gaeshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Harai-makikomi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Kani-basami", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Uchi-mata-sukashi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Kesa-gatame", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Yoko-shiho-gatame", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Kami-shiho-gatame", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Tate-shiho-gatame", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Juji-gatame", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Ude-garami", "Judo", "Sol et soumissions", "grab", [1, 0, 0, 1, 5]], ["Hadaka-jime", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Okuri-eri-jime", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 6]], ["Sankaku-jime", "Judo", "Sol et soumissions", "grab", [0, 1, 0, 1, 5]], ["Kata-gatame", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Hiza-gatame", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Waki-gatame", "Judo", "Sol et soumissions", "grab", [1, 0, 0, 1, 5]], ["Nami-juji-jime", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Kata-ha-jime", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Étranglement arrière", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 1, 1, 5]], ["Triangle", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Armbar", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Kimura", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 1, 0, 1, 5]], ["Guillotine", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Omoplata", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 6]], ["Ezekiel", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["D'Arce", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [1, 0, 0, 1, 5]], ["Anaconda", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Clé de cheville", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Passage de garde", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Montée", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Prise de dos", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Balayage de garde", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Berimbolo", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 6]], ["Clé de talon", "Sambo", "Sol et soumissions", "grab", [0, 1, 0, 1, 5]], ["Clé de genou", "Sambo", "Sol et soumissions", "grab", [0, 0, 0, 1, 6]], ["Projection-frappe", "Sambo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Balayage arrière", "Sambo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coup de pied bas militaire", "Sambo", "Pieds", "kick", [3, 0, 0, 1, 1]], ["Clé de cou", "Catch wrestling", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Double wristlock", "Catch wrestling", "Sol et soumissions", "grab", [1, 0, 0, 1, 5]], ["Ceinture arrière", "Catch wrestling", "Projections", "grab", [0, -1, 1, 2, 5]], ["Projection de catch", "Catch wrestling", "Projections", "grab", [0, -1, 0, 2, 5]], ["Souplesse arrière", "Lutte gréco-romaine", "Projections", "grab", [0, -1, 0, 2, 5]], ["Projection de bras", "Lutte gréco-romaine", "Projections", "throw", [2, 0, 1, 0, 4]], ["Tour de hanche", "Lutte gréco-romaine", "Projections", "throw", [2, 0, 1, 0, 4]], ["Ceinture avant", "Lutte gréco-romaine", "Projections", "grab", [0, -1, 0, 2, 5]], ["Fireman's carry", "Lutte libre", "Projections", "grab", [0, -1, 0, 2, 5]], ["Ankle pick", "Lutte libre", "Projections", "grab", [0, 0, 0, 2, 5]], ["Duck under", "Lutte libre", "Défense", "slip", [0, 2, 3, 0, 0]], ["Snap down", "Lutte libre", "Projections", "throw", [1, 0, 1, 0, 4]], ["High crotch", "Lutte libre", "Projections", "grab", [0, 0, 0, 2, 5]], ["Coup de poing vertical", "Marines (MCMAP)", "Poings", "cross", [3, 0, 0, 1, 0]], ["Coup de coude MCMAP", "Marines (MCMAP)", "Coudes et genoux", "elbow", [3, 1, 1, 0, 0]], ["Coup de genou MCMAP", "Marines (MCMAP)", "Coudes et genoux", "knee", [3, 0, 0, 1, 1]], ["Coup de pied frontal MCMAP", "Marines (MCMAP)", "Pieds", "teep", [1, 0, 2, 1, 0]], ["Balayage MCMAP", "Marines (MCMAP)", "Projections", "throw", [1, 1, 1, 0, 4]], ["Contre-étranglement", "Marines (MCMAP)", "Défense", "slip", [1, 2, 3, 0, 0]], ["Amenée au sol MCMAP", "Marines (MCMAP)", "Projections", "grab", [0, -1, 0, 2, 6]], ["Désarmement à mains nues", "Marines (MCMAP)", "Défense", "slip", [1, 2, 3, 0, 0]], ["Défense 360°", "Krav Maga (Tsahal)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Riposte simultanée", "Krav Maga (Tsahal)", "Poings", "cross", [3, 1, 0, 0, 0]], ["Coup de pied aux parties", "Krav Maga (Tsahal)", "Pieds", "teep", [1, 0, 2, 0, 0]], ["Paume au menton", "Krav Maga (Tsahal)", "Poings", "palm", [4, 0, 1, 0, 0]], ["Coude à 360°", "Krav Maga (Tsahal)", "Coudes et genoux", "elbow", [3, 1, 1, 0, 0]], ["Sortie d'étranglement", "Krav Maga (Tsahal)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Défense contre couteau", "Krav Maga (Tsahal)", "Défense", "slip", [0, 3, 3, 0, 0]], ["Défense contre saisie", "Krav Maga (Tsahal)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Genou de combat", "Krav Maga (Tsahal)", "Coudes et genoux", "knee", [3, 0, 0, 1, 1]], ["Rafale de rue", "Krav Maga (Tsahal)", "Poings", "chain", [-1, 4, 0, -1, 1]], ["Frappe relâchée", "Systema (Spetsnaz)", "Poings", "palm", [5, 0, 1, -1, 0]], ["Frappe courte", "Systema (Spetsnaz)", "Poings", "chain", [-1, 4, 0, -1, 0]], ["Déséquilibre", "Systema (Spetsnaz)", "Projections", "throw", [1, 0, 1, 1, 4]], ["Roulade Systema", "Systema (Spetsnaz)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Frappe au plexus", "Systema (Spetsnaz)", "Poings", "palm", [5, 0, 1, -1, 0]], ["Travail au sol Systema", "Systema (Spetsnaz)", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Tranche de la main", "Fairbairn (Defendu)", "Poings", "palm", [4, 0, 1, -1, 1]], ["Coup de menton", "Fairbairn (Defendu)", "Poings", "palm", [4, 1, 1, -1, 0]], ["Chute du tigre", "Fairbairn (Defendu)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coup de pied latéral", "Fairbairn (Defendu)", "Pieds", "teep", [2, 0, 2, 0, 0]], ["Coude Fairbairn", "Fairbairn (Defendu)", "Coudes et genoux", "elbow", [3, 1, 1, 0, 0]], ["Combat rapproché Kapap", "Kapap", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Projection Kapap", "Kapap", "Projections", "throw", [1, 0, 1, 1, 4]], ["Riposte Kapap", "Kapap", "Poings", "cross", [3, 0, 0, 0, 0]], ["Coude transperçant", "Lerdrit (armée thaï)", "Coudes et genoux", "elbow", [4, 1, 0, 0, 0]], ["Genou de guerre", "Lerdrit (armée thaï)", "Coudes et genoux", "knee", [3, 1, 0, 1, 1]], ["Pied tranchant", "Lerdrit (armée thaï)", "Pieds", "kick", [3, 0, 0, 1, 1]], ["Coude de rupture", "Lerdrit (armée thaï)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Frappe-projection", "Sambo de combat", "Projections", "throw", [2, 0, 1, 0, 4]], ["Coup de poing de combat", "Sambo de combat", "Poings", "cross", [3, 0, 0, 0, 0]], ["Clé de bras de combat", "Sambo de combat", "Sol et soumissions", "grab", [1, 0, 0, 1, 5]], ["Clé d'intervention", "Combat militaire", "Projections", "throw", [1, 0, 1, 0, 5]], ["Amenée au sol", "Combat militaire", "Projections", "grab", [0, -1, 0, 3, 5]], ["Frappe de dégagement", "Combat militaire", "Poings", "cross", [3, 0, 0, 0, 0]], ["Coup de crosse (mains nues)", "Combat militaire", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Coup de pied de rupture", "Combat militaire", "Pieds", "teep", [1, 0, 3, 0, 0]], ["Age-uke", "Shotokan", "Défense", "slip", [1, 2, 3, 0, 0]], ["Gedan-barai", "Shotokan", "Défense", "slip", [0, 2, 3, 0, 0]], ["Shuto-uchi", "Shotokan", "Poings", "palm", [4, 0, 1, -1, 0]], ["Empi-uchi", "Shotokan", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Hiza-geri", "Shotokan", "Coudes et genoux", "knee", [3, 0, 0, 1, 1]], ["Tobi-geri", "Shotokan", "Pieds", "high", [4, -1, -1, 0, 0]], ["Shita-tsuki", "Kyokushin", "Poings", "hook", [3, 1, -1, 0, 0]], ["Gedan mawashi-geri", "Kyokushin", "Pieds", "kick", [3, 0, 0, 2, 0]], ["Jodan mawashi-geri", "Kyokushin", "Pieds", "high", [4, -1, -1, 1, 0]], ["Kakato-otoshi", "Kyokushin", "Pieds", "high", [4, -1, -1, 0, 0]], ["Tobi-hiza-geri", "Kyokushin", "Coudes et genoux", "knee", [3, 0, 0, 1, 2]], ["Sanchin-dachi", "Goju-ryu", "Défense", "slip", [0, 3, 3, 0, 0]], ["Tora-guchi", "Goju-ryu", "Défense", "slip", [0, 2, 3, 0, 1]], ["Shotei-uchi", "Goju-ryu", "Poings", "palm", [4, 0, 1, -1, 0]], ["Nagashi-zuki", "Wado-ryu", "Poings", "cross", [3, 0, 0, 0, 0]], ["Tai sabaki Wado", "Wado-ryu", "Défense", "slip", [0, 2, 3, 0, 0]], ["Coup de tête Kudo", "Kudo", "Coudes et genoux", "elbow", [4, 1, 0, 0, 0]], ["Projection Kudo", "Kudo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Uchi-uke-zuki", "Shorinji Kempo", "Poings", "cross", [3, 0, 0, 1, 0]], ["Kote-nuki", "Shorinji Kempo", "Défense", "slip", [0, 2, 3, 1, 0]], ["Ukemi", "Ninjutsu", "Défense", "slip", [1, 2, 3, 0, 0]], ["Shuto ninja", "Ninjutsu", "Poings", "palm", [4, 0, 2, -1, 0]], ["Projection ninja", "Ninjutsu", "Projections", "throw", [1, 0, 1, 0, 4]], ["Irimi-nage", "Aïkido", "Projections", "throw", [1, 0, 1, 1, 4]], ["Ikkyo", "Aïkido", "Projections", "throw", [1, 0, 1, 0, 4]], ["Nikyo", "Aïkido", "Projections", "throw", [1, 1, 1, 0, 4]], ["Sankyo", "Aïkido", "Projections", "throw", [1, 0, 1, 0, 4]], ["Kaiten-nage", "Aïkido", "Projections", "throw", [1, 0, 1, 0, 4]], ["Tenchi-nage", "Aïkido", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coup de pied bas Hapkido", "Hapkido", "Pieds", "kick", [3, 1, 0, 1, 0]], ["Projection circulaire", "Hapkido", "Projections", "throw", [1, 0, 2, 0, 4]], ["Coup de pied sauté", "Tang Soo Do", "Pieds", "high", [4, -1, -1, 0, 0]], ["Coup de pied retourné", "Tang Soo Do", "Pieds", "spin", [4, -1, -3, -1, 0]], ["Clé de doigt", "Kuk Sool Won", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coup de pied Kuk Sool", "Kuk Sool Won", "Pieds", "high", [4, -1, -1, 0, 0]], ["Projection Ssireum", "Ssireum", "Projections", "throw", [1, 0, 1, 0, 4]], ["Pont de fer", "Hung Gar", "Défense", "slip", [0, 3, 3, 0, 0]], ["Poing du tigre noir", "Hung Gar", "Poings", "cross", [3, 0, 0, 0, 0]], ["Gwa choi (marteau)", "Choy Li Fut", "Poings", "hook", [3, 1, -1, 0, 0]], ["Sow choi (balayage)", "Choy Li Fut", "Poings", "hook", [3, 1, -1, 0, 0]], ["Chop choi", "Choy Li Fut", "Poings", "cross", [3, 1, 0, 0, 0]], ["Ding zhou (coude)", "Bajiquan", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Tie shan kao", "Bajiquan", "Poings", "palm", [4, 0, 1, -1, 0]], ["Paume du serpent", "Baguazhang", "Poings", "palm", [4, 0, 1, -1, 0]], ["Changement de paume", "Baguazhang", "Défense", "slip", [0, 2, 3, 0, 0]], ["Pi Quan", "Xing Yi", "Poings", "palm", [4, 1, 1, -1, 0]], ["Zuan Quan", "Xing Yi", "Poings", "hook", [4, 1, -1, 0, 0]], ["Pao Quan", "Xing Yi", "Poings", "cross", [3, 0, 0, 0, 0]], ["Heng Quan", "Xing Yi", "Poings", "hook", [3, 1, -1, 0, 0]], ["Pousser les mains", "Tai chi", "Défense", "slip", [0, 2, 3, 0, 0]], ["Fouet simple", "Tai chi", "Poings", "palm", [4, 0, 1, -1, 0]], ["Peng Lu Ji An", "Tai chi", "Défense", "slip", [1, 2, 3, 0, 0]], ["Crochet de mante", "Mante religieuse", "Poings", "chain", [-1, 4, 0, -1, 0]], ["Saisie de mante", "Mante religieuse", "Projections", "throw", [2, 0, 1, 0, 4]], ["Serre d'aigle", "Griffe d'aigle", "Projections", "throw", [1, 1, 1, 0, 4]], ["Griffe aux yeux (feinte)", "Griffe d'aigle", "Poings", "jab", [0, 3, 1, 1, 0]], ["Coupe renversée", "Boxe de l'homme ivre", "Poings", "hook", [3, 1, -1, 1, 0]], ["Chute de l'ivrogne", "Boxe de l'homme ivre", "Défense", "slip", [0, 2, 3, 0, 0]], ["Saut du singe", "Style du singe", "Pieds", "spin", [4, -1, -3, 0, 0]], ["Griffe du singe", "Style du singe", "Poings", "chain", [-1, 4, 1, -1, 0]], ["Bec de la grue", "Style de la grue", "Poings", "jab", [0, 3, 1, 0, 0]], ["Ailes de la grue", "Style de la grue", "Défense", "slip", [0, 2, 3, 0, 0]], ["Langue du serpent", "Style du serpent", "Poings", "jab", [0, 3, 1, 0, 0]], ["Serpent enroulé", "Style du serpent", "Projections", "throw", [1, 0, 1, 0, 5]], ["Phénix (poing)", "Bak Mei", "Poings", "cross", [3, 0, 0, 0, 0]], ["Bak Mei court", "Bak Mei", "Poings", "chain", [-1, 4, 0, -1, 0]], ["Stop-hit", "Jeet Kune Do", "Poings", "jab", [0, 3, 1, 0, 0]], ["Lead straight", "Jeet Kune Do", "Poings", "jab", [0, 3, 1, 0, 0]], ["Interception", "Jeet Kune Do", "Défense", "slip", [0, 2, 3, 1, 0]], ["Coup de pied d'arrêt", "Jeet Kune Do", "Pieds", "teep", [1, 0, 2, 1, 0]], ["Rafale du Kenpo", "Kenpo", "Poings", "chain", [-1, 4, 0, -1, 0]], ["Coup de pied de Kenpo", "Kenpo", "Pieds", "kick", [3, 0, 1, 1, 0]], ["Combinaison Kajukenbo", "Kajukenbo", "Poings", "chain", [-1, 5, 0, -1, 0]], ["Destruction du bras", "Panantukan (Kali)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Coup de poing Panantukan", "Panantukan (Kali)", "Poings", "hook", [3, 1, -1, 0, 0]], ["Tigre au sol", "Silat Harimau", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Balayage Harimau", "Silat Harimau", "Projections", "throw", [1, 0, 1, 0, 4]], ["Frappe du sanglier", "Bando", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Frappe de Banshay", "Banshay", "Poings", "palm", [4, 0, 1, -1, 1]], ["Coude de Kuntao", "Kuntao", "Coudes et genoux", "elbow", [3, 1, 1, 0, 0]], ["Frappe aux points vitaux", "Varma kalai", "Poings", "palm", [4, 0, 1, -1, 0]], ["Lutte de Malla-yuddha", "Malla-yuddha", "Projections", "grab", [0, -1, 0, 2, 6]], ["Dhobi pachad", "Pehlwani", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coup de pied antique", "Pankration", "Pieds", "kick", [3, 0, 1, 1, 0]], ["Prise antique", "Pankration", "Projections", "grab", [1, -1, 0, 2, 5]], ["Coup de pied bas savate", "Boxe française", "Pieds", "kick", [3, 0, 0, 1, 0]], ["Direct savate", "Boxe française", "Poings", "cross", [3, 0, 0, 0, 0]], ["Moulinet (mains nues)", "Canne de combat", "Poings", "hook", [3, 2, -1, 0, 0]], ["Projection Bartitsu", "Bartitsu", "Projections", "throw", [1, 0, 1, 0, 5]], ["Kliked", "Gouren", "Projections", "throw", [1, 0, 2, 0, 4]], ["Clé de Luta Livre", "Luta Livre", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Ground and pound", "Vale tudo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Lutte à genoux", "Huka-huka", "Projections", "grab", [0, -1, 0, 2, 5]], ["Esquive du Nguni", "Nguni (Afrique du Sud)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Parade du Tahtib", "Tahtib (Égypte)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Projection Evala", "Evala (Togo)", "Projections", "grab", [0, -1, 0, 2, 5]], ["Coup de tête Lethwei", "Lethwei", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Coude sauté", "Lethwei", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Coude volant", "Muay Boran", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Genou volant", "Muay Boran", "Coudes et genoux", "knee", [3, 0, 0, 1, 1]], ["Écraser la tête du serpent", "Muay Boran", "Pieds", "kick", [3, 0, 0, 1, 0]], ["Combo K-1", "Kickboxing japonais", "Poings", "chain", [0, 4, 0, -1, 0]], ["Coup de pied retourné K-1", "Kickboxing japonais", "Pieds", "spin", [4, -1, -3, -1, 1]], ["Coude au sol", "MMA", "Sol et soumissions", "grab", [0, 0, 1, 1, 5]], ["Takedown MMA", "MMA", "Projections", "grab", [0, -1, 0, 2, 5]], ["Switch kick", "MMA", "Pieds", "high", [5, -1, -1, 0, 0]], ["Coup de pied à la tête", "MMA", "Pieds", "high", [4, -1, -1, 0, 0]], ["Clinch contre la cage", "MMA", "Coudes et genoux", "knee", [3, 1, 0, 1, 1]], ["Parcours du combattant", "Armée", "Militaire", null, [0, 2, 0, 3, 0]], ["Marche commando avec sac", "Forces spéciales", "Militaire", null, [0, 0, 0, 4, 0]], ["Pompes militaires", "Armée", "Militaire", null, [2, 0, 0, 1, 0]], ["Tractions commando", "Armée", "Militaire", null, [2, 0, 0, 1, 1]], ["Nage de combat", "Marine", "Militaire", null, [0, 0, 0, 3, 0]], ["Résistance au froid", "Commandos", "Militaire", null, [0, 0, 1, 2, 0]], ["Hell Week", "Navy SEAL", "Militaire", null, [0, 0, 1, 4, 0]], ["Inoculation au stress", "Forces spéciales", "Militaire", null, [0, 1, 2, 1, 0]], ["Course en treillis", "Armée", "Militaire", null, [0, 1, 0, 3, 0]], ["Corde lisse", "Armée", "Militaire", null, [1, 0, 0, 1, 2]], ["Combat à plusieurs", "Krav Maga", "Militaire", null, [0, 1, 2, 1, 0]], ["Squat", "Musculation", "Physique", null, [3, 0, 0, 0, 1]], ["Soulevé de terre", "Musculation", "Physique", null, [3, -1, 0, 0, 2]], ["Développé couché", "Musculation", "Physique", null, [3, -1, 0, 0, 0]], ["Développé militaire", "Musculation", "Physique", null, [2, 0, 0, 0, 0]], ["Dips", "Musculation", "Physique", null, [2, 0, 0, 0, 0]], ["Arraché", "Haltérophilie", "Physique", null, [3, 2, 0, 0, 0]], ["Épaulé-jeté", "Haltérophilie", "Physique", null, [3, 1, 0, 0, 1]], ["Pneu et Atlas stones", "Strongman", "Physique", null, [3, -1, 0, 1, 2]], ["Pliométrie", "Athlétisme", "Physique", null, [1, 3, 0, 0, 0]], ["Fractionné HIIT", "Cardio", "Physique", null, [0, 1, 0, 3, 0]], ["Marathon", "Course", "Physique", null, [0, -1, 0, 4, 0]], ["Natation", "Sport", "Physique", null, [0, 0, 0, 3, 0]], ["Vélo", "Sport", "Physique", null, [0, 0, 0, 3, 0]], ["Escalade", "Sport", "Physique", null, [1, 0, 0, 1, 2]], ["Calisthenics", "Gymnastique", "Physique", null, [2, 1, 0, 1, 0]], ["Gymnastique", "Gymnastique", "Physique", null, [1, 2, 1, 0, 0]], ["Yoga", "Yoga", "Physique", null, [0, 1, 1, 1, 0]], ["Pilates", "Gainage", "Physique", null, [0, 0, 1, 1, 0]], ["Gainage", "Gainage", "Physique", null, [0, 0, 2, 1, 0]], ["Corde à sauter", "Boxe", "Physique", null, [0, 2, 0, 1, 0]], ["Shadow boxing", "Boxe", "Physique", null, [0, 2, 1, 0, 0]], ["Sac lourd", "Boxe", "Physique", null, [2, 0, 0, 1, 0]], ["Pattes d'ours", "Boxe", "Physique", null, [1, 2, 0, 0, 0]], ["Battle rope", "Cardio", "Physique", null, [1, 0, 0, 2, 0]], ["Poussée de traîneau", "Strongman", "Physique", null, [2, 0, 0, 2, 0]], ["Grip", "Escalade", "Physique", null, [0, 0, 0, 0, 2]], ["Étirements", "Souplesse", "Physique", null, [0, 1, 1, 0, 0]], ["Nutrition", "Hygiène de vie", "Physique", null, [1, 0, 0, 1, 0]], ["Sommeil", "Hygiène de vie", "Physique", null, [0, 1, 1, 1, 0]], ["Récupération chaud-froid", "Hygiène de vie", "Physique", null, [0, 0, 1, 1, 0]]]);
 CAT.push(...[["Poing nu du Musangwe", "Musangwe (Afrique du Sud)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Crochet du Venda", "Musangwe (Afrique du Sud)", "Poings", "hook", [3, 1, -1, 0, 0]], ["Coup de tête Gidigbo", "Gidigbo (Nigeria)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Saisie Gidigbo", "Gidigbo (Nigeria)", "Projections", "grab", [0, -1, 1, 2, 5]], ["Projection Kokawa", "Kokawa (Nigeria)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coup de pied tournant Ngolo", "Ngolo (Angola)", "Pieds", "spin", [4, -1, -3, -1, 0]], ["Balayage Ngolo", "Ngolo (Angola)", "Projections", "throw", [1, 0, 1, 0, 5]], ["Esquive Istunka", "Istunka (Somalie)", "Défense", "slip", [0, 2, 4, 0, 0]], ["Projection Mukna", "Mukna (Inde)", "Projections", "throw", [1, 0, 2, 0, 4]], ["Ceinture Mukna", "Mukna (Inde)", "Projections", "grab", [0, -1, 0, 2, 5]], ["Projection Khuresh", "Khuresh (Touva)", "Projections", "throw", [1, 0, 1, 1, 4]], ["Projection Chidaoba", "Chidaoba (Géorgie)", "Projections", "throw", [1, 1, 1, 0, 4]], ["Saisie de veste", "Chidaoba (Géorgie)", "Projections", "grab", [1, -1, 0, 2, 5]], ["Projection Koch", "Koch (Arménie)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Ceinture Karakucak", "Karakucak (Turquie)", "Projections", "grab", [0, -1, 0, 2, 5]], ["Projection canarienne", "Lucha canaria (Espagne)", "Projections", "throw", [2, 0, 1, 0, 4]], ["Agarre canario", "Lucha canaria (Espagne)", "Projections", "grab", [0, -1, 0, 3, 5]], ["Projection Ranggeln", "Ranggeln (Autriche)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Backhold de Cumberland", "Cumberland (Angleterre)", "Projections", "grab", [1, -1, 0, 2, 5]], ["Coup de poing irlandais", "Boxe irlandaise à mains nues", "Poings", "cross", [3, 0, 1, 0, 0]], ["Esquive irlandaise", "Boxe irlandaise à mains nues", "Défense", "slip", [0, 2, 3, 0, 1]], ["Projection Marajoara", "Luta Marajoara (Brésil)", "Projections", "throw", [1, 0, 2, 0, 4]], ["Rabo de arraia", "Capoeira Angola", "Pieds", "spin", [4, 0, -3, -1, 0]], ["Cabeçada", "Capoeira Angola", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Rasteira", "Capoeira Angola", "Projections", "throw", [1, 0, 1, 0, 4]], ["Ciseau de jambes", "Vovinam (Vietnam)", "Projections", "throw", [2, 0, 1, 0, 4]], ["Coup de coude Vovinam", "Vovinam (Vietnam)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 1]], ["Coup de pied sauté Vovinam", "Vovinam (Vietnam)", "Pieds", "high", [4, -1, -1, 0, 0]], ["Coude Kun Khmer", "Kun Khmer (Cambodge)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Genou Kun Khmer", "Kun Khmer (Cambodge)", "Coudes et genoux", "knee", [3, 0, 0, 1, 1]], ["Low kick Kun Khmer", "Kun Khmer (Cambodge)", "Pieds", "kick", [3, 0, 1, 1, 0]], ["Coude Muay Lao", "Muay Lao (Laos)", "Coudes et genoux", "elbow", [3, 1, 1, 0, 0]], ["Pied Muay Lao", "Muay Lao (Laos)", "Pieds", "kick", [3, 1, 0, 1, 0]], ["Frappe Betawi", "Pencak Silat Betawi", "Poings", "palm", [4, 0, 1, -1, 0]], ["Balayage Betawi", "Pencak Silat Betawi", "Projections", "throw", [1, 1, 1, 0, 4]], ["Coups en rafale Arnis", "Arnis mano mano (Philippines)", "Poings", "chain", [-1, 4, 0, -1, 0]], ["Clé Arnis", "Arnis mano mano (Philippines)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Projection Tegumi", "Tegumi (Okinawa)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Frappe Lua", "Lua (Hawaï)", "Poings", "palm", [4, 0, 1, -1, 0]], ["Clé Lua", "Lua (Hawaï)", "Sol et soumissions", "grab", [0, 0, 0, 2, 5]], ["Projection Pahlavani", "Koshti Pahlavani (Iran)", "Projections", "throw", [1, 0, 1, 1, 4]], ["Ceinture Pahlavani", "Koshti Pahlavani (Iran)", "Projections", "grab", [0, -1, 0, 2, 5]], ["Coup de pied militaire chinois", "Sanshou militaire (Chine)", "Pieds", "kick", [3, 0, 0, 1, 0]], ["Projection militaire chinoise", "Sanshou militaire (Chine)", "Projections", "throw", [1, 1, 1, 0, 4]], ["Coup de pied latéral US", "Kickboxing américain", "Pieds", "teep", [1, 0, 2, 0, 0]], ["Combinaison US", "Kickboxing américain", "Poings", "chain", [-1, 4, 0, -1, 1]], ["Coup de pied de Kyokushin brésilien", "Kyokushin brésilien", "Pieds", "high", [4, -1, -1, 0, 0]], ["Coude de rue", "Boxe thaïe de rue (Lethwei moderne)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Crochet au foie mexicain", "Boxe mexicaine", "Poings", "hook", [3, 1, 0, 0, 0]], ["Uppercut mexicain", "Boxe mexicaine", "Poings", "hook", [3, 2, -1, 0, 0]], ["Jab cubain", "Boxe cubaine", "Poings", "jab", [0, 3, 1, 0, 0]], ["Esquive cubaine", "Boxe cubaine", "Défense", "slip", [0, 2, 3, 0, 0]], ["Direct soviétique", "Boxe soviétique", "Poings", "cross", [3, 0, 0, 0, 0]], ["Jeu de jambes soviétique", "Boxe soviétique", "Défense", "slip", [0, 2, 3, 0, 0]], ["Destruction Suntukan", "Boxe philippine (Suntukan)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Genou royal", "Bokator (combat royal)", "Coudes et genoux", "knee", [3, 1, 0, 1, 1]], ["Coude royal", "Bokator (combat royal)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Coup de pied Kalari du Sud", "Kalaripayattu du Sud", "Pieds", "high", [4, -1, 0, 0, 0]], ["Saisie Kalari", "Kalaripayattu du Sud", "Projections", "throw", [1, 0, 1, 0, 4]], ["Rafale Silambam", "Silambam (mains nues)", "Poings", "chain", [-1, 4, 0, 0, 0]], ["Parade Gatka", "Gatka (mains nues)", "Défense", "slip", [0, 2, 3, 1, 0]], ["Dhak (projection)", "Kushti de Delhi", "Projections", "throw", [2, 0, 1, 0, 4]], ["Oshidashi (poussée)", "Sumo amateur", "Projections", "grab", [0, -1, 0, 2, 5]], ["Uwatenage", "Sumo amateur", "Projections", "throw", [1, 0, 1, 0, 4]], ["Mjaðmarhnykkur", "Glima (ceinture)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Parade irlandaise", "Bataireacht (Irlande, mains nues)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Projection Kurash", "Kurash (Ouzbékistan)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coup de pied Hopak", "Combat Hopak (Ukraine)", "Pieds", "spin", [4, -1, -3, 0, 0]], ["Projection Hopak", "Combat Hopak (Ukraine)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Frappe Svaroh", "Svaroh (Ukraine)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Riposte Krav Panim", "Krav Panim (Israël)", "Poings", "cross", [3, 1, 0, 0, 0]], ["Coup de pied Zipota", "Zipota (Pays basque)", "Pieds", "high", [4, -1, -1, 0, 0]], ["Esquive portugaise", "Jogo do pau (Portugal, mains nues)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Pankration au sol", "Pankration moderne", "Sol et soumissions", "grab", [0, 1, 0, 1, 5]], ["Coup de pied pankration", "Pankration moderne", "Pieds", "kick", [3, 0, 0, 1, 1]], ["Course en altitude", "Kenya", "Vie et endurance (monde)", null, [0, 1, 0, 4, 0]], ["Vie en haute montagne", "Sherpas (Népal)", "Vie et endurance (monde)", null, [0, 0, 1, 4, 0]], ["Plongée en apnée", "Ama (Japon)", "Vie et endurance (monde)", null, [0, 0, 1, 3, 0]], ["Marche du désert", "Touaregs (Sahara)", "Vie et endurance (monde)", null, [0, 0, 0, 4, 0]], ["Ultra-trail", "Tarahumaras (Mexique)", "Vie et endurance (monde)", null, [0, 1, 0, 5, 0]], ["Résistance au froid", "Inuits (Arctique)", "Vie et endurance (monde)", null, [0, 0, 2, 3, 0]], ["Pêche en mer froide", "Vikings (Scandinavie)", "Vie et endurance (monde)", null, [1, 0, 1, 3, 0]], ["Course de fond", "Éthiopie", "Vie et endurance (monde)", null, [0, 1, 0, 4, 0]], ["Chasse à l'endurance", "San (Kalahari)", "Vie et endurance (monde)", null, [0, 1, 0, 4, 0]], ["Marathon des moines", "Moines de Hiei (Japon)", "Vie et endurance (monde)", null, [0, 0, 1, 5, 0]], ["Nage en eau glacée", "Russie", "Vie et endurance (monde)", null, [0, 0, 1, 3, 0]], ["Endurance du Sumo", "Japon", "Vie et endurance (monde)", null, [1, -1, 2, 2, 1]], ["Sauna", "Finlande", "Santé et récupération (monde)", null, [0, 0, 1, 1, 0]], ["Banya", "Russie", "Santé et récupération (monde)", null, [0, 0, 1, 1, 0]], ["Hammam", "Turquie", "Santé et récupération (monde)", null, [0, 0, 1, 1, 0]], ["Onsen", "Japon", "Santé et récupération (monde)", null, [0, 0, 1, 1, 0]], ["Temazcal", "Mexique", "Santé et récupération (monde)", null, [0, 0, 1, 1, 0]], ["Massage thaï", "Thaïlande", "Santé et récupération (monde)", null, [0, 1, 1, 0, 0]], ["Massage ayurvédique", "Inde", "Santé et récupération (monde)", null, [0, 0, 1, 1, 0]], ["Tai chi du matin", "Chine", "Santé et récupération (monde)", null, [0, 0, 2, 1, 0]], ["Yoga", "Inde", "Santé et récupération (monde)", null, [0, 1, 1, 1, 0]], ["Sieste", "Espagne", "Santé et récupération (monde)", null, [0, 1, 0, 1, 0]], ["Régime méditerranéen", "Grèce / Italie", "Santé et récupération (monde)", null, [0, 0, 1, 2, 0]], ["Régime d'Okinawa", "Japon", "Santé et récupération (monde)", null, [0, 0, 1, 2, 0]], ["Kimchi et fermentés", "Corée", "Santé et récupération (monde)", null, [0, 0, 1, 1, 0]], ["Thé vert", "Chine / Japon", "Santé et récupération (monde)", null, [0, 1, 0, 1, 0]], ["Bains froids", "Scandinavie", "Santé et récupération (monde)", null, [0, 0, 1, 2, 0]], ["Sommeil long", "Science du sport", "Santé et récupération (monde)", null, [0, 1, 1, 1, 0]], ["Hydratation", "Science du sport", "Santé et récupération (monde)", null, [0, 0, 0, 2, 0]], ["Étirements quotidiens", "Monde", "Santé et récupération (monde)", null, [0, 1, 1, 0, 0]], ["Highland Games (tronc, pierre)", "Écosse", "Muscles (monde)", null, [4, -1, 0, 1, 1]], ["Strongman", "Islande", "Muscles (monde)", null, [5, -2, 0, 1, 2]], ["Haltérophilie bulgare", "Bulgarie", "Muscles (monde)", null, [4, 1, 0, 0, 0]], ["Kettlebell russe", "Russie", "Muscles (monde)", null, [3, 0, 0, 2, 0]], ["Zurkhaneh (massues)", "Iran", "Muscles (monde)", null, [3, 0, 0, 1, 1]], ["Gada (masse indienne)", "Inde", "Muscles (monde)", null, [3, 0, 0, 1, 1]], ["Pierres de levée (Lifting stones)", "Pays basque", "Muscles (monde)", null, [4, -1, 0, 1, 1]], ["Calisthenics de rue", "USA", "Muscles (monde)", null, [2, 2, 0, 1, 0]], ["Gymnastique soviétique", "URSS", "Muscles (monde)", null, [2, 2, 1, 0, 0]], ["Musculation culturisme", "USA", "Muscles (monde)", null, [4, -1, 0, 0, 0]], ["Lutte à la corde (tir à la corde)", "Monde", "Muscles (monde)", null, [2, 0, 0, 2, 2]], ["Portage de charges", "Sherpas (Népal)", "Muscles (monde)", null, [2, -1, 0, 3, 1]], ["Arbre et bûches", "Canada", "Muscles (monde)", null, [3, 0, 0, 1, 1]], ["Pompes Hindu", "Inde", "Muscles (monde)", null, [2, 0, 0, 2, 0]], ["Mallakhamb (poteau)", "Inde", "Muscles (monde)", null, [2, 2, 0, 0, 2]], ["Sled et traîneau", "Alaska", "Muscles (monde)", null, [3, 0, 0, 2, 0]]]);
-const EXTRA = {"Course en altitude": {"life": 30}, "Vie en haute montagne": {"life": 40}, "Plongée en apnée": {"life": 25}, "Marche du désert": {"life": 30}, "Ultra-trail": {"life": 35}, "Résistance au froid": {"life": 30}, "Pêche en mer froide": {"life": 25}, "Course de fond": {"life": 30}, "Chasse à l'endurance": {"life": 35}, "Marathon des moines": {"life": 45}, "Nage en eau glacée": {"life": 25}, "Endurance du Sumo": {"life": 30}, "Sauna": {"heal": 0.08}, "Banya": {"heal": 0.08}, "Hammam": {"heal": 0.07}, "Onsen": {"heal": 0.08}, "Temazcal": {"heal": 0.06}, "Massage thaï": {"heal": 0.08}, "Massage ayurvédique": {"heal": 0.07}, "Tai chi du matin": {"heal": 0.08}, "Yoga": {"heal": 0.08}, "Sieste": {"heal": 0.05}, "Régime méditerranéen": {"heal": 0.06}, "Régime d'Okinawa": {"heal": 0.07}, "Kimchi et fermentés": {"heal": 0.05}, "Thé vert": {"heal": 0.05}, "Bains froids": {"heal": 0.07}, "Sommeil long": {"heal": 0.1}, "Hydratation": {"heal": 0.05}, "Étirements quotidiens": {"heal": 0.05}};
+const EXTRA = {"Aura de combat": {"life": 40, "res": 0.04}, "Entraînement en gravité x10": {"life": 50, "res": 0.05}, "Méditation sous la cascade": {"heal": 0.1, "res": 0.03}, "Cri de guerre": {"res": 0.04}, "Bouclier d'aura": {"res": 0.08}, "Endurance sans fin": {"life": 30, "heal": 0.06}, "Éveil intérieur": {"life": 25}, "Course en altitude": {"life": 30}, "Vie en haute montagne": {"life": 40}, "Plongée en apnée": {"life": 25}, "Marche du désert": {"life": 30}, "Ultra-trail": {"life": 35}, "Résistance au froid": {"life": 30}, "Pêche en mer froide": {"life": 25}, "Course de fond": {"life": 30}, "Chasse à l'endurance": {"life": 35}, "Marathon des moines": {"life": 45}, "Nage en eau glacée": {"life": 25}, "Endurance du Sumo": {"life": 30}, "Sauna": {"heal": 0.08}, "Banya": {"heal": 0.08}, "Hammam": {"heal": 0.07}, "Onsen": {"heal": 0.08}, "Temazcal": {"heal": 0.06}, "Massage thaï": {"heal": 0.08}, "Massage ayurvédique": {"heal": 0.07}, "Tai chi du matin": {"heal": 0.08}, "Yoga": {"heal": 0.08}, "Sieste": {"heal": 0.05}, "Régime méditerranéen": {"heal": 0.06}, "Régime d'Okinawa": {"heal": 0.07}, "Kimchi et fermentés": {"heal": 0.05}, "Thé vert": {"heal": 0.05}, "Bains froids": {"heal": 0.07}, "Sommeil long": {"heal": 0.1}, "Hydratation": {"heal": 0.05}, "Étirements quotidiens": {"heal": 0.05}};
 CAT.push(...[["Méditation Zen", "Japon", "Mental et esprit (monde)", null, [0, 0, 2, 1, 0]], ["Vipassana", "Birmanie / Inde", "Mental et esprit (monde)", null, [0, 0, 1, 2, 0]], ["Pranayama (respiration)", "Inde", "Mental et esprit (monde)", null, [0, 0, 1, 2, 0]], ["Tummo (chaleur intérieure)", "Tibet", "Mental et esprit (monde)", null, [0, 0, 1, 2, 0]], ["Esprit du Bushido", "Japon", "Mental et esprit (monde)", null, [1, 0, 1, 1, 0]], ["Haka", "Nouvelle-Zélande", "Mental et esprit (monde)", null, [2, 0, 0, 1, 0]], ["Sisu (ténacité)", "Finlande", "Mental et esprit (monde)", null, [0, 0, 1, 3, 0]], ["Stoïcisme", "Grèce antique", "Mental et esprit (monde)", null, [0, 0, 2, 1, 0]], ["Visualisation", "Sport de haut niveau", "Mental et esprit (monde)", null, [1, 1, 1, 0, 0]], ["Mental de guerrier (Lethwei)", "Birmanie", "Mental et esprit (monde)", null, [1, 0, 1, 1, 0]], ["Ubuntu (esprit d'équipe)", "Afrique australe", "Mental et esprit (monde)", null, [0, 0, 1, 2, 0]], ["Ikigai (raison de se battre)", "Japon", "Mental et esprit (monde)", null, [1, 0, 0, 2, 0]]]);
 Object.assign(EXTRA, {"Méditation Zen": {"res": 0.03, "heal": 0.03}, "Vipassana": {"res": 0.03, "heal": 0.04}, "Pranayama (respiration)": {"res": 0.02, "life": 15}, "Tummo (chaleur intérieure)": {"res": 0.03, "life": 15}, "Esprit du Bushido": {"res": 0.04}, "Haka": {"res": 0.03, "life": 10}, "Sisu (ténacité)": {"res": 0.05, "life": 20}, "Stoïcisme": {"res": 0.04}, "Visualisation": {"res": 0.02}, "Mental de guerrier (Lethwei)": {"res": 0.05}, "Ubuntu (esprit d'équipe)": {"res": 0.02, "life": 10}, "Ikigai (raison de se battre)": {"res": 0.02, "life": 15}});
 for (const [n,v] of Object.entries({"Corps de fer": 0.08, "Tibias d'acier": 0.05, "Ma Bu (cavalier)": 0.03, "Sanchin kata": 0.05, "Misogi (eau froide)": 0.02, "Résistance au froid": 0.03, "Hell Week": 0.04, "Combat fatigué": 0.03, "Inoculation au stress": 0.03, "Ponts de lutte": 0.03, "Shiko": 0.03, "Endurance du Sumo": 0.05, "Pont de fer": 0.04, "Relâchement": 0.05, "Blocage tibia": 0.04, "Garde haute": 0.03, "Gainage": 0.02, "Sparring": 0.02, "Sac lourd": 0.02, "Bains froids": 0.02, "Strongman": 0.03, "Highland Games (tronc, pierre)": 0.02, "Sanchin-dachi": 0.03})) EXTRA[n] = Object.assign({}, EXTRA[n]||{}, {res:v});
 CAT.push(...[["Frappe Teukgong", "Teukgong Moosul (Corée)", "Poings", "cross", [3, 0, 0, 0, 1]], ["Projection Teukgong", "Teukgong Moosul (Corée)", "Projections", "throw", [1, 1, 1, 0, 4]], ["Coup de pied Teukgong", "Teukgong Moosul (Corée)", "Pieds", "high", [4, -1, -1, 0, 0]], ["Frappe Jieitai", "Jieitai kakutōjutsu (Japon)", "Poings", "palm", [4, 0, 2, -1, 0]], ["Projection Jieitai", "Jieitai kakutōjutsu (Japon)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Clinch Combatives", "Combatives (US Army)", "Coudes et genoux", "knee", [4, 0, 0, 1, 1]], ["Takedown Combatives", "Combatives (US Army)", "Projections", "grab", [0, -1, 0, 2, 5]], ["Frappe Combatives", "Combatives (US Army)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Frappe du légionnaire", "Légion étrangère (France)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Amenée au sol légionnaire", "Légion étrangère (France)", "Projections", "grab", [0, -1, 1, 2, 5]], ["Clé d'intervention GIGN", "GIGN (France)", "Projections", "throw", [1, 1, 1, 0, 4]], ["Frappe de dégagement GIGN", "GIGN (France)", "Poings", "palm", [4, 0, 1, -1, 1]], ["Coup de genou commando", "Commandos Marine (France)", "Coudes et genoux", "knee", [3, 0, 0, 1, 1]], ["Coude commando", "Commandos Marine (France)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Frappe SAS", "SAS (Royaume-Uni)", "Poings", "cross", [4, 0, 0, 0, 0]], ["Projection SAS", "SAS (Royaume-Uni)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Frappe Gurkha", "Gurkhas (Népal)", "Poings", "hook", [3, 1, -1, 0, 0]], ["Coude Gurkha", "Gurkhas (Népal)", "Coudes et genoux", "elbow", [3, 1, 0, 1, 0]], ["Frappe BOPE", "BOPE (Brésil)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Contrôle BOPE", "BOPE (Brésil)", "Projections", "grab", [0, -1, 1, 2, 5]], ["Riposte Shayetet", "Shayetet 13 (Israël)", "Poings", "chain", [-1, 4, 0, -1, 1]], ["Défense Shayetet", "Shayetet 13 (Israël)", "Défense", "slip", [0, 3, 3, 0, 0]], ["Frappe Spetsnaz", "Spetsnaz (Russie)", "Poings", "palm", [4, 0, 1, -1, 1]], ["Projection Spetsnaz", "Spetsnaz (Russie)", "Projections", "throw", [1, 0, 1, 0, 5]], ["Coup de pied Spetsnaz", "Spetsnaz (Russie)", "Pieds", "kick", [3, 0, 0, 1, 0]], ["Combo militaire chinois", "Armée chinoise (Chine)", "Poings", "chain", [-1, 4, 0, 0, 0]], ["Saisie militaire chinoise", "Armée chinoise (Chine)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coude des Marines thaï", "Marines thaïlandais", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Genou des Marines thaï", "Marines thaïlandais", "Coudes et genoux", "knee", [3, 0, 0, 1, 2]], ["Sélection de la Légion étrangère", "France", "Militaire", null, [1, 1, 1, 3, 0]], ["Stage commando (Commandos Marine)", "France", "Militaire", null, [1, 1, 1, 3, 1]], ["Sélection GIGN", "France", "Militaire", null, [1, 1, 2, 2, 1]], ["Sélection SAS (Brecon Beacons)", "Royaume-Uni", "Militaire", null, [0, 0, 1, 4, 0]], ["Doko race (Gurkhas)", "Népal", "Militaire", null, [1, 0, 0, 4, 1]], ["BUD/S (Navy SEAL)", "USA", "Militaire", null, [0, 0, 1, 4, 0]], ["Ranger School", "USA", "Militaire", null, [0, 0, 1, 3, 0]], ["Sélection Spetsnaz", "Russie", "Militaire", null, [1, 0, 1, 3, 1]], ["Sélection Shayetet 13", "Israël", "Militaire", null, [0, 1, 1, 3, 0]], ["Entraînement Teukgong", "Corée", "Militaire", null, [1, 1, 1, 2, 1]], ["Entraînement BOPE", "Brésil", "Militaire", null, [1, 0, 1, 3, 0]], ["Survie en milieu hostile", "Monde", "Militaire", null, [0, 0, 1, 3, 0]], ["Combat en armure (lesté)", "Monde", "Militaire", null, [2, -1, 1, 2, 0]], ["Résistance à la douleur", "Forces spéciales", "Militaire", null, [0, 0, 2, 1, 0]]]);
 Object.assign(EXTRA, {"Sélection de la Légion étrangère": {"res": 0.03, "life": 15}, "Stage commando (Commandos Marine)": {"res": 0.03, "life": 15}, "Sélection GIGN": {"res": 0.03}, "Sélection SAS (Brecon Beacons)": {"life": 20}, "Doko race (Gurkhas)": {"life": 25}, "BUD/S (Navy SEAL)": {"res": 0.03, "life": 20}, "Ranger School": {"res": 0.02, "life": 15}, "Sélection Spetsnaz": {"res": 0.04}, "Sélection Shayetet 13": {"res": 0.03}, "Entraînement Teukgong": {"res": 0.02}, "Entraînement BOPE": {"res": 0.02, "life": 10}, "Survie en milieu hostile": {"life": 15}, "Combat en armure (lesté)": {"res": 0.02}, "Résistance à la douleur": {"res": 0.04}});
-const ANIM = {jab:['jab','jab',null],cross:['cross','cross','kdCross'],hook:['hook','hook','kdHook'],chain:['chain','chain',null],palm:['palm','palm','kdPalm'],
+const ANIM = {beam:['beam','beam','kdBeam'],shot:['shot','shot','kdShot'],swing:['swing','swing','kdSwing'],jab:['jab','jab',null],cross:['cross','cross','kdCross'],hook:['hook','hook','kdHook'],chain:['chain','chain',null],palm:['palm','palm','kdPalm'],
   kick:['kick','low',null],teep:['teep','teep',null],high:['high','high','kdHigh'],spin:['spin','spin',null],elbow:['elbow','elbow','kdElbow'],knee:['knee','knee','kdKnee'],
   grab:['grab',null,'titan'],throw:['throw',null,'ippon'],slip:['slip','slip',null]};
 // TECHS rows: [id, label, category, AI move, step, KO step, mods, art]
+// Anime-style powers: original names, inspired by the codes of Japanese animation
+CAT.push(...[
+  ["Vague d'énergie", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'beam', [4,0,0,-1,0]], ["Boule de feu", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'beam', [4,1,-1,-1,0]],
+  ["Rayon de foudre", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'beam', [3,3,-1,-1,0]], ["Souffle du dragon", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'beam', [5,-1,0,-2,0]],
+  ["Canon d'aura", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'beam', [5,0,-1,-2,0]], ["Éclair céleste", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'beam', [4,2,-1,-1,0]],
+  ["Les cent poings", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'chain', [1,5,-1,-1,0]], ["Poing de feu", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'cross', [4,1,0,0,0]],
+  ["Poing de glace", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'cross', [3,1,1,0,0]], ["Paume du tonnerre", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'palm', [4,1,0,0,0]],
+  ["Poing météore", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'hook', [5,0,-1,-1,0]], ["Coup de pied tornade", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'spin', [3,3,-1,0,0]],
+  ["Pied éclair", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'high', [2,4,0,0,0]], ["Lame de vent", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'high', [3,3,0,0,0]],
+  ["Genou volant", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'knee', [4,2,-1,0,0]], ["Projection céleste", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'throw', [3,0,0,0,4]],
+  ["Prise du serpent", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'grab', [1,1,1,0,4]], ["Téléportation éclair", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'slip', [0,4,3,0,0]],
+  ["Clones d'ombre", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'slip', [0,3,4,0,0]], ["Super saut volant", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'high', [2,3,0,1,0]],
+  ["Aura de combat", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [2,1,2,2,0]], ["Éveil intérieur", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [4,2,0,0,0]],
+  ["Œil qui prédit", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [0,1,4,0,0]], ["Mode furie", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [5,2,-3,-1,0]],
+  ["Entraînement en gravité x10", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [3,2,1,3,1]], ["Méditation sous la cascade", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [0,0,2,3,0]],
+  ["Cri de guerre", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [2,0,1,1,0]], ["Bouclier d'aura", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [0,0,5,1,0]],
+  ["Endurance sans fin", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [0,0,1,5,0]], ["Coup final de l'étoile", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'palm', [5,1,-1,-1,0]],
+]);
+// Accessories of cartoon heroes and everything in the world (weapons, objects, sports, jobs, nature)
+{ const C = (cat, art, list) => list.forEach(([n, a, m]) => CAT.push([n, art, cat, a, m]));
+  C('Dessins animés : accessoires', 'Accessoires de héros', [["Cape de héros", null, [0,1,2,1,0]], ["Bâton magique", 'swing', [3,1,1,0,0]], ["Anneau de pouvoir", null, [3,1,1,1,0]], ["Bottes de vitesse", 'slip', [0,5,1,1,0]], ["Ceinture de champion", null, [1,0,2,2,0]], ["Gants d'énergie", 'beam', [4,1,0,0,0]], ["Masque de héros", null, [0,1,3,0,0]], ["Épée lumineuse", 'swing', [4,2,0,0,0]], ["Bouclier du héros", null, [0,0,5,0,0]], ["Bandeau de combattant", null, [1,1,1,2,0]], ["Nuage volant", 'slip', [0,4,2,1,0]], ["Bâton qui s'allonge", 'swing', [3,2,1,0,0]], ["Haricot de force", null, [1,0,1,5,0]], ["Fusée dorsale", 'slip', [1,4,1,0,0]]]);
+  C('Tout le monde : armes blanches', 'Armes du monde', [["Couteau", 'swing', [3,3,0,0,0]], ["Épée", 'swing', [4,2,1,0,0]], ["Katana", 'swing', [4,3,0,0,0]], ["Sabre", 'swing', [4,2,0,0,0]], ["Lance", 'swing', [3,2,1,0,0]], ["Hache", 'swing', [5,-1,0,0,0]], ["Bâton (bo)", 'swing', [2,2,2,0,0]], ["Nunchaku", 'swing', [3,4,0,0,0]], ["Tonfa", 'swing', [2,2,3,0,0]], ["Kama (faucille)", 'swing', [3,3,0,0,0]], ["Saï", 'swing', [2,3,2,0,0]], ["Fouet", 'swing', [2,4,0,0,0]], ["Masse d'armes", 'swing', [5,-1,0,0,0]], ["Machette", 'swing', [4,2,0,0,0]], ["Kukri", 'swing', [4,2,0,0,0]], ["Escrima (bâtons)", 'swing', [2,4,1,0,0]], ["Chaîne", 'swing', [3,2,0,0,1]], ["Bouclier", null, [0,-1,5,0,0]]]);
+  C('Tout le monde : armes à distance', 'Armes du monde', [["Pistolet", 'shot', [4,3,0,0,0]], ["Revolver", 'shot', [5,1,0,0,0]], ["Fusil", 'shot', [5,0,0,0,0]], ["Arc et flèches", 'shot', [3,2,0,0,0]], ["Arbalète", 'shot', [4,0,0,0,0]], ["Fronde", 'shot', [2,3,0,0,0]], ["Shuriken", 'shot', [2,4,0,0,0]], ["Couteaux de lancer", 'shot', [3,3,0,0,0]], ["Boomerang", 'shot', [2,3,1,0,0]], ["Sarbacane", 'shot', [1,4,0,0,0]], ["Lance-pierre", 'shot', [2,3,0,0,0]], ["Pistolet à eau", 'shot', [0,4,1,0,0]], ["Paintball", 'shot', [1,4,0,0,0]], ["Lasso", 'grab', [0,2,0,0,4]]]);
+  C('Tout le monde : objets', 'Objets du quotidien', [["Chaise", 'swing', [4,-1,1,0,0]], ["Poêle à frire", 'swing', [4,0,1,0,0]], ["Balai", 'swing', [2,2,1,0,0]], ["Parapluie", 'swing', [2,2,2,0,0]], ["Rouleau à pâtisserie", 'swing', [3,1,0,0,0]], ["Casserole", 'swing', [3,0,1,0,0]], ["Pelle", 'swing', [4,0,0,0,0]], ["Râteau", 'swing', [3,1,0,0,0]], ["Clé à molette", 'swing', [4,1,0,0,0]], ["Sac à main", 'swing', [2,2,0,0,0]], ["Oreiller", 'swing', [0,3,1,0,0]], ["Livre très lourd", 'swing', [3,0,0,0,0]], ["Casque de moto", null, [0,-1,4,0,0]], ["Gilet pare-balles", null, [0,-2,5,1,0]], ["Corde", 'grab', [0,1,0,1,4]], ["Échelle", 'swing', [4,-1,1,0,0]]]);
+  C('Tout le monde : sports', 'Sports du monde', [["Batte de baseball", 'swing', [5,0,0,0,0]], ["Crosse de hockey", 'swing', [4,1,0,0,0]], ["Raquette de tennis", 'swing', [3,2,0,0,0]], ["Club de golf", 'swing', [4,1,0,0,0]], ["Lancer de ballon", 'shot', [2,3,0,0,0]], ["Placage de rugby", 'grab', [3,1,0,1,4]], ["Tir de footballeur", 'kick', [4,2,0,0,0]], ["Dunk de basket", 'palm', [4,2,0,0,0]], ["Skateboard", 'swing', [3,3,0,0,0]], ["Haltère", 'swing', [5,-1,0,1,0]], ["Kettlebell", 'swing', [5,-1,0,1,0]], ["Lancer de poids", 'shot', [4,-1,0,0,0]]]);
+  C('Tout le monde : métiers', 'Métiers du monde', [["Lance à incendie (pompier)", 'shot', [2,1,2,0,0]], ["Matraque (police)", 'swing', [3,2,2,0,0]], ["Menottes", 'grab', [0,2,1,0,4]], ["Marteau du forgeron", 'swing', [5,-1,0,1,0]], ["Clé de mécanicien", 'swing', [4,1,0,0,0]], ["Sifflet de l'arbitre", null, [0,1,2,0,0]], ["Force du bûcheron", null, [3,0,1,3,0]], ["Endurance du mineur", null, [0,0,2,4,0]], ["Agilité du couvreur", 'slip', [0,4,2,0,0]], ["Poigne du déménageur", 'grab', [3,0,0,1,4]]]);
+  C('Tout le monde : nature', 'Nature', [["Lancer de pierre", 'shot', [3,1,0,0,0]], ["Bâton de bois", 'swing', [3,1,1,0,0]], ["Noix de coco", 'shot', [3,1,0,0,0]], ["Boule de neige", 'shot', [1,3,0,0,0]], ["Force du gorille", null, [5,0,1,1,0]], ["Vitesse du guépard", 'slip', [0,5,1,0,0]], ["Peau de l'éléphant", null, [0,-1,4,3,0]]]);
+}
+// Powers in the style of cartoons from all over the world (original names, no existing character)
+{ const C = (cat, art, list) => list.forEach(([n, a, m]) => CAT.push([n, art, 'Dessins animés : ' + cat, a, m]));
+  C('énergie et arts martiaux', 'Animé japonais', [["Transformation de puissance", null, [5,3,1,1,0]], ["Explosion d'aura", 'beam', [5,0,0,-2,0]], ["Rayon des deux mains", 'beam', [5,0,-1,-2,0]], ["Disque d'énergie tranchant", 'beam', [4,2,-1,-1,0]], ["Coup de la comète", 'cross', [5,1,-1,0,0]], ["Vol supersonique", 'slip', [1,5,2,0,0]]]);
+  C('ninjas et samouraïs', 'Animé japonais', [["Clone qui explose", 'slip', [2,2,3,0,0]], ["Shuriken d'énergie", 'beam', [3,3,0,0,0]], ["Pas de l'ombre", 'slip', [0,5,3,0,0]], ["Lame de lune", 'high', [4,3,0,0,0]], ["Tornade de feuilles", 'spin', [2,4,1,0,0]], ["Sceau de paralysie", 'grab', [1,1,2,0,4]]]);
+  C('énergie et arts martiaux', 'Animation chinoise (donghua)', [["Paume des neuf soleils", 'palm', [5,0,0,-1,0]], ["Épée volante", 'beam', [4,3,-1,-1,0]], ["Souffle de jade", 'beam', [3,1,1,0,0]], ["Corps de bronze immortel", null, [0,0,5,3,0]], ["Pas des nuages", 'slip', [0,4,3,1,0]], ["Poing du tigre céleste", 'cross', [4,2,0,0,0]]]);
+  C('énergie et arts martiaux', 'Animation coréenne', [["Coup de pied du phénix", 'high', [4,3,0,0,0]], ["Onde de choc du poing", 'beam', [4,1,0,-1,0]], ["Réflexes surhumains", null, [0,3,4,0,0]], ["Rafale de cent pieds", 'chain', [2,5,-1,-1,0]]]);
+  C('cartoon', 'Cartoon américain', [["Marteau géant", 'palm', [5,-1,-1,0,0]], ["Corps élastique", 'slip', [0,2,5,1,0]], ["Coup qui aplatit", 'hook', [5,0,-1,0,0]], ["Tornade qui tourne", 'spin', [3,4,-1,0,0]], ["Enclume qui tombe", 'beam', [5,-2,0,0,0]], ["Gants à ressort", 'jab', [2,4,0,0,0]], ["Course à toute vitesse", 'slip', [0,5,2,1,0]], ["Peau de banane", 'grab', [0,2,2,0,3]], ["Tarte à la crème", 'beam', [1,3,0,0,0]], ["Bâton de dynamite", 'beam', [5,0,-2,-1,0]], ["Se relever comme si de rien n'était", null, [0,0,3,5,0]], ["Gonfler comme un ballon", null, [0,-1,4,2,0]]]);
+  C('cartoon', 'BD et animation européennes', [["Potion de force", null, [5,1,1,2,0]], ["Gifle qui fait voler", 'palm', [4,1,0,0,0]], ["Coup de tête du costaud", 'cross', [4,0,1,0,0]], ["Lancer de menhir", 'throw', [5,-1,0,0,3]], ["Tourbillon de bagarre", 'chain', [3,3,-1,0,0]], ["Moustache de fer", null, [0,0,3,1,0]]]);
+  C('cartoon', 'Animation russe', [["Coup de l'ours des neiges", 'hook', [5,0,0,0,0]], ["Souffle de l'hiver", 'beam', [3,1,1,0,0]], ["Endurance de la taïga", null, [0,0,2,5,0]]]);
+  C('cartoon', 'Animation brésilienne', [["Ginga de la jungle", 'spin', [2,4,1,0,0]], ["Coup de pied du jaguar", 'high', [4,3,0,0,0]], ["Danse du carnaval", 'slip', [0,4,3,1,0]]]);
+  C('super-héros', 'Super-héros', [["Super force", null, [5,0,1,1,0]], ["Vision laser", 'beam', [4,3,0,0,0]], ["Souffle glacé", 'beam', [3,1,1,0,0]], ["Coup de poing volant", 'cross', [5,3,-1,0,0]], ["Bouclier lancé", 'beam', [3,2,2,0,0]], ["Peau d'acier", null, [0,-1,5,2,0]], ["Super vitesse", 'slip', [1,5,2,0,0]], ["Toile qui attrape", 'grab', [0,3,1,0,4]], ["Griffes rétractables", 'chain', [3,3,0,0,0]], ["Régénération", null, [0,0,2,5,0]], ["Sonar", null, [0,1,3,0,0]], ["Atterrissage de héros", 'palm', [4,1,0,0,0]]]);
+  C('magie', 'Animation magique', [["Boule de feu magique", 'beam', [4,1,-1,0,0]], ["Éclair de foudre", 'beam', [4,3,-1,-1,0]], ["Mur de glace", null, [0,0,5,0,0]], ["Vague d'eau", 'beam', [3,1,1,0,0]], ["Poing de pierre", 'cross', [5,-1,1,0,0]], ["Lame de vent magique", 'high', [3,4,0,0,0]], ["Baguette qui repousse", 'beam', [2,2,2,0,0]], ["Bouclier enchanté", null, [0,0,5,1,0]], ["Sort de lenteur", 'grab', [1,1,2,0,3]], ["Potion de soin", null, [0,0,1,4,0]], ["Transformation en animal", null, [3,3,1,1,0]], ["Pluie d'étoiles", 'beam', [4,2,-1,-1,0]]]);
+  C('animaux et robots', 'Animaux héros', [["Griffes de tigre", 'chain', [3,3,0,0,0]], ["Morsure du crocodile", 'grab', [3,0,1,0,4]], ["Coup de queue", 'spin', [3,3,0,0,0]], ["Charge du rhinocéros", 'cross', [5,1,-1,0,0]], ["Saut du kangourou", 'high', [3,3,0,1,0]], ["Carapace de tortue", null, [0,-1,5,2,0]], ["Rugissement du lion", null, [2,0,1,0,0]], ["Agilité du chat", 'slip', [0,4,3,0,0]]]);
+  C('animaux et robots', 'Robots géants', [["Poing-fusée", 'beam', [5,1,-1,0,0]], ["Canon de poitrine", 'beam', [5,-1,0,-1,0]], ["Armure de titane", null, [0,-1,5,2,0]], ["Propulseurs", 'slip', [1,4,2,0,0]], ["Épée laser", 'high', [4,2,0,0,0]], ["Bras-foreuse", 'chain', [4,2,-1,0,0]]]);
+}
 const TECHS = CAT.map((c,i) => { const a = c[3] ? ANIM[c[3]] : [null,null,null]; return ['t'+i, c[0]+' ('+c[1]+')', c[2], a[0], a[1], a[2], c[4], c[1], c[0]]; });
 const BASIC = ['Jab','Direct','Crochet','Low kick','Teep','High kick','Ushiro-geri','Coude horizontal','Genou droit','Double-leg','O-goshi','Esquive rotative','Paume de fer','Rafale en chaîne'];
 const TT = id => TECHS.find(t => t[0]===id);
-function bonusOf(ids){ let life = 0, heal = 0, res = 0; ids.forEach(id => { const t = TT(id); const e = t && EXTRA[t[8]]; if (e){ life += e.life||0; heal += e.heal||0; res += e.res||0; } }); return {life: Math.min(400, life), heal: Math.min(.8, heal), res}; }
+function bonusOf(ids){ let life = 0, heal = 0, res = 0; ids.forEach(id => { const t = TT(id); const e = t && EXTRA[t[8]]; if (e){ life += e.life||0; heal += e.heal||0; res += e.res||0; } if (t && /^Dessins animés/.test(t[2])){ life += 3; res += .004; } if (t && /^Tout le monde/.test(t[2]) && !t[3]){ res += .003; } }); return {life: Math.min(400, life), heal: Math.min(.8, heal), res}; }
 const HEALTH_LIFE = {'Pleine forme':20,'En forme':0,'Fatigué':-10,'Blessé':-20,'Malade':-30};
 const HEALTH_RES = {'Pleine forme':.05,'En forme':0,'Fatigué':-.05,'Blessé':-.1,'Malade':-.1};
 // Total life and hit resistance from everything: base, practices, health, muscles, weight
@@ -775,7 +992,7 @@ function invSpecial(inv){
 }
 
 // ---- ONE technique: every chosen technique melted into a single strike ----
-const FAM_GROUP = {jab:'punch',cross:'punch',hook:'punch',chain:'punch',palm:'punch',slip:'punch',kick:'kick',teep:'kick',high:'kick',spin:'kick',elbow:'elbow',knee:'knee',grab:'proj',throw:'proj'};
+const FAM_GROUP = {beam:'punch',shot:'punch',swing:'punch',jab:'punch',cross:'punch',hook:'punch',chain:'punch',palm:'punch',slip:'punch',kick:'kick',teep:'kick',high:'kick',spin:'kick',elbow:'elbow',knee:'knee',grab:'proj',throw:'proj'};
 const GROUP_NOUN = {punch:'La Paume',kick:'Le Fouet',elbow:'La Lame',knee:'Le Bélier',proj:"L'Avalanche"};
 const GROUP_STEP = {punch:'palm',kick:'high',elbow:'elbow',knee:'knee',proj:'titan'};
 const SUFFIX = ['du Dragon','de la Tempête','du Phénix','de la Foudre','du Séisme','du Tonnerre','du Cyclone','de la Comète','du Volcan','de l\'Orage'];
@@ -820,7 +1037,7 @@ function fusedMove(ids, nameHint, prof){
   if (grp==='punch') why.push(spd >= 75 ? `Rapide (vitesse ${spd}) : un coup de poing part plus vite que tout le reste` : `Le coup le plus sûr : il garde l'équilibre et peut enchaîner`);
   if (grp==='elbow') why.push(`Puissant de près (puissance ${pow}) : le coude est l'os le plus dur, il ne lui faut presque pas d'élan`);
   if (grp==='knee') why.push(`Endurant et musclé : au corps-à-corps, le genou use l'adversaire et le plie en deux`);
-  if (grp==='proj') why.push(`${w >= 95 ? `Lourd (${w} kg)` : 'Bon lutteur'}${m >= 70 ? ' et musclé' : ''} (lutte ${grap}) : il écrase l'adversaire au sol avec tout son poids`);
+  if (grp==='proj') why.push(w >= 95 || grap >= 60 ? `${w >= 95 ? `Lourd (${w} kg)` : 'Bon lutteur'}${m >= 70 ? ' et musclé' : ''} (lutte ${grap}) : il écrase l'adversaire au sol avec tout son poids` : `Léger (${w} kg, lutte ${grap}) : il ne force pas, il utilise l'élan de l'adversaire pour le faire tomber`);
   if (hl==='Fatigué' || hl==='Malade') why.push(`Santé « ${hl} » : un coup court qui économise son énergie`);
   if (hl==='Blessé') why.push(`Blessé : rien de risqué sur une jambe`);
   if (hl==='Pleine forme') why.push(`Pleine forme : il peut la lancer à pleine vitesse`);
@@ -868,6 +1085,12 @@ function personalMoves(ids){
   const h = fuse(head); if (h) out.pm_head = Object.assign(h, {name:'Tête · ' + h.top, short:'TÊTE', seq: kicksUp ? [ST('highCh',140),ST('highHit',150,H(9,{range:1.14})),ST('guard',220)] : [ST('jab',90,H(3,{stun:200})),ST('cross',130,H(8)),ST('guard',200)]});
   const b = fuse(pick(t => ['knee','teep','hook'].includes(t[3]))); if (b) out.pm_body = Object.assign(b, {name:'Corps · ' + b.top, short:'CORPS', seq:[ST('grab',120),ST('knee',140,H(8,{range:1,target:'body',react:'rBody'})),ST('guard',220)]});
   const l = fuse(pick(t => t[3]==='kick')); if (l) out.pm_leg = Object.assign(l, {name:'Jambes · ' + l.top, short:'JAMBES', seq:[ST('lowWind',130),ST('lowHit',150,H(7,{range:1.1,target:'leg',react:'rLeg',stun:420})),ST('lowWind',120),ST('guard',180)]});
+  const enL = pick(t => t[3]==='beam'), en = fuse(enL);
+  if (en){ const names = enL.map(t => t[8]).join(' ');
+    const col = /feu|soleil|phénix|dynamite|comète/i.test(names) ? 0xff6a2a : /glac|hiver|neige|eau/i.test(names) ? 0x8fe8ff : /foudre|éclair|laser/i.test(names) ? 0xffe14a : /jade|étoile/i.test(names) ? 0x6dff9a : 0x6ad8ff;
+    out.pm_beam = Object.assign(en, {name:'Énergie · ' + en.top, short:'⚡ VAGUE', seq:[FXS('fz2',280,null,'charge',col), FXS('fz4',320,H(10,{range:9,target:'body',react:'rBody',stun:300}),'beam',col), ST('guard',240)]}); }
+  const shL = pick(t => t[3]==='shot'), sh = fuse(shL); if (sh) out.pm_shot = Object.assign(sh, {name:'Tir · ' + sh.top, short:'🔫 TIR', seq:[FXS('jab',200,null,'aim'), FXS('jab',130,H(9,{range:9,target:'body',react:'rBody',stun:260}),'shot',0xffd34a), ST('guard',220)]});
+  const swL = pick(t => t[3]==='swing'), sw = fuse(swL); if (sw) out.pm_swing = Object.assign(sw, {name:'Arme · ' + sw.top, short:'🗡 ARME', weapon: swL[0][8], seq:[ST('fz1',140), ST('fz4',140,H(11,{range:1.5,react:'rHead',stun:320})), ST('guard',220)]});
   const e = fuse(pick(t => t[3]==='elbow')); if (e) out.pm_elbow = Object.assign(e, {name:'Coude · ' + e.top, short:'COUDE', seq:[ST('elbow',120,H(9,{range:.98})),ST('guard',200)]});
   const projL = pick(t => t[3]==='grab' || t[3]==='throw');
   const p = fuse(projL); if (p) out.pm_proj = Object.assign(p, {name:'Projection · ' + p.top, short:'PROJECTION', seq:[ST('grab',150,{grab: projL.filter(t=>t[3]==='throw').length >= projL.length/2 ? 'ippon' : 'plaquage', range:.98})]});
@@ -889,18 +1112,19 @@ function buildCustom(c){
   const key = 'cust'+c.id;
   const prof = {body: bodyOf(c), h:c.h, w:c.w, m:c.m, s, life: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life, health:c.health||'En forme', traits:c.traits};
   const fmv = fusedMove(c.techs, c.tn, prof) || fusedMove([byName('Direct')], c.tn, prof);
-  SPECIALS[key] = fusedSpecial(fmv);
+  const style = customStyle(c, s);
+  SPECIALS[key] = styleSpecial(style, fmv);
   const pmv = personalMoves(c.techs);
   if (!/^technique ultime/i.test(fmv.name)) SPECIALS[key].name = 'Technique ultime : ' + fmv.name;
-  return {rank:null, custom:c.id, body: bodyOf(c), traits: c.traits, techIds: c.techs, fusedMove: fmv, pmoves: pmv, level:overall(s), s, moves: Object.keys(pmv).filter(k => k!=='pm_dodge').length ? Object.keys(pmv).filter(k => k!=='pm_dodge') : ['fused'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]),
+  return {rank:null, custom:c.id, style, gear: c.gear || ['nues'], mood: c.mood || 'Calme', body: bodyOf(c), traits: c.traits, techIds: c.techs, fusedMove: fmv, pmoves: pmv, level:overall(s), s, moves: Object.keys(pmv).filter(k => k!=='pm_dodge').length ? Object.keys(pmv).filter(k => k!=='pm_dodge') : ['fused'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]),
     h:c.h, w:c.w, title:'Créé par toi', person:c.name, idleP:'guard', life: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life, resist: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).res, healBonus: bonusOf(c.techs).heal, health: c.health || 'En forme', look: lookOf(c), m: c.m};
 }
 const byName = n => TECHS.find(t => t[8]===n)[0];
-let cInv = null, cPers = [], pq = '';
+let cInv = null, cPers = [], pq = '', cPersDone = false;
 let cT = ['Jab','Direct','Low kick','Double-leg'].map(byName), cSp = ['Jab','Direct','Double-leg'].map(byName), showAll = false, tq = '', tcat = 'Tout';
 function readCustom(){
   return {id: Date.now(), name: ($('cName').value.trim() || 'Adversaire mystère'), h:+$('cH').value/100, w:+$('cW').value, m:+$('cM').value, level:+$('cL').value,
-    techs:[...cT], spec:[], traits:{...cTr}, body:{...cBody}, tn:$('cTN').value.trim(), life:+$('cLife').value, health:cLook.health, skin:cLook.skin, nails:cLook.nails, bare:cLook.bare};
+    techs:[...cT], spec:[], traits:{...cTr}, body:{...cBody}, gear:[...cGear], mood:cMood, tn:$('cTN').value.trim(), life:+$('cLife').value, health:cLook.health, skin:cLook.skin, nails:cLook.nails, bare:cLook.bare};
 }
 const MUSC = m => m < 20 ? 'Mince' : m < 45 ? 'Normal' : m < 70 ? 'Musclé' : m < 90 ? 'Très musclé' : 'Colosse';
 const modTxt = mods => mods.map((v,i) => v ? `<span class="${v>0?'up':'dn'}">${STAT[i]} ${v>0?'+':''}${v}</span>` : '').filter(Boolean).join(' · ');
@@ -947,7 +1171,7 @@ function preset(kind){
     for (let h=160; h<=215; h+=5) for (let w=60; w<=130; w+=5) for (let m=40; m<=100; m+=10){ const t = {...c, h:h/100, w, m}; const sc = scoreOf(t) - (Math.abs(h-188)+Math.abs(w-95)+Math.abs(m-85))/1000; if (sc > bestS){ bestS = sc; bp = t; } }
     c = bp; c.spec = []; c.inv = inventTechnique(c.techs, 'La Technique Ultime');
   } else if (kind==='worst'){
-    c = {...base, name:'Le Pire', level:30, techs:['Coup de pied 540','Tomoe-nage'].map(byName), tn:'La Catastrophe'};
+    c = {...base, name:'Le Pire', level:30, techs:['Coup de pied 540','Tomoe-nage'].map(byName), tn:''};
     c.spec = ['Coup de pied 540'].map(byName);
     let worstS = 999, wp = null;
     for (let h=150; h<=220; h+=10) for (let w=50; w<=160; w+=10) for (let m=0; m<=100; m+=25){ const t = {...c, h:h/100, w, m}; const sc = scoreOf(t); if (sc < worstS){ worstS = sc; wp = t; } }
@@ -957,6 +1181,7 @@ function preset(kind){
     c.spec = ['Jab','Direct','Crochet'].map(byName);
   }
   const LH = {worst:[50,'Malade'], avg:[100,'En forme'], best:[1000,'Pleine forme']}[kind];
+  cGear = kind==='best' ? [...BEST_GEAR] : kind==='avg' ? ['mma','dents'] : ['nues']; cMood = kind==='worst' ? 'Triste' : kind==='best' ? 'Confiant' : 'Calme';
   cBody = kind==='worst' ? {age:68, os:10, mains:10, poumons:10} : kind==='best' ? {age:28, os:99, mains:99, poumons:99} : {...BODY0};
   cTr = kind==='worst' ? {agr:10, iq:10, calme:10, patience:10, ruse:10, courage:10} : kind==='best' ? {agr:80, iq:99, calme:99, patience:85, ruse:99, courage:99} : {...T50}; $('cLife').value = LH[0]; cLook.health = LH[1];
   $('cName').value = c.name; $('cH').value = Math.round(c.h*100); $('cW').value = c.w; $('cM').value = c.m; $('cL').value = c.level; $('cTN').value = c.tn;
@@ -964,7 +1189,7 @@ function preset(kind){
 }
 function seqUI(){
   { const rc = readCustom(); const f = fusedMove(cT, $('cTN').value.trim(), {h:rc.h, w:rc.w, m:rc.m, s:customStats(rc), life:vitals(rc.life, rc.techs, rc.health, rc.w, rc.m, rc.traits, customStats(rc), rc.body).life, health:rc.health, traits:rc.traits, body:rc.body});
-    $('cTop').innerHTML = f ? `<div class="tact" style="font-size:12px;color:var(--gold);letter-spacing:1px">⚡ SA TECHNIQUE PARFAITE (créée pour lui, se met à jour toute seule)</div><div class="fn" style="font-size:30px">🥊 ${f.name}</div><div class="tact">${f.desc} · puissance ×${f.mul.toFixed(2)}</div><ul class="tact">${f.why.slice(0,5).map(x=>`<li>${x}</li>`).join('')}</ul><div class="tm" style="font-size:12px;color:var(--mute)">Toutes les raisons sont plus bas, dans « Sa technique parfaite ».</div>` : '<span style="color:var(--mute)">Choisis des techniques pour créer sa technique parfaite.</span>';
+    $('cTop').innerHTML = f ? `<div class="tact" style="font-size:12px;color:var(--gold);letter-spacing:1px">⚡ SA TECHNIQUE PARFAITE (créée pour lui, se met à jour toute seule)</div><div class="fn" style="font-size:30px">🥊 ${f.name}</div>${(() => { const st = STY[customStyle(rc, customStats(rc))]; return `<div class="tact" style="font-size:15px"><b>${st[0]} Son style : ${st[1]}</b> · ${st[2]}</div>`; })()}<div class="tact">${f.desc} · puissance ×${f.mul.toFixed(2)}</div><ul class="tact">${f.why.slice(0,5).map(x=>`<li>${x}</li>`).join('')}</ul><div class="tm" style="font-size:12px;color:var(--mute)">Toutes les raisons sont plus bas, dans « Sa technique parfaite ».</div>` : '<span style="color:var(--mute)">Choisis des techniques pour créer sa technique parfaite.</span>';
     $('cSeq').innerHTML = f ? `<span class="st2 kd" style="font-size:15px">🥊 ${f.name}<br><span style="font-size:11px;color:var(--mute)">${f.desc} · puissance ×${f.mul.toFixed(2)}</span></span><div class="tact" style="width:100%;margin-top:6px"><b>Pourquoi c'est la meilleure pour lui :</b><ul>${f.why.map(x=>`<li>${x}</li>`).join('')}</ul></div>` : '<span style="color:var(--mute);font-size:13px">Choisis au moins une technique de combat.</span>';
     preview(); return; }
   if (cInv){ $('cSeq').innerHTML = cInv.steps.map((st,i) => `<span class="st2 ${i===cInv.steps.length-1?'kd':''}">${st.name}<br><span style="font-size:10px;color:var(--mute)">${st.art}</span></span>`).join('<span class="ar">→</span>') + ` <span class="st2" id="spClear">✕ vider</span>`;
@@ -992,8 +1217,9 @@ $('cName').oninput = preview;
 $('cTN').oninput = seqUI;
 function myOppsUI(){
   const list = (save.customs || []).filter(c => c.techs && c.techs.every(id => TT(id)));
-  $('myOpps').innerHTML = list.length ? '<div class="tact" style="margin-bottom:6px"><b>Mes adversaires créés</b> <span style="color:var(--mute)">(🧪 tester · 📹 apprendre · 🥊 combattre)</span></div>' + list.map((c,i) => { const o = buildCustom(c);
-    return `<div class="myo"><div><b>${c.name}</b> · note ${o.level}<br><span>${c.h.toFixed(2).replace('.',',')} m · ${c.w} kg · ${MUSC(c.m)} · ❤ ${vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life} · 🛡 ${Math.round(vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).res*100)} % · ${c.health||'En forme'} · ${c.techs.length} techniques</span></div><button data-l="${i}" style="background:#2b2b35">📹</button><button data-t="${i}" style="background:#2b2b35">🧪</button><button data-f="${i}">🥊</button><button class="del" data-d="${i}">✕</button></div>`; }).join('') : '';
+  $('myOpps').innerHTML = list.length ? '<div class="tact" style="margin-bottom:6px"><b>Mes adversaires créés</b> <span style="color:var(--mute)">(🧪 tester · 📹 apprendre · 🥊 combattre · 🎮 le jouer moi)</span></div>' + list.map((c,i) => { const o = buildCustom(c);
+    return `<div class="myo"><div><b>${c.name}</b> · note ${o.level}<br><span>${c.h.toFixed(2).replace('.',',')} m · ${c.w} kg · ${MUSC(c.m)} · ❤ ${vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life} · 🛡 ${Math.round(vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).res*100)} % · ${c.health||'En forme'} · ${c.techs.length} techniques</span></div><button data-l="${i}" style="background:#2b2b35">📹</button><button data-t="${i}" style="background:#2b2b35">🧪</button><button data-f="${i}">🥊</button><button data-me="${i}" title="Le jouer moi">🎮</button><button class="del" data-d="${i}">✕</button></div>`; }).join('') : '';
+  $('myOpps').querySelectorAll('[data-me]').forEach(b => b.onclick = () => { const c = list[+b.dataset.me]; save.myChar = 'c'+c.id; persist(); menu(); go('sOpp'); bannerLocal('TU JOUES ' + c.name.toUpperCase(), 2000); });
   $('myOpps').querySelectorAll('[data-f]').forEach(b => b.onclick = () => showVs(buildCustom(list[+b.dataset.f])));
   $('myOpps').querySelectorAll('[data-t]').forEach(b => b.onclick = () => { curOpp = buildCustom(list[+b.dataset.t]); startFight(true); });
   $('myOpps').querySelectorAll('[data-l]').forEach(b => b.onclick = () => startLesson(buildCustom(list[+b.dataset.l])));
@@ -1007,7 +1233,7 @@ const NAILS = [['Naturels','#f1c9b8'],['Noirs','#151515'],['Rouges','#d1182b'],[
 const HEALTH = [['Pleine forme',1.2,1],['En forme',1,1],['Fatigué',.75,1],['Blessé',1,.8],['Malade',.6,.9]];
 const lookOf = c => ({skin: c.skin || '#d8d4cf', nails: c.nails || NAILS[0][1], bare: !!c.bare});
 const healthOf = h => HEALTH.find(x => x[0]===h) || HEALTH[1];
-let cTr = {...T50}, cBody = {...BODY0};
+let cTr = {...T50}, cBody = {...BODY0}, cGear = ['nues'], cMood = 'Calme';
 function traitsUI(){
   $('cTraits').innerHTML = TRAITS.map(([k,ic,n]) => `<div class="slid"><span>${ic} ${n.split(' ')[0]}</span><input type="range" min="0" max="99" value="${cTr[k]}" data-tr="${k}"><b>${cTr[k]}</b></div>`).join('');
   document.querySelectorAll('[data-tr]').forEach(i => i.oninput = () => { cTr[i.dataset.tr] = +i.value; i.nextElementSibling.textContent = i.value; seqUI(); });
@@ -1022,6 +1248,10 @@ function lookUI(){
   document.querySelectorAll('#cNails [data-nails]').forEach(b => b.onclick = () => { cLook.nails = b.dataset.nails; cLook.bare = true; lookUI(); });
   document.querySelectorAll('#cHealth [data-health]').forEach(b => b.onclick = () => { cLook.health = b.dataset.health; lookUI(); seqUI(); });
   document.querySelectorAll('#cHands [data-bare]').forEach(b => b.onclick = () => { cLook.bare = b.dataset.bare==='1'; lookUI(); });
+  $('cMood').innerHTML = Object.keys(MOODS).map(m => `<button class="${cMood===m?'on':''}" data-mood="${m}">${m}</button>`).join('');
+  $('cGear').innerHTML = Object.entries(GEAR).map(([k,g]) => `<button class="${cGear.includes(k)?'on':''}" data-gear="${k}" title="${gearFx(k).join(', ')}">${g.n}<br><small style="opacity:.75">${gearFx(k).slice(0,2).join(' · ')}</small></button>`).join('');
+  document.querySelectorAll('#cMood [data-mood]').forEach(b => b.onclick = () => { cMood = b.dataset.mood; lookUI(); seqUI(); });
+  document.querySelectorAll('#cGear [data-gear]').forEach(b => b.onclick = () => { const k = b.dataset.gear; if (cGear.includes(k)) cGear = cGear.filter(x => x!==k); else { if (GEAR[k].g) cGear = cGear.filter(x => GEAR[x].g !== GEAR[k].g); cGear.push(k); } lookUI(); seqUI(); });
   const h = healthOf(cLook.health);
   const bo = bonusOf(cT), V = vitals(+$('cLife').value, cT, cLook.health, +$('cW').value, +$('cM').value, cTr, customStats(readCustom()), {...cBody});
   $('cLookTxt').innerHTML = `❤ Vie totale : <b>${V.life}</b> <span style="color:var(--mute)">(${V.parts.filter(p=>p[1]).map(p => p[0] + ' ' + (p[1]>0 && p[0]!=='base' ? '+' : '') + p[1]).join(' · ')})</span><br>🛡 Résistance aux coups : <b>${Math.round(V.res*100)} %</b> de dégâts en moins<br>Santé : <b>${cLook.health}</b> (récupération ×${(h[1]*(1+bo.heal)).toFixed(2)}${h[2]<1?', commence à '+Math.round(h[2]*100)+' % de vie':''})`;
@@ -1032,20 +1262,23 @@ function candidates(){
   const list = [];
   (save.customs || []).filter(c => c.techs && c.techs.every(id => TT(id))).forEach((c,i) => list.push({id:'c'+c.id, label:c.name, sub:`créé · ${c.techs.length} techniques`, c}));
   for (let r=1; r<=NOPP; r++){ const o = opponent(r); list.push({id:'r'+r, label:`#${r} ${o.person}`, sub:o.arts.join(' + '), o}); }
+  const T = {person:'Le Tourbillon', arts: save.playerAll ? [...new Set(TECHS.map(t => t[7]))] : ['Boxe','Wing Chun','Capoeira','Judo','Muay Thai','Karaté','Aïkido'], h:1.80, w:PLAYER.w, level:86, body:PLAYER.body, traits:PLAYER.traits, m:PLAYER.m};
+  list.push({id:'tourb', label:'🌀 Moi (Le Tourbillon)', sub:'ton style à toi', o:T});
   return list;
 }
 function persUI(){
   const all = candidates(), q = pq.toLowerCase();
-  const shown = all.filter(x => !q || (x.label+' '+x.sub).toLowerCase().includes(q)).slice(0,60);
+  const shown = all.filter(x => !q || (x.label+' '+x.sub).toLowerCase().includes(q));
   $('persList').innerHTML = shown.map(x => `<div class="tc ${cPers.includes(x.id)?'on':''}" data-p="${x.id}"><div class="ck">${cPers.includes(x.id)?'✓':''}</div><div><div class="tn">${x.label}</div><div class="tm">${x.sub}</div></div></div>`).join('');
-  $('persList').querySelectorAll('.tc').forEach(el => el.onclick = () => { const id = el.dataset.p; cPers = cPers.includes(id) ? cPers.filter(x=>x!==id) : cPers.concat([id]); persUI(); });
+  $('persList').querySelectorAll('.tc').forEach(el => el.onclick = () => { const id = el.dataset.p; cPers = cPers.includes(id) ? cPers.filter(x=>x!==id) : cPers.concat([id]); cPersDone = false; persUI(); });
   $('persSel').innerHTML = cPers.length ? `<b>${cPers.length} choisi(s) :</b> ` + cPers.map(id => all.find(x=>x.id===id)).filter(Boolean).map(x=>x.label).join(' + ') : '<span style="color:var(--mute)">Aucun combattant choisi.</span>';
-  $('bPersFuse').disabled = cPers.length < 2;
-  $('bPersFuse').textContent = cPers.length < 2 ? '👥 Choisis au moins 2 combattants' : `👥 FUSIONNER LES ${cPers.length} COMBATTANTS`;
+  $('bPersFuse').disabled = cPers.length < 2 || cPersDone;
+  $('bPersFuse').textContent = cPersDone ? `✅ LES ${cPers.length} COMBATTANTS SONT FUSIONNÉS` : cPers.length < 2 ? '👥 Choisis au moins 2 combattants' : `👥 FUSIONNER LES ${cPers.length} COMBATTANTS`;
+  if (cPersDone) $('persSel').innerHTML = `<b style="color:var(--gold)">✅ Fusion faite : ${cPers.length} combattants</b> · tout est au maximum et sa technique parfaite est créée.`;
 }
 function fusePersons(){
   const all = candidates(), sel = cPers.map(id => all.find(x=>x.id===id)).filter(Boolean);
-  if (sel.length < 2) return;
+  if (sel.length < 2) return; cPersDone = true;
   const techs = new Set(); let h = 0, w = 0, lv = 0;
   const names = [];
   sel.forEach(x => {
@@ -1065,12 +1298,23 @@ function fusePersons(){
 }
 $('pq').oninput = e => { pq = e.target.value; persUI(); };
 $('bPersFuse').onclick = fusePersons;
+$('bPersAll').onclick = () => { cPers = candidates().map(x => x.id); cPersDone = false; persUI(); };
 $('bCreate').onclick = () => go('sCreate');
 $('bFuse').onclick = () => { const rc = readCustom(); const f = fusedMove(cT, '', {h:rc.h, w:rc.w, m:rc.m, s:customStats(rc), life:vitals(rc.life, rc.techs, rc.health, rc.w, rc.m, rc.traits, customStats(rc), rc.body).life, health:rc.health, traits:rc.traits, body:rc.body}); if (f && !$('cTN').value.trim()) $('cTN').value = f.name; seqUI(); };
 function fillAll(ids, tn, nm){ cT = ids; cSp = []; cInv = inventTechnique(ids, tn); $('cTN').value = tn; if (!$('cName').value.trim() || ["L'Ultime","Le Vert","Le Rouge"].includes($('cName').value)) $('cName').value = nm; createUI(); }
 $('pGreen').onclick = () => fillAll(TECHS.filter(t => t[6].every(v => v >= 0)).map(t => t[0]), 'Technique Verte', 'Le Vert');
 $('pRed').onclick = () => fillAll(TECHS.filter(t => t[6].some(v => v < 0)).map(t => t[0]), 'Technique Rouge', 'Le Rouge');
-$('pAll').onclick = () => { cBody = {age:28, os:99, mains:99, poumons:99}; cTr = {agr:99, iq:99, calme:99, patience:99, ruse:99, courage:99}; $('cLife').value = 1000; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); createUI(); };
+const catOf = re => TECHS.filter(t => re.test(t[2])).map(t => t[0]);
+const NORMAL_RE = /^(?!Dessins animés|Tout le monde)/;
+const bigPreset = (ids, name, tech) => { $('pAll').onclick(); cT = ids; cInv = inventTechnique(cT, tech); $('cTN').value = tech; $('cName').value = name; cPers = []; cPersDone = false; if (typeof persUI === 'function') persUI(); createUI(); };
+$('pMix').onclick = () => bigPreset(catOf(/^(?!Tout le monde)/), 'Le Combattant des Dessins Animés', 'Technique Combat-Animé');
+$('pWorld').onclick = () => bigPreset(catOf(/^Tout le monde/), 'Le Guerrier du Monde', 'Technique du Monde');
+$('p3').onclick = () => bigPreset(TECHS.map(t => t[0]), 'Le Tout des Trois', 'Technique des Trois');
+$('pAnime').onclick = () => { $('pAll').onclick(); cT = TECHS.filter(t => /^Dessins animés/.test(t[2])).map(t => t[0]); cInv = inventTechnique(cT, 'Technique Dessin Animé'); $('cTN').value = 'Technique Dessin Animé'; $('cName').value = 'Le Héros des Dessins Animés'; cPers = []; cPersDone = false; if (typeof persUI === 'function') persUI(); createUI(); };
+$('pAll').onclick = () => { cGear = [...ALL_GEAR]; cMood = 'Confiant'; cBody = {age:28, os:99, mains:99, poumons:99}; cTr = {agr:99, iq:99, calme:99, patience:99, ruse:99, courage:99}; $('cLife').value = 1000; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.filter(t => NORMAL_RE.test(t[2])).map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); cPers = candidates().map(x => x.id); cPersDone = true; if (typeof persUI === 'function') persUI(); if ($('cName').value === "L'Ultime") $('cName').value = 'La Fusion de Tous'; createUI(); };
+$('bSaveMe').onclick = () => { if (!cT.length) return;
+  if (!cSp.length && !cInv) $('bFuse').onclick();
+  const c = readCustom(); save.customs = (save.customs||[]).filter(x=>x.techs).concat([c]); save.myChar = 'c'+c.id; persist(); menu(); go('sOpp'); bannerLocal('TU JOUES ' + c.name.toUpperCase() + ' · CHOISIS TON ADVERSAIRE', 2500); };
 $('pWorst').onclick = () => preset('worst'); $('pAvg').onclick = () => preset('avg'); $('pBest').onclick = () => preset('best');
 $('bSaveOpp').onclick = () => { if (!cT.length) return;
   if (!cSp.length && !cInv) $('bFuse').onclick();
@@ -1078,6 +1322,8 @@ $('bSaveOpp').onclick = () => { if (!cT.length) return;
 
 
 // ===================== 3D =====================
+let cageG, ringG;
+function setArena(t){ save.arena = t; persist(); if (cageG){ cageG.visible = t==='cage'; ringG.visible = t==='ring'; } document.querySelectorAll('[data-arena]').forEach(b => b.classList.toggle('on', b.dataset.arena===t)); }
 let renderer, scene, camera, MA, MB, flashM, flashMat, flashT = 9;
 const SC = 0.0118, UP = new THREE.Vector3(0,1,0);
 const ZD = {head:0,neck:0,hip:0,le:-0.21,lh:-0.08,re:0.21,rh:0.08,lk:-0.11,lf:-0.14,rk:0.11,rf:0.15};
@@ -1097,20 +1343,25 @@ function init3D(){
   floor.position.y = -.03; floor.receiveShadow = true; scene.add(floor);
   const ring = new THREE.Mesh(new THREE.RingGeometry(3.4,3.46,64), new THREE.MeshBasicMaterial({color:0xe63946,transparent:true,opacity:.35,side:THREE.DoubleSide}));
   ring.rotation.x = -Math.PI/2; ring.position.y = .005; scene.add(ring);
-  // Cage: chain-link style grid on the far panels only (never between camera and fighters)
-  const fencePts = [];
+  // Arenas: MMA cage (octagon, radius 3.7) and boxing ring (3 ropes, half-size 3.6)
+  cageG = new THREE.Group(); ringG = new THREE.Group(); scene.add(cageG); scene.add(ringG);
+  const R = 3.7, fencePts = [];
   for (let i=0;i<8;i++){ const a=i/8*Math.PI*2+Math.PI/8, b=(i+1)/8*Math.PI*2+Math.PI/8;
-    const p1 = new THREE.Vector3(Math.cos(a)*6.5,0,Math.sin(a)*6.5), p2 = new THREE.Vector3(Math.cos(b)*6.5,0,Math.sin(b)*6.5);
-    if ((p1.z+p2.z)/2 > 1) continue;
-    const L = p1.distanceTo(p2), nV = Math.round(L/.25);
-    for (let k=0;k<=nV;k++){ const p = p1.clone().lerp(p2, k/nV); fencePts.push(p.x,0,p.z, p.x,1.8,p.z); }
-    for (let hgt=0; hgt<=1.8; hgt+=.25){ fencePts.push(p1.x,hgt,p1.z, p2.x,hgt,p2.z); }
+    const p1 = new THREE.Vector3(Math.cos(a)*R,0,Math.sin(a)*R), p2 = new THREE.Vector3(Math.cos(b)*R,0,Math.sin(b)*R);
+    if ((p1.z+p2.z)/2 > .5) continue;
+    const L = p1.distanceTo(p2), nV = Math.round(L/.22);
+    for (let k=0;k<=nV;k++){ const p = p1.clone().lerp(p2, k/nV); fencePts.push(p.x,0,p.z, p.x,1.9,p.z); }
+    for (let hgt=0; hgt<=1.9; hgt+=.22){ fencePts.push(p1.x,hgt,p1.z, p2.x,hgt,p2.z); }
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,1.95,8), new THREE.MeshStandardMaterial({color:0x2a2a33})); post.position.set(p1.x,.97,p1.z); cageG.add(post);
   }
   const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute(fencePts, 3));
-  scene.add(new THREE.LineSegments(fg, new THREE.LineBasicMaterial({color:0x777788, transparent:true, opacity:.35})));
-  for (let i=0;i<8;i++){ const a=i/8*Math.PI*2+Math.PI/8, b=(i+1)/8*Math.PI*2+Math.PI/8;
-    const post = new THREE.Mesh(new THREE.CylinderGeometry(.05,.05,1.6,8), new THREE.MeshStandardMaterial({color:0x333340})); post.position.set(Math.cos(a)*6.5,.8,Math.sin(a)*6.5); scene.add(post);
-    for (const h of [.6,1.1,1.55]) scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(Math.cos(a)*6.5,h,Math.sin(a)*6.5),new THREE.Vector3(Math.cos(b)*6.5,h,Math.sin(b)*6.5)]), new THREE.LineBasicMaterial({color:0x44444f}))); }
+  cageG.add(new THREE.LineSegments(fg, new THREE.LineBasicMaterial({color:0x8888a0, transparent:true, opacity:.4})));
+  const H2 = 3.6, ropeCol = [0xe63946, 0xffffff, 0x2f80c9];
+  const rope = (a, b, col) => { const d = new THREE.Vector3().subVectors(b,a); const m = new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,d.length(),6), new THREE.MeshStandardMaterial({color:col, roughness:.5}));
+    m.position.copy(a).addScaledVector(d,.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), d.clone().normalize()); ringG.add(m); };
+  [[-H2,-H2],[H2,-H2],[-H2,H2],[H2,H2]].forEach(([x,z]) => { const p = new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,1.5,10), new THREE.MeshStandardMaterial({color:0xcccccc})); p.position.set(x,.75,z); ringG.add(p); });
+  [.5,.9,1.3].forEach((h,i) => { rope(new THREE.Vector3(-H2,h,-H2), new THREE.Vector3(H2,h,-H2), ropeCol[i]); rope(new THREE.Vector3(-H2,h,-H2), new THREE.Vector3(-H2,h,H2), ropeCol[i]); rope(new THREE.Vector3(H2,h,-H2), new THREE.Vector3(H2,h,H2), ropeCol[i]); });
+  setArena(save.arena || 'cage');
   MA = mannequin({skin:0xd8d4cf, accent:0xe63946, shirt:0x26262e});
   MB = mannequin({skin:0x8f9aab, accent:0x2f80c9, shirt:0x3b4250});
   flashMat = new THREE.MeshBasicMaterial({color:0xffd27a,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});
@@ -1135,9 +1386,9 @@ function mannequin(c){
   f.head.scale.set(.105,.125,.1); return f;
 }
 function place(m,a,b,rx,rz){ const d = new THREE.Vector3().subVectors(b,a), L = d.length(); m.position.copy(a).addScaledVector(d,.5); if (L>1e-5) m.quaternion.setFromUnitVectors(UP,d.normalize()); m.scale.set(rx,L,rz); }
-function to3(p, x, face, sc=1){
+function to3(p, x, face, sc=1, lift=0){
   const o = {};
-  for (const k of KEYS){ const [px,py] = p[k]; o[k] = new THREE.Vector3(x + (px-94)*SC*sc*face, Math.max(.05,(200-py)*SC*sc+.04), ZD[k]*face*Math.min(1.15,sc)); }
+  for (const k of KEYS){ const [px,py] = p[k]; o[k] = new THREE.Vector3(x + (px-94)*SC*sc*face, Math.max(.05,(200-py)*SC*sc+.04) + lift, ZD[k]*face*Math.min(1.15,sc)); }
   o.lS = o.neck.clone().add(new THREE.Vector3(0,-.03,-.19*face)); o.rS = o.neck.clone().add(new THREE.Vector3(0,-.03,.19*face));
   o.lH = o.hip.clone().add(new THREE.Vector3(0,0,-.1*face)); o.rH = o.hip.clone().add(new THREE.Vector3(0,0,.1*face));
   o.mid = o.hip.clone().lerp(o.neck,.45); o.headB = o.neck.clone().addScaledVector(new THREE.Vector3().subVectors(o.head,o.neck),.45);
@@ -1155,9 +1406,71 @@ function paint(M, L, isA){
   M.gloveMat.color.set(L.bare ? (L.skin || '#d8d4cf') : M.accent);
   M.gloves.forEach(g => g.mesh.scale.set(L.bare ? .05 : .075, L.bare ? .045 : .068, L.bare ? .05 : .068));
   M.nailMat.color.set(L.nails || '#f1c9b8'); M.nails.forEach(n => n.mesh.visible = !!L.bare);
+  if (save.anime) setTimeout(refreshToon, 0);
 }
 const lerp2 = (a,b,t) => { const o={}; for (const k of KEYS) o[k] = [a[k][0]+(b[k][0]-a[k][0])*t, a[k][1]+(b[k][1]-a[k][1])*t]; return o; };
 const ease = t => t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
+
+
+// ===================== ANIME MODE & ENERGY EFFECTS =====================
+// Toon shading + black outlines + speed lines + comic hit words + aura; energy balls for 'beam' moves (any mode).
+let OUTLINE = null, TOON_GRAD = null;
+const FX_COL = {beam:0x6ad8ff, charge:0x6ad8ff};
+const NO_OUTLINE = {visible:false};
+function fxMesh(color){ const m = new THREE.Mesh(US, new THREE.MeshBasicMaterial({color, transparent:true, opacity:.8, blending:THREE.AdditiveBlending, depthWrite:false})); m.material.userData.outlineParameters = NO_OUTLINE; m.visible = false; scene.add(m); return m; }
+function fxUpdate(f, o, other, dt){
+  if (!f.fx) f.fx = {ball: fxMesh(0x6ad8ff), core: fxMesh(0xffffff), trail: new THREE.Mesh(UC, new THREE.MeshBasicMaterial({color:0x6ad8ff, transparent:true, opacity:.55, blending:THREE.AdditiveBlending, depthWrite:false})), aura: fxMesh(0xffd23f)};
+  f.fx.trail.material.userData.outlineParameters = NO_OUTLINE;
+  const X = f.fx; if (!X.trail.parent) scene.add(X.trail);
+  if (!X.weapon){ X.weapon = new THREE.Mesh(UC, new THREE.MeshStandardMaterial({color:0x9aa3ad, metalness:.6, roughness:.35})); X.weapon.castShadow = true; scene.add(X.weapon); }
+  const wpn = f.data.pmoves && f.data.pmoves.pm_swing, gun = f.data.pmoves && f.data.pmoves.pm_shot;
+  X.weapon.visible = !!(wpn || gun);
+  if (X.weapon.visible){ const dir = o.rh.clone().sub(o.re).normalize(), len = wpn ? (/couteau|kukri|saï|kama/i.test(wpn.weapon || '') ? .3 : /lance|bâton|bo|échelle|crosse|club|batte|pelle|râteau|balai/i.test(wpn.weapon || '') ? .95 : .65) : .16;
+    place(X.weapon, o.rh, o.rh.clone().addScaledVector(dir, len), wpn ? .022 : .035, wpn ? .022 : .05); X.weapon.material.color.set(wpn ? (/bâton|bo|batte|balai|bois|crosse|chaise|échelle/i.test(wpn.weapon || '') ? 0x8a5a2b : 0xb8c2cc) : 0x2b2f36); }
+  const st = f.cur, kind = st && st.fx, k = st && f.curDur ? Math.min(1, f.t / f.curDur) : 0;
+  const hand = o.lh.clone().lerp(o.rh, .5).addScaledVector(new THREE.Vector3(f.face, 0, 0), .08);
+  if (kind){ const c = st.col || 0x6ad8ff; X.ball.material.color.set(c); X.trail.material.color.set(c); }
+  X.ball.visible = X.core.visible = !!kind && kind !== 'aim'; X.trail.visible = kind === 'beam' || kind === 'shot';
+  if (kind === 'charge'){ const r = .05 + .13*k + Math.sin(performance.now()/40)*.01; X.ball.position.copy(hand); X.ball.scale.setScalar(r); X.core.position.copy(hand); X.core.scale.setScalar(r*.45); }
+  if (kind === 'aim'){ X.ball.visible = X.core.visible = false; }
+  if (kind === 'shot'){ const tx = other.x - f.face*.25, p = hand.clone(); p.x += (tx - hand.x) * k; p.y = hand.y + (1.15*other.sc - hand.y) * k * .5;
+    X.ball.position.copy(p); X.ball.scale.setScalar(.05); X.core.position.copy(p); X.core.scale.setScalar(.025); X.trail.visible = true; place(X.trail, p.clone().addScaledVector(new THREE.Vector3(-f.face, 0, 0), .35), p, .012, .012); }
+  if (kind === 'beam'){
+    const tx = other.x - f.face*.25, p = hand.clone(); p.x += (tx - hand.x) * k; p.y = hand.y + (1.15*other.sc - hand.y) * k * .6;
+    X.ball.position.copy(p); X.ball.scale.setScalar(.19); X.core.position.copy(p); X.core.scale.setScalar(.09);
+    place(X.trail, hand, p, .07, .07);
+  }
+  // aura when the special gauge is full or during a special (anime mode only)
+  const auraOn = !!(save.anime && (f.gauge >= 100 || f.special));
+  X.aura.visible = auraOn;
+  if (auraOn){ const c = o.hip.clone().lerp(o.neck, .4); X.aura.position.copy(c); const pz = 1 + Math.sin(performance.now()/90)*.06; X.aura.scale.set(.42*pz*f.sc, .95*pz*f.sc, .42*pz*f.sc); X.aura.material.opacity = .22 + Math.sin(performance.now()/60)*.06; X.aura.material.color.set(f.special ? 0xff5a3c : 0xffd23f); }
+  // big hits: speed lines + comic word (anime mode)
+  if (f._hp === undefined) f._hp = f.hp;
+  const drop = f._hp - f.hp; f._hp = f.hp;
+  if (save.anime && drop >= 7){ speedLines(drop >= 14 ? 520 : 320); popLocal(f, ['BAM !','DOKA !','POW !','BAKOOM !','ZBAM !','KRAK !'][Math.floor(Math.random()*6)], '#ffe066', true); }
+}
+function speedLines(ms){ const el = $('speed'); if (!el) return; el.style.transition = 'none'; el.style.opacity = '1'; requestAnimationFrame(() => { el.style.transition = `opacity ${ms}ms ease-out`; el.style.opacity = '0'; }); }
+function toonMat(m){
+  if (!m || !m.isMeshStandardMaterial || m.transparent || m.opacity < 1 || !m.visible) return m;
+  if (!m.userData.toon){ if (!TOON_GRAD){ const d = new Uint8Array([70, 70, 70, 150, 150, 150, 255, 255, 255]); TOON_GRAD = new THREE.DataTexture(d, 3, 1, THREE.RGBFormat); TOON_GRAD.minFilter = TOON_GRAD.magFilter = THREE.NearestFilter; TOON_GRAD.needsUpdate = true; }
+    const t = new THREE.MeshToonMaterial({gradientMap: TOON_GRAD, map: m.map || null, side: m.side, emissive: m.emissive ? m.emissive.clone() : 0x000000, emissiveIntensity: m.emissiveIntensity || 1}); t.color = m.color; t.userData.std = m; m.userData.toon = t; }
+  return m.userData.toon;
+}
+// swap every figure/arena material between standard and toon
+function refreshToon(){
+  if (!scene) return;
+  scene.traverse(o => { if (!o.isMesh || !o.material) return;
+    // no outline on glows, transparent or unlit parts (lights, auras, energy)
+    if (o.material.transparent || o.material.isMeshBasicMaterial || o.geometry.type === 'PlaneGeometry') o.material.userData.outlineParameters = NO_OUTLINE;
+    if (save.anime && o.material.isMeshStandardMaterial) o.material = toonMat(o.material);
+    else if (!save.anime && o.material.isMeshToonMaterial && o.material.userData.std) o.material = o.material.userData.std; });
+  if (save.anime && !OUTLINE && renderer){
+    const go = () => { if (THREE.OutlineEffect && !OUTLINE) OUTLINE = new THREE.OutlineEffect(renderer, {defaultThickness: .0045, defaultColor: [0, 0, 0]}); };
+    if (THREE.OutlineEffect) go(); else loadScript2(['https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/effects/OutlineEffect.js', 'https://unpkg.com/three@0.128.0/examples/js/effects/OutlineEffect.js'], go);
+  }
+  document.body.classList.toggle('anime', !!save.anime);
+}
+function loadScript2(urls, done){ const t = i => { if (i >= urls.length) return; const sc = document.createElement('script'); sc.src = urls[i]; sc.onload = done; sc.onerror = () => t(i+1); document.head.appendChild(sc); }; t(0); }
 
 // ===================== FIGHT ENGINE =====================
 let F = null, A, B, last = 0, running = false, shake = 0, slowmo = 0;
@@ -1174,14 +1487,14 @@ function startFight(test){
   if (L) endLesson();
   lastTest = !!test; twoSel = null; $('pad2').style.display = 'none'; document.querySelector('.pad').style.display = ''; $('ctl').style.display = '';
   $('fight').classList.add('on'); resize();
-  const M = me();
+  const M = myData();
   A = makeFighter(M, -1.4, 1, false); B = makeFighter(curOpp, 1.4, -1, true);
-  A.aiMoves = ['tjab','vrille','fouet','faux','vent'].concat(M.all ? ['fused'] : []);
+  if (isTourb(M)) A.aiMoves = ['tjab','vrille','fouet','faux','vent'].concat(M.all ? ['fused'] : []);
   paint(MA, A.data.look, true); paint(MB, B.data.look, false);
   F = {round:1, time:60, phase:'intro', phaseT:1.6, test:!!test};
   $('testTag').style.display = test ? 'block' : 'none';
   P = A; setControl(A);
-  $('spB').textContent = '⚠ ' + SPECIALS[curOpp.sps[0]].name; $('nA').textContent = PLAYER.name; $('nB').textContent = (curOpp.rank?`#${curOpp.rank} `:'') + curOpp.person;
+  $('spB').textContent = '⚠ ' + SPECIALS[curOpp.sps[0]].name; $('nA').textContent = nameOf(A.data); $('spA').textContent = '⚡ ' + SPECIALS[A.data.sps[0]].name; $('nB').textContent = (curOpp.rank?`#${curOpp.rank} `:'') + curOpp.person;
   resize();
   $('endBox').classList.remove('on'); banner(test ? 'TEST' : 'ROUND 1');
   if (!running){ running = true; last = performance.now(); requestAnimationFrame(loop); }
@@ -1192,23 +1505,25 @@ function setControl(f){
   for (const k in keys) keys[k] = false;
   $('sw').classList.toggle('me', P===A);
   $('ctlR').classList.toggle('on', P===A); $('ctlL').classList.toggle('on', P===B);
-  $('nA').innerHTML = (P===A?'🎮 ':'') + PLAYER.name; $('nB').innerHTML = (P===B?'🎮 ':'') + (curOpp.rank?`#${curOpp.rank} `:'') + curOpp.person;
+  $('nA').innerHTML = (P===A?'🎮 ':'') + nameOf(A.data); $('nB').innerHTML = (P===B?'🎮 ':'') + (curOpp.rank?`#${curOpp.rank} `:'') + curOpp.person;
   const famBtns = f => [...new Set(f.data.moves ? f.data.moves.filter(m => m!=='slip') : [])].slice(0,13).map(m => { return [m, m==='fused' ? '🥊 ' + f.data.fusedMove.name.toUpperCase() : MOVE_FR[m].toUpperCase()]; });
-  const moves = P===A ? TOURB_MOVES.concat(A.data.all ? famBtns(A) : []) : [...new Set(B.data.moves.filter(m => m!=='slip'))].slice(0,7).map(m => { return [m, B.data.pmoves && B.data.pmoves[m] ? B.data.pmoves[m].short + ' (' + B.data.pmoves[m].n + ')' : m==='fused' ? '🥊 ' + B.data.fusedMove.name.toUpperCase() : (MOVE_FR[m]||m).toUpperCase()]; });
+  const moves = (P===A && isTourb(A.data) ? TOURB_MOVES.concat(A.data.all ? famBtns(A) : []) : P===A ? movesOf(A.data) : [...new Set(B.data.moves.filter(m => m!=='slip'))].slice(0,7).map(m => { return [m, B.data.pmoves && B.data.pmoves[m] ? B.data.pmoves[m].short + ' (' + B.data.pmoves[m].n + ')' : m==='fused' ? '🥊 ' + B.data.fusedMove.name.toUpperCase() : (MOVE_FR[m]||m).toUpperCase()]; })).concat([['acro','🤸 ACRO']]).concat(save.anime && !(P.data.pmoves && P.data.pmoves.pm_beam) ? [['beam','⚡ VAGUE']] : []);
   const spName = SPECIALS[P.data.sps[0]].name;
   $('padR').style.gridTemplateColumns = `repeat(${moves.length > 12 ? 5 : moves.length > 9 ? 4 : moves.length > 4 ? 3 : Math.max(2, moves.length)},minmax(0,1fr))`;
   $('padR').innerHTML = moves.map(([k,l]) => `<button class="b" data-k="${k}">${l}</button>`).join('') + `<div class="spRow">${P.data.sps.map((k,i) => `<button class="b spc" data-sp="${i}" style="font-size:14px">${i?'🌍':'⚡'} ${SPECIALS[k].name.toUpperCase()}</button>`).join('')}</div>`;
-  $('dodgeBtn').textContent = P===A ? '🌬 PAS DU VENT' : '↯ ESQUIVE';
+  $('dodgeBtn').textContent = P===A && isTourb(A.data) ? '🌬 PAS DU VENT' : '↯ ESQUIVE';
   bindPad();
 }
-$('ctl').onclick = () => { if (F && !F.lesson) { setControl(P===A ? B : A); banner(P===A ? 'TU CONTRÔLES LE TOURBILLON' : 'TU CONTRÔLES ' + curOpp.person.toUpperCase(), 1000); } };
+$('ctl').onclick = () => { if (F && !F.lesson) { setControl(P===A ? B : A); banner(P===A ? 'TU CONTRÔLES ' + nameOf(A.data).toUpperCase() : 'TU CONTRÔLES ' + curOpp.person.toUpperCase(), 1000); } };
 function newRound(){
-  A.x=-1.4; B.x=1.4; for (const f of [A,B]){ f.hp=Math.round(f.hpMax*healthOf(f.data.health)[2]); f.st=100; f.zone={head:100, body:100, leg:100}; f.bal=100; f.dazed=0; f.kds=0; f.ribs=false; f.handHurt=false; f.q=[]; f.cur=null; f.state='idle'; f.pose={...G}; f.from={...G}; f.armor=0; f.invuln=0; }
+  A.x=-1.4; B.x=1.4; for (const f of [A,B]){ f.hp=Math.round(f.hpMax*healthOf(f.data.health)[2]); f.st=100; f.zone={head:100, body:100, leg:100}; f.bal=100; f.dazed=0; f.kds=0; f.ribs=false; f.handHurt=false; f.acro=null; f.lift=0; f.q=[]; f.cur=null; f.state='idle'; f.pose={...G}; f.from={...G}; f.armor=0; f.invuln=0; }
   F.time = 60; F.phase='intro'; F.phaseT=1.4; banner('ROUND '+F.round);
 }
 function zoneHUD(id, f){ const c = v => v > 60 ? '#52b788' : v > 40 ? '#f4b942' : '#e63946'; $(id).innerHTML = [['🧠','head'],['🫁','body'],['🦵','leg']].map(([i,k]) => `<span>${i}<i style="width:${f.zone[k]*.22}px;background:${c(f.zone[k])}"></i></span>`).join(''); }
-function banner(t, ms=1300){ const b = $('banner'); b.textContent = t; b.style.opacity = 1; clearTimeout(b._t); b._t = setTimeout(()=>b.style.opacity=0, ms); }
-function pop(f, txt, col, big){
+function banner(t, ms=1300){ if (F && F.mp === 'host' && MP && MP.conn && MP.conn.open) MP.conn.send({t:'ban', txt:t, ms}); bannerLocal(t, ms); }
+function bannerLocal(t, ms=1300){ const b = $('banner'); b.textContent = t; b.style.opacity = 1; clearTimeout(b._t); b._t = setTimeout(()=>b.style.opacity=0, ms); }
+function pop(f, txt, col, big){ if (F && F.mp === 'host' && MP && MP.conn && MP.conn.open) MP.conn.send({t:'pop', w: f===A?'A':'B', txt, col, big}); popLocal(f, txt, col, big); }
+function popLocal(f, txt, col, big){
   const v = to3(f.pose, f.x, f.face, f.sc).head.clone(); v.y += .25;
   const p = v.project(camera), r = renderer.domElement.getBoundingClientRect();
   const d = document.createElement('div'); d.className = 'pop'; d.textContent = txt; d.style.color = col||'#e63946'; if (big) d.style.fontSize = '34px';
@@ -1238,7 +1553,10 @@ function act(f, name){
 function special(f, i){
   if (!canAct(f) || f.gauge < 100) return false;
   const sp = SPECIALS[f.data.sps[i]]; if (!sp) return false;
+  if (sp.acro){ f.gauge = 0; f.special = true; slowmo = .5; banner((f.isAI?'⚠ ':'⚡ ') + sp.name.toUpperCase(), 1400); startAcro(f, true); return true; }
+  { const o = other(f), dd = Math.abs(o.x - f.x); const near = Math.min(.92, .85*f.sc); if (dd > near && dd < 1.8) f.x = o.x - Math.sign(o.x - f.x) * near; }
   f.gauge = 0; f.armor = 1; play(f, sp.seq, 'attack'); f.special = true; f.vmul = f.data.fusedMove && sp.name === f.data.fusedMove.name ? f.data.fusedMove.mul : 1;
+  if (sp.power) f.vmul *= sp.power;
   if (sp.counter) f.counter = sp.counter; if (sp.evade) f.evade = sp.evade;
   slowmo = .5;
   if (f.isAI) banner('⚠ '+(f.data.person||f.data.name).toUpperCase()+' : '+sp.name.toUpperCase(), 1600); else banner('⚡ '+sp.name.toUpperCase(), 1100);
@@ -1255,10 +1573,10 @@ function hitQuality(att, def){
     - (def.def-70)*.004 - (def.A.vue-60)*.002
     + (def.dazed > 0 ? .2 : 0) + (def.bal < 40 ? .1 : 0) + (def.state==='stun' ? .1 : 0)
     - (att.st < 20 ? .15 : 0) - (att.dazed > 0 ? .15 : 0) - (att.bal < 40 ? .1 : 0)
-    + (att.special ? .15 : 0) + rnd(.22));
+    + (att.special ? .15 : 0) + (moodOf(att.data).q||0) - (moodOf(def.data).q||0)*.5 + rnd(.22));
 }
 function guardQuality(def, att){
-  return clamp01(.5 + (def.def-70)*.005 + (def.A.vue-60)*.003 + (def.A.reflexes-60)*.003 + (def.A.timing-60)*.002 - (att.pow-70)*.004 - (def.st < 20 ? .25 : 0) - (def.dazed > 0 ? .3 : 0) + rnd(.18));
+  return clamp01(.5 + gearVal(def.data,'guard',0) + (def.def-70)*.005 + (def.A.vue-60)*.003 + (def.A.reflexes-60)*.003 + (def.A.timing-60)*.002 - (att.pow-70)*.004 - (def.st < 20 ? .25 : 0) - (def.dazed > 0 ? .3 : 0) + rnd(.18));
 }
 function dodgeQuality(def, att){
   return clamp01(.6 + (def.A.vue-60)*.005 + (def.spd-70)*.003 + (def.A.reflexes-60)*.003 + (def.A.souplesse-50)*.002 - (att.spd-70)*.004 - (def.dazed > 0 ? .3 : 0) - (def.bal < 40 ? .15 : 0) + rnd(.2));
@@ -1313,7 +1631,10 @@ function onEvent(f, ev){
     mult *= .4 + q*.9;
     const fb = bodyOf(f.data), ob = bodyOf(o.data);
     const punch = ['jab','cross','hook','chainL','chainR','fz4','vrille','palm'].includes(f.cur && f.cur.p);
-    if (punch) mult *= (.8 + fb.mains/250) * (f.handHurt ? .8 : 1);
+    if (punch) mult *= (.8 + fb.mains/250) * (f.handHurt ? .8 : 1) * gearVal(f.data,'punch',1);
+    if (['lowHit','highHit','spinHit','teepHit','faux'].includes(f.cur && f.cur.p)) mult *= gearVal(f.data,'kick',1);
+    if ((f.cur && f.cur.p) === 'elbow') mult *= gearVal(o.data, 'elbow', 1);
+    mult *= gearVal(o.data, {head:'head', body:'body', leg:'leg'}[Z], 1) * (moodOf(f.data).dmg || 1);
     mult *= 1.1 - ob.os/500;
     mult *= .9 + f.A.explosivite/500;
     if (['lowHit','highHit','spinHit','teepHit','faux'].includes(f.cur && f.cur.p)) mult *= .85 + f.A.souplesse/333;
@@ -1330,8 +1651,8 @@ function onEvent(f, ev){
     if (vp==='CÔTES' && ob.os < 40 && q >= .8 && !o.ribs){ o.ribs = true; o.zone.body = Math.max(0, o.zone.body - 15); pop(o, 'CÔTE FÊLÉE', '#e63946', true); }
     if (vp==='GENOU'){ o.bal = Math.max(0, o.bal - 25); }
     if (vp==='TEMPE' && q >= .75 && o.dazed <= 0){ o.dazed = 1.5; pop(o, '💫 TEMPE : SONNÉ', '#f4b942', true); }
-    if (punch && fb.mains < 40 && q >= .85 && !f.handHurt){ f.handHurt = true; pop(f, '✋ MAIN BLESSÉE', '#e63946'); }
-    if (vp==='MENTON' && q >= .85 && o.hp > 0 && !ev.kd && Math.random() < .3 * (1 - o.A.menton/130) * (1 - ob.os/200)){ ev = Object.assign({}, ev, {kd:1}); pop(o, 'K.O. NET AU MENTON !', '#f4b942', true); slowmo = .6; }
+    if (punch && fb.mains < 40 && q >= .85 && !f.handHurt && !gearVal(f.data,'noHand',0)){ f.handHurt = true; pop(f, '✋ MAIN BLESSÉE', '#e63946'); }
+    if (vp==='MENTON' && q >= .85 && o.hp > 0 && !ev.kd && Math.random() < .3 * (1 - o.A.menton/130) * (1 - ob.os/200) * gearVal(o.data,'ko',1)){ ev = Object.assign({}, ev, {kd:1}); pop(o, 'K.O. NET AU MENTON !', '#f4b942', true); slowmo = .6; }
     o.bal = Math.max(0, o.bal - d * ({head:.8, body:1, leg:2.6}[Z]) * (1.2 - o.A.jambes/100*.5));
     if (Z==='head' && (d > o.hpMax*.1 || o.zone.head < 40) && o.dazed <= 0){ o.dazed = 2.2 * (1.3 - traitsOf(o.data).calme/100*.6); pop(o, '💫 SONNÉ', '#f4b942', true); }
     if (Z==='head') ev = Object.assign({}, ev, {stun: (ev.stun||300) * (1.2 - o.A.douleur/250) * (1.3 - o.A.menton/100*.6) * (o.zone.head < 40 ? 1.4 : 1)});
@@ -1348,7 +1669,7 @@ function onEvent(f, ev){
   }
   if (ev.grab){
     const T = THROWS[ev.grab];
-    let p = .55 + (f.grap - o.grap)/220 + (o.state==='guard' ? .35 : 0) - (o.state==='attack' && !o.armor ? .35 : 0) + (o.bal < 40 ? .25 : 0) + (o.dazed > 0 ? .2 : 0);
+    let p = .55 + (f.grap - o.grap)/220 + (o.state==='guard' ? .35 : 0) - (o.state==='attack' && !o.armor ? .35 : 0) + (o.bal < 40 ? .25 : 0) + (o.dazed > 0 ? .2 : 0) + gearVal(f.data,'grab',0);
     if (ev.force) p += .25;
     const ok = F.lesson ? true : dist() <= ev.range*f.sc && !['down','ko','thrown'].includes(o.state) && o.invuln<=0 && Math.random() < p;
     if (ok){ pop(f, 'SAISIE ' + pct(clamp01(p)), '#f4b942'); o.armor = 0; o.state = 'thrown'; o.q = T.def.map(s=>({...s})).concat([ST('downOut',3000)]); nextStep(o); f.q = T.att.map(s=>({...s})); nextStep(f); }
@@ -1373,6 +1694,9 @@ function timeUp(){
 function endMatch(){
   F.phase = 'over';
   const win = A.wins > B.wins;
+  if (F.mp === 'host'){ const hostWin = A.wins > B.wins;
+    $('endT').textContent = hostWin ? 'VICTOIRE !' : 'DÉFAITE'; $('endT').style.color = hostWin ? 'var(--gold)' : 'var(--red)'; $('endP').innerHTML = `${A.wins} - ${B.wins}`; $('endBox').classList.add('on');
+    if (MP && MP.conn && MP.conn.open) MP.conn.send({t:'end', title: hostWin ? 'DÉFAITE' : 'VICTOIRE !', col: hostWin ? 'var(--red)' : 'var(--gold)', text: `${B.wins} - ${A.wins}`}); return; }
   if (F.twoP){ const w = A.wins > B.wins ? 'JOUEUR 1' : 'JOUEUR 2'; $('endT').textContent = w + ' GAGNE !'; $('endT').style.color = A.wins > B.wins ? 'var(--red)' : 'var(--blue)'; $('endP').innerHTML = `${A.wins} - ${B.wins}`; $('endBox').classList.add('on'); F.phase = 'over'; return; }
   if (P === B){ $('endT').textContent = B.wins > A.wins ? 'VICTOIRE DE ' + curOpp.person.toUpperCase() : 'LE TOURBILLON GAGNE'; $('endT').style.color = 'var(--gold)'; $('endP').innerHTML = `${B.wins} - ${A.wins}. Tu contrôlais ${curOpp.person}, donc le classement ne change pas.`; $('endBox').classList.add('on'); F.phase='over'; return; }
   $('endT').textContent = win ? 'VICTOIRE !' : 'DÉFAITE';
@@ -1427,7 +1751,7 @@ function start2P(id1, id2){
   $('spA').textContent = '⚡ ' + SPECIALS[d1.sps[0]].name; $('spB').textContent = '⚡ ' + SPECIALS[d2.sps[0]].name;
   const half = (f, p) => { const mv = movesOf(f.data);
     return `<div class="half p${p}"><button class="b" data-p="${p}" data-k="left">◀</button><button class="b" data-p="${p}" data-k="right">▶</button><button class="b g" data-p="${p}" data-k="guard">🛡</button><button class="b g" data-p="${p}" data-k="dodge">↯</button>`
-      + mv.map(([k,l]) => `<button class="b" data-p="${p}" data-k="${k}">${l}</button>`).join('')
+      + mv.map(([k,l]) => `<button class="b" data-p="${p}" data-k="${k}">${l}</button>`).join('') + `<button class="b" data-p="${p}" data-k="acro">🤸</button>` + (save.anime ? `<button class="b" data-p="${p}" data-k="beam">⚡</button>` : '')
       + f.data.sps.slice(0,2).map((k,i) => `<button class="b spc" data-p="${p}" data-sp="${i}">⚡ ${SPECIALS[k].name.toUpperCase()}</button>`).join('') + `</div>`; };
   $('pad2').innerHTML = half(A,1) + half(B,2);
   $('pad2').querySelectorAll('[data-k]').forEach(b => { const f = b.dataset.p==='1' ? A : B, k = b.dataset.k;
@@ -1437,11 +1761,224 @@ function start2P(id1, id2){
   resize(); banner('JOUEUR 1 CONTRE JOUEUR 2', 1300);
 }
 function press2(f, k){
+  if (k==='acro'){ startAcro(f); return; }
   if (k==='dodge'){ act(f, isTourb(f.data) ? 'vent' : 'slip'); return; }
   if ((MOVES[k] || k==='fused' || (f.data.pmoves && f.data.pmoves[k])) && !['left','right','guard'].includes(k)) act(f,k);
 }
 $('b2Go').onclick = () => start2P($('j1').value, $('j2').value);
 const KB1 = {a:'left',q:'left',d:'right',s:'guard',w:'dodge',z:'dodge'}, KB2 = {ArrowLeft:'left',ArrowRight:'right',ArrowDown:'guard',ArrowUp:'dodge'};
+
+// ===================== ONLINE MULTIPLAYER (PeerJS, host-authoritative) =====================
+let MP = null;
+function loadPeer(cb){
+  if (window.Peer) return cb();
+  const add = (src, next) => { const sc = document.createElement('script'); sc.src = src; sc.onload = cb; sc.onerror = next; document.head.appendChild(sc); };
+  add('https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js', () => add('https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js', () => mpStatus('❌ Impossible de charger le multijoueur (pas d\'Internet, ou appli Claude).')));
+}
+const mpStatus = t => $('mpStatus').innerHTML = t;
+function mpUI(){
+  const opts = fighterOptions().map(([v,l]) => `<option value="${v}">${l}</option>`).join('');
+  const v = $('mpSel').value; $('mpSel').innerHTML = opts; $('mpSel').value = v || 'tourb';
+  const info = () => { const d = fighterData($('mpSel').value); $('mpInfo').textContent = `Note ${overall(d.s)} · ❤ ${d.life||100}`; };
+  info(); $('mpSel').onchange = info;
+}
+function mpPayload(id){
+  if (id === 'tourb') return {id, all: !!save.playerAll, look: save.look || null, gear: save.gear || ['nues'], mood: save.mood || 'Calme'};
+  if (id[0] === 'c') return {id:'c', custom: (save.customs||[]).find(x => 'c'+x.id === id)};
+  return {id};
+}
+function mpData(p){
+  if (p.id === 'tourb'){ const keep = [save.playerAll, save.look, save.gear, save.mood]; save.playerAll = p.all; save.look = p.look; save.gear = p.gear; save.mood = p.mood; const d = me(); [save.playerAll, save.look, save.gear, save.mood] = keep; return d; }
+  if (p.id === 'c') return buildCustom(p.custom);
+  return opponent(+p.id.slice(1));
+}
+function mpPeerOpts(){ return window.FF_PEER_OPTS || {}; }
+function mpClose(){ if (MP){ clearInterval(MP.scan); clearInterval(MP.retry); clearTimeout(MP.pt); try { MP.host && MP.host.destroy(); } catch(e){} try { MP.probe && MP.probe.destroy(); } catch(e){} try { MP.conn && MP.conn.close(); } catch(e){} try { MP.peer && MP.peer.destroy(); } catch(e){} } MP = null; }
+function mpWire(conn, role){
+  MP.conn = conn;
+  conn.on('data', m => mpOnData(m));
+  conn.on('close', () => { if (F && F.mp){ banner('ADVERSAIRE DÉCONNECTÉ', 2500); F.phase = 'over'; } mpStatus('Connexion terminée.'); });
+}
+// ---- Invite: share a link that opens the game and fills the code ----
+const inviteLink = code => location.origin + location.pathname + '?join=' + code;
+const inviteText = code => `🥊 Viens te battre contre moi sur Fusion Fighters ! Code : ${code}`;
+function inviteHTML(code){
+  const t = encodeURIComponent(inviteText(code) + ' ' + inviteLink(code));
+  return `<div class="artChips" style="justify-content:center;margin-top:8px">
+    <button id="invShare" style="background:#2fa36b;color:#fff">📨 Inviter</button>
+    <a href="https://wa.me/?text=${t}" target="_blank" rel="noopener"><button>💬 WhatsApp</button></a>
+    <a href="sms:?&body=${t}"><button>✉️ SMS</button></a>
+    <button id="invCopy">📋 Copier le lien</button></div>`;
+}
+function bindInvite(code){
+  const copy = () => { const l = inviteText(code) + ' ' + inviteLink(code);
+    (navigator.clipboard ? navigator.clipboard.writeText(l) : Promise.reject()).then(() => { $('invCopy').textContent = '✅ Lien copié !'; }).catch(() => prompt('Copie ce lien :', l)); };
+  if ($('invCopy')) $('invCopy').onclick = copy;
+  if ($('invShare')) $('invShare').onclick = () => { if (navigator.share) navigator.share({title:'Fusion Fighters', text: inviteText(code), url: inviteLink(code)}).catch(() => {}); else copy(); };
+}
+$('mpInviteTop').onclick = () => { if (MP && MP.code && !MP.matched){ const b = $('invShare'); if (b) b.click(); return; } $('mpHost').onclick(); };
+// Opened from an invite link: go to multiplayer with the code ready
+(() => { const j = new URLSearchParams(location.search).get('join'); if (!j || !/^\d{6}$/.test(j)) return;
+  setTimeout(() => { go('sMP'); $('mpCode').value = j; mpStatus(`📨 Tu es invité à la partie <b style="color:var(--gold)">${j}</b> !<br>Choisis ton personnage, puis appuie sur <b>Rejoindre</b>.`); $('mpJoin').style.background = '#2fa36b'; }, 50); })();
+// ---- Online play through Trystero: WebRTC, players find each other through several public networks
+// at the same time (MQTT brokers, WebTorrent trackers, Nostr relays). One working network is enough.
+const TRY_APP = 'adrien426-fusion-fighters-v2';
+const TRY_NETS = [
+  ['mqtt', {}],
+  ['torrent', {relayUrls: ['wss://tracker.webtorrent.dev', 'wss://tracker.openwebtorrent.com', 'wss://tracker.btorrent.xyz']}],
+  ['nostr', {relayUrls: ['wss://relay.damus.io', 'wss://nos.lol', 'wss://relay.primal.net', 'wss://nostr.mom', 'wss://relay.nostr.band', 'wss://offchain.pub']}],
+];
+let TRYS = null;
+function loadTry(cb){
+  if (TRYS) return cb(TRYS);
+  if (window.FF_TRYS){ TRYS = window.FF_TRYS; return cb(TRYS); }
+  const one = ([name, config]) => {
+    const urls = [`https://esm.run/trystero@0.21.8/${name}`, `https://esm.sh/trystero@0.21.8/${name}`];
+    const tryUrl = i => i >= urls.length ? Promise.resolve(null)
+      : import(urls[i]).then(m => m.joinRoom ? {name, joinRoom: m.joinRoom, selfId: m.selfId, config} : tryUrl(i+1)).catch(() => tryUrl(i+1));
+    return tryUrl(0);
+  };
+  Promise.all(TRY_NETS.map(one)).then(list => {
+    TRYS = list.filter(Boolean);
+    if (!TRYS.length){ TRYS = null; mpStatus('❌ Impossible de charger le multijoueur. Ouvre le jeu sur le site, dans Chrome ou Safari.'); return; }
+    cb(TRYS);
+  });
+}
+// Join the room on every network and pair with one other free player.
+// Free players announce themselves; in each pair the lower id asks, the other accepts.
+// The same person may be seen on several networks: the 'matched' flag keeps it to one match.
+function mpRoom(roomName, waitingHTML, code){
+  mpClose(); mpStatus('🔌 Connexion…');
+  loadTry(list => {
+    const me = MP = {role:'guest', mine: mpPayload($('mpSel').value), matched:false, pending:null, partner:null, code, nets:[], rooms:[]};
+    me.peer = {destroy: () => me.rooms.forEach(r => { try { r.leave(); } catch(e){} })};
+    const seen = () => me.nets.reduce((n, x) => n + Object.keys(x.peers).length, 0);
+    const waiting = () => { if (MP !== me || me.matched) return;
+      mpStatus(waitingHTML() + `<div style="font-size:11px;color:var(--mute);margin-top:6px">📡 ${me.nets.length} réseau(x) · joueurs vus : ${seen()}</div>`);
+      if ($('mpCancel')) $('mpCancel').onclick = () => { mpClose(); mpStatus('Recherche annulée.'); };
+      if (me.code) bindInvite(me.code); };
+    const free = () => !me.matched && !me.pending;
+    function tryPair(){
+      if (MP !== me || !free()) return;
+      for (const N of me.nets){
+        const c = Object.keys(N.peers).filter(id => N.peers[id] && id > N.myId).sort();
+        if (!c.length) continue;
+        const id = c[0]; me.pending = {N, id}; N.sendPr({t:'ask'}, id);
+        me.pt = setTimeout(() => { if (me.pending && me.pending.id === id){ me.pending = null; tryPair(); } }, 5000);
+        return;
+      }
+    }
+    function begin(N, id, role){
+      me.partner = {N, id}; me.role = role; me.nets.forEach(x => x.sendSt({free:false}));
+      const h = {data:[], close:[]};
+      const conn = {open:true, send: d => { if (conn.open) N.sendM(d, id); }, on: (ev, cb) => (h[ev] = h[ev] || []).push(cb),
+        close: () => { conn.open = false; me.peer.destroy(); },
+        _close: () => { if (!conn.open) return; conn.open = false; h.close.forEach(f => f()); },
+        _data: d => h.data.forEach(f => f(d))};
+      mpWire(conn, role);
+      mpStatus('✅ Adversaire trouvé ! Le combat commence…');
+      if (role === 'guest') conn.send({t:'hello', p: me.mine});
+    }
+    const isPartner = (N, id) => me.partner && me.partner.N === N && me.partner.id === id;
+    for (const S of list){
+      let room;
+      try { room = S.joinRoom(Object.assign({appId: TRY_APP + (S.appSuffix || '')}, S.config || {}), roomName); } catch(e){ continue; }
+      const [sendSt, getSt] = room.makeAction('st'), [sendPr, getPr] = room.makeAction('pr'), [sendM, getM] = room.makeAction('m');
+      const N = {name: S.name, myId: S.selfId, peers:{}, sendSt, sendPr, sendM};
+      me.rooms.push(room); me.nets.push(N);
+      room.onPeerJoin(id => { N.peers[id] = false; sendSt({free: !me.matched}, id); waiting(); });
+      room.onPeerLeave(id => { delete N.peers[id]; if (me.pending && me.pending.N === N && me.pending.id === id){ me.pending = null; clearTimeout(me.pt); }
+        if (isPartner(N, id) && me.conn) me.conn._close(); waiting(); });
+      getSt((d, id) => { N.peers[id] = !!d.free; tryPair(); });
+      getPr((d, id) => {
+        if (MP !== me) return;
+        const mine = me.pending && me.pending.N === N && me.pending.id === id;
+        if (d.t === 'ask'){ if (free()){ me.matched = true; sendPr({t:'ok'}, id); begin(N, id, 'guest'); } else sendPr({t:'no'}, id); return; }
+        if (d.t === 'ok'){ if (mine && !me.matched){ me.pending = null; clearTimeout(me.pt); me.matched = true; begin(N, id, 'host'); } else sendPr({t:'cancel'}, id); return; }
+        if (d.t === 'no' && mine){ me.pending = null; clearTimeout(me.pt); setTimeout(tryPair, 300 + Math.random()*900); return; }
+        if (d.t === 'cancel' && isPartner(N, id) && !(F && F.mp)){ me.matched = false; me.partner = null; me.conn = null; me.nets.forEach(x => x.sendSt({free:true})); waiting(); }
+      });
+      getM((d, id) => { if (me.conn && isPartner(N, id)) me.conn._data(d); });
+    }
+    if (!me.nets.length){ mpStatus('❌ Ce navigateur ne permet pas le multijoueur. Ouvre le jeu dans Chrome ou Safari.'); return; }
+    me.retry = setInterval(() => { tryPair(); waiting(); }, 2000);
+    waiting();
+  });
+}
+const cancelBtn = '<br><button id="mpCancel" style="margin-top:8px">Annuler</button>';
+function mpAuto(){
+  mpRoom('lobby', () => '⏳ En attente d\'un adversaire…<br><span style="font-size:13px;color:var(--mute)">Dès que quelqu\'un d\'autre appuie sur « Combat automatique », le combat commence.</span>' + cancelBtn);
+}
+$('mpHost').onclick = () => {
+  const code = String(Math.floor(100000 + Math.random()*900000));
+  mpRoom('code-' + code, () => `Ton code : <b style="font-size:32px;letter-spacing:4px;color:var(--gold)">${code}</b><br>Donne-le à l'autre joueur, ou invite-le avec un lien :` + inviteHTML(code) + `<div style="margin-top:6px">En attente d'un joueur…</div>` + cancelBtn, code);
+};
+$('mpJoin').onclick = () => {
+  const code = $('mpCode').value.trim(); if (!/^\d{6}$/.test(code)){ mpStatus('Entre le code à 6 chiffres.'); return; }
+  mpRoom('code-' + code, () => `🔎 Je rejoins la partie <b style="color:var(--gold)">${code}</b>…<br><span style="font-size:13px;color:var(--mute)">Le combat commence dès que ton ami est là.</span>` + cancelBtn);
+};
+$('mpAuto').onclick = mpAuto;
+$('mpBack').onclick = () => { mpClose(); go('sMenu'); };
+$('bMP').onclick = () => go('sMP');
+const animeUI = () => { $('bAnime').textContent = save.anime ? '🌸 MODE DESSIN ANIMÉ : OUI (toucher pour enlever)' : '🌸 MODE DESSIN ANIMÉ (tous les dessins animés du monde)'; };
+$('bAnime').onclick = () => { save.anime = !save.anime; persist(); animeUI(); refreshToon(); };
+animeUI(); setTimeout(() => { if (save.anime) refreshToon(); }, 300);
+function mpOnData(m){
+  if (!MP) return;
+  if (MP.role === 'host'){
+    if (m.t === 'hello'){ MP.conn.send({t:'start', host: MP.mine, guest: m.p, arena: save.arena||'cage'}); startOnline(MP.mine, m.p, 'host'); return; }
+    if (!F || !F.mp) return;
+    if (m.t === 'k') B.keys[m.k] = m.v;
+    if (m.t === 'p') press2(B, m.k);
+    if (m.t === 'sp') special(B, m.i);
+  } else {
+    if (m.t === 'start'){ setArena(m.arena || 'cage'); startOnline(m.host, m.guest, 'guest'); return; }
+    if (!F || !F.mp) return;
+    if (m.t === 's') MP.state = m;
+    if (m.t === 'pop'){ const f = m.w === 'A' ? A : B; popLocal(f, m.txt, m.col, m.big); }
+    if (m.t === 'ban') bannerLocal(m.txt, m.ms);
+    if (m.t === 'end'){ F.phase = 'over'; $('endT').textContent = m.title; $('endT').style.color = m.col; $('endP').innerHTML = m.text; $('endBox').classList.add('on'); }
+  }
+}
+function startOnline(hp, gp, role){
+  const d1 = mpData(hp), d2 = mpData(gp);
+  curOpp = Object.assign({}, role === 'host' ? d2 : d1, {person: nameOf(role === 'host' ? d2 : d1)});
+  startFight(false);
+  A = makeFighter(d1, -1.4, 1, false); B = makeFighter(d2, 1.4, -1, false);
+  A.keys = k1; B.keys = k2; P = null; F.twoP = true; F.mp = role;
+  paint(MA, d1.look, true); paint(MB, d2.look, false);
+  $('ctl').style.display = 'none'; $('testTag').style.display = 'none'; document.querySelector('.pad').style.display = 'none'; $('pad2').style.display = 'grid';
+  $('nA').textContent = (role==='host' ? '🎮 Toi · ' : 'Adversaire · ') + nameOf(d1); $('nB').textContent = (role==='guest' ? '🎮 Toi · ' : 'Adversaire · ') + nameOf(d2);
+  $('spA').textContent = '⚡ ' + SPECIALS[d1.sps[0]].name; $('spB').textContent = '⚡ ' + SPECIALS[d2.sps[0]].name;
+  const mineF = role === 'host' ? A : B, p = role === 'host' ? 1 : 2, mv = movesOf(mineF.data);
+  $('pad2').innerHTML = `<div class="half p${p}" style="grid-column:1/-1;grid-template-columns:repeat(4,minmax(0,1fr))"><button class="b" data-k="left">◀</button><button class="b" data-k="right">▶</button><button class="b g" data-k="guard">🛡 GARDE</button><button class="b g" data-k="dodge">↯ ESQUIVE</button>`
+    + mv.map(([k,l]) => `<button class="b" data-k="${k}">${l}</button>`).join('') + `<button class="b" data-k="acro">🤸 ACRO</button>` + (save.anime ? `<button class="b" data-k="beam">⚡ VAGUE</button>` : '')
+    + mineF.data.sps.slice(0,2).map((k,i) => `<button class="b spc" data-sp="${i}">⚡ ${SPECIALS[k].name.toUpperCase()}</button>`).join('') + `</div>`;
+  const local = role === 'host' ? k1 : k2;
+  $('pad2').querySelectorAll('[data-k]').forEach(b => { const k = b.dataset.k;
+    b.onpointerdown = e => { e.preventDefault(); b.classList.add('on');
+      if (role === 'host'){ A.keys[k] = true; press2(A,k); } else { local[k] = true; MP.conn.send({t:'k', k, v:true}); MP.conn.send({t:'p', k}); } };
+    b.onpointerup = b.onpointerleave = b.onpointercancel = () => { b.classList.remove('on');
+      if (role === 'host') A.keys[k] = false; else if (local[k]){ local[k] = false; MP.conn.send({t:'k', k, v:false}); } }; });
+  $('pad2').querySelectorAll('[data-sp]').forEach(b => b.onpointerdown = e => { e.preventDefault(); if (role === 'host') special(A, +b.dataset.sp); else MP.conn.send({t:'sp', i:+b.dataset.sp}); });
+  resize(); go('sMP'); $('fight').classList.add('on');
+  bannerLocal(role === 'host' ? 'TU ES À GAUCHE' : 'TU ES À DROITE', 1500);
+}
+const FPACK = f => ({l:+(f.lift||0).toFixed(2), x:+f.x.toFixed(3), p: KEYS.flatMap(k => [Math.round(f.pose[k][0]*10)/10, Math.round(f.pose[k][1]*10)/10]), hp:+f.hp.toFixed(1), st:Math.round(f.st), g:Math.round(f.gauge), z:f.zone, bal:Math.round(f.bal), dz:+(f.dazed||0).toFixed(2), w:f.wins, s:f.state});
+function mpSend(now){
+  if (!MP || !MP.conn || !MP.conn.open || now - (MP.last||0) < 50) return;
+  MP.last = now;
+  MP.conn.send({t:'s', A: FPACK(A), B: FPACK(B), F: {time: +F.time.toFixed(1), round: F.round, phase: F.phase}});
+}
+function mpApply(){
+  const S = MP && MP.state; if (!S) return;
+  for (const [f, D] of [[A, S.A], [B, S.B]]){
+    f.x = f.x + (D.x - f.x) * .6;
+    const tgt = {}; KEYS.forEach((k,i) => tgt[k] = [D.p[i*2], D.p[i*2+1]]); f.pose = lerp2(f.pose, tgt, .6);
+    f.lift = D.l || 0; f.hp = D.hp; f.st = D.st; f.gauge = D.g; f.zone = D.z; f.bal = D.bal; f.dazed = D.dz; f.wins = D.w; f.state = D.s;
+  }
+  F.time = S.F.time; F.round = S.F.round; F.phase = S.F.phase === 'over' ? F.phase : S.F.phase;
+}
 // ===================== LESSON: learn the technique for real =====================
 const FAM = {jab:'jab',cross:'cross',kdCross:'cross',hook:'hook',kdHook:'hook',chain:'chain',palm:'palm',kdPalm:'palm',low:'kick',teep:'teep',high:'high',kdHigh:'high',
   spin:'spin',elbow:'elbow',kdElbow:'elbow',knee:'knee',kdKnee:'knee',titan:'grab',loup:'grab',ippon:'throw',ipponS:'throw',slip:'slip'};
@@ -1506,7 +2043,7 @@ function ai(f, dt){
   if (f.state==='guard' && (o.state!=='attack' || f.dazed > 0)) f.state = 'idle';
   if (!canAct(f)) return;
   if (o.state==='attack' && d < 1.25 && Math.random() < L*.7 * (f.A.vue/80) * (.7 + tr.iq/100*.6) * (f.zone.head < 40 && tr.calme < 60 ? .6 : 1)){
-    const r = Math.random(), pg = .45 + tr.patience/100*.3; if (r < pg) { f.state = 'guard'; f.aiT = .35; f.counterNext = tr.patience >= 60; return; } if (r < .88) { act(f, f===A ? 'vent' : 'slip'); return; }
+    const r = Math.random(), pg = .45 + tr.patience/100*.3 + (f.data.style==='counter' ? .25 : 0); if (r < pg) { f.state = 'guard'; f.aiT = .35; f.counterNext = tr.patience >= 60 || f.data.style==='counter'; return; } if (r < .88) { act(f, f===A ? 'vent' : 'slip'); return; }
   }
   if (f.gauge >= 100){
     const good = o.state==='stun' || o.state==='attack' || o.zone.head < 50 || tr.iq < 60 || Math.random() < .25;
@@ -1515,7 +2052,9 @@ function ai(f, dt){
   if (d > 1.12){ f.move = -1; f.aiT = .12 * (1.2 - tr.agr/100*.5); return; }
   f.move = 0;
   if (f.st < 20 && tr.courage < 70){ f.move = 1; f.aiT = .4; return; }
-  const ms = (f.aiMoves || f.data.moves).filter(m => m!=='slip' && m!=='vent');
+  const ms = (f.aiMoves || f.data.moves).filter(m => m!=='slip' && m!=='vent'), sty = f.data.style;
+  if ((sty==='throw' || sty==='ground') && ms.includes('pm_proj') && d < 1.1 && Math.random() < .3){ act(f, 'pm_proj'); return; }
+  if (sty==='acro' && d > 1.0 && Math.random() < .25){ if (startAcro(f)) return; }
   const grabs = ms.filter(m => m==='grab'||m==='throw');
   const grabs2 = grabs.concat(ms.filter(m => m==='pm_proj'));
   if (o.state==='guard' && grabs2.length && Math.random() < .55){ act(f, grabs2[Math.floor(Math.random()*grabs2.length)]); return; }
@@ -1523,12 +2062,17 @@ function ai(f, dt){
   if (f.counterNext){ f.counterNext = false; act(f, ms[ms.length-1]); return; }
   if (Math.random() < .12 * (1.5 - tr.courage/100) * (1.3 - tr.agr/100*.6)){ f.move = 1; f.aiT = .3; return; }
   if (Math.random() < tr.ruse/100*.25){ const fe = ms.find(m => m==='jab'||m==='tjab'); if (fe){ act(f, fe); f.aiT = .12; return; } }
+  if (d > 1.7 && (save.anime || (f.data.pmoves && f.data.pmoves.pm_beam)) && Math.random() < .05){ if (act(f, f.data.pmoves && f.data.pmoves.pm_beam ? 'pm_beam' : 'beam')) return; }
+  if (d > 1.4 && Math.random() < (.02 + f.A.acrobatie/1200) * (1 + (tr.agr-50)/100)){ if (startAcro(f)) return; }
   const edge = Math.abs(o.x) > 2.6 && Math.sign(o.x) === f.face;
   if (ms.includes('pm_out') && edge && Math.random() < .35 + tr.iq/250){ act(f, 'pm_out'); return; }
-  const wgt = m => ({pm_head: 1 + tr.agr/60, pm_elbow: 1 + tr.agr/70 + tr.courage/150, pm_body: 1 + tr.patience/70, pm_leg: 1 + tr.iq/80, pm_proj: 1 + tr.courage/90, pm_out: edge ? 2 : .2}[m] || 1);
+  const sw = {combo:{pm_head:2.5, pm_body:1.5}, kick:{pm_leg:3}, clinch:{pm_elbow:3}, throw:{pm_proj:2.5}, ground:{pm_proj:2.5}, power:{pm_head:1.5}}[sty] || {};
+  const wgt0 = m => ({pm_head: 1 + tr.agr/60, pm_elbow: 1 + tr.agr/70 + tr.courage/150, pm_body: 1 + tr.patience/70, pm_leg: 1 + tr.iq/80, pm_proj: 1 + tr.courage/90, pm_out: edge ? 2 : .2}[m] || 1);
+  const wgt = m => wgt0(m) * (sw[m] || 1);
   const tot = ms.reduce((x,m)=>x+wgt(m),0); let r = Math.random()*tot, pickM = ms[0];
   for (const m of ms){ r -= wgt(m); if (r <= 0){ pickM = m; break; } }
   act(f, pickM);
+  if (sty==='combo') f.aiT *= .45;
 }
 
 // Input
@@ -1543,12 +2087,14 @@ function bindPad(){
 }
 function press(k){
   if (!P) return;
-  if (k==='dodge') { act(P, P===A ? 'vent' : 'slip'); return; }
+  if (k==='acro'){ startAcro(P); return; }
+  if (k==='dodge') { act(P, isTourb(P.data) ? 'vent' : 'slip'); return; }
   if ((MOVES[k] || k==='fused' || (P.data.pmoves && P.data.pmoves[k])) && !['left','right','guard'].includes(k)) act(P,k);
 }
 const KB = {ArrowLeft:'left',ArrowRight:'right',a:'left',d:'right',q:'left',s:'guard',ArrowDown:'guard',w:'dodge',z:'dodge',ArrowUp:'dodge'};
 const KEYMOVE = ['j','k','l','u','h','g'];
 addEventListener('keydown', e => { if (!$('fight').classList.contains('on')) return;
+  if (F && F.mp) return;
   if (F && F.twoP){ const r = (f, map, mk, spk) => { const k = map[e.key]; if (k && !f.keys[k]){ f.keys[k] = true; press2(f,k); }
       const mi = mk.indexOf(e.key); if (mi >= 0){ const m = movesOf(f.data)[mi]; if (m) press2(f, m[0]); } if (spk.includes(e.key)) special(f,0); };
     r(A, KB1, ['f','g','h','j'], ['r']); r(B, KB2, ['1','2','3','4'], ['0','Enter']); return; }
@@ -1557,17 +2103,42 @@ addEventListener('keydown', e => { if (!$('fight').classList.contains('on')) ret
   const mi = KEYMOVE.indexOf(e.key); if (mi >= 0){ const btn = document.querySelectorAll('#padR [data-k]')[mi]; if (btn) press(btn.dataset.k); }
   if (k && !keys[k]){ keys[k] = true; press(k); } });
 addEventListener('keyup', e => { if (F && F.twoP){ const a = KB1[e.key], b = KB2[e.key]; if (a) A.keys[a] = false; if (b) B.keys[b] = false; return; } const k = KB[e.key]; if (k) keys[k] = false; });
-$('pause').onclick = () => { if (F && F.twoP){ $('fight').classList.remove('on'); F = null; go('s2P'); return; } const wasL = F && F.lesson; $('fight').classList.remove('on'); F = null; if (wasL){ endLesson(); go(curOpp && !curOpp.rank ? 'sCreate' : 'sVs'); } else go('sOpp'); };
-$('bAgain').onclick = () => { if (twoSel) start2P(twoSel[0], twoSel[1]); else startFight(lastTest); };
+$('pause').onclick = () => { if (F && F.mp){ $('fight').classList.remove('on'); F = null; mpClose(); go('sMP'); mpStatus('Partie quittée.'); return; } if (F && F.twoP){ $('fight').classList.remove('on'); F = null; go('s2P'); return; } const wasL = F && F.lesson; $('fight').classList.remove('on'); F = null; if (wasL){ endLesson(); go(curOpp && !curOpp.rank ? 'sCreate' : 'sVs'); } else go('sOpp'); };
+$('bAgain').onclick = () => { if (F && F.mp){ $('fight').classList.remove('on'); F = null; mpClose(); go('sMP'); mpStatus('Crée ou rejoins une nouvelle partie pour la revanche.'); return; } if (twoSel) start2P(twoSel[0], twoSel[1]); else startFight(lastTest); };
 $('bBack').onclick = () => { const t = twoSel; $('fight').classList.remove('on'); F = null; go(t ? 's2P' : curOpp && !curOpp.rank ? 'sCreate' : 'sOpp'); };
 
 // Update
+
+// ---- Acrobatics: climb the cage / rebound on the ropes, then a flying strike ----
+function startAcro(f, boost){
+  if (!canAct(f)) return false;
+  const ac = f.A.acrobatie, cost = boost ? 0 : Math.round(15 + (100-ac)/5);
+  if (!boost && f.st < cost){ pop(f, 'TROP FATIGUÉ', '#9a9aa8'); return false; }
+  const o = other(f); f.st -= cost;
+  const back = Math.sign(f.x - o.x) || -f.face;
+  f.acro = {t:0, x0:f.x, edge: back * (save.arena === 'ring' ? 3.35 : 3.3), tgt:null, hit:false, boost: !!boost, fail: !boost && Math.random() < Math.max(0, (55-ac)/90) * (1.2 - f.bal/250)};
+  f.state = 'attack'; f.q = []; f.cur = null;
+  pop(f, save.arena === 'ring' ? '🤸 LES CORDES !' : '🤸 LA CAGE !', '#f4b942', true);
+  return true;
+}
+function acroTick(f, dt){
+  const a = f.acro; a.t += dt / (1.15 - f.A.acrobatie/300);
+  const T1 = .35, T2 = .6, T3 = 1.0, top = (save.arena === 'ring' ? .6 : 1.1) * (.35 + f.A.acrobatie/150), o = other(f);
+  if (a.fail && a.t >= .5 && a.t < T3){ a.t = T3; f.lift = 0; f.acro = null; f.bal = Math.max(0, f.bal - 30); f.hp -= 3; pop(f, '😵 ACROBATIE RATÉE', '#e63946'); f.q = [ST('stumble', 350), ST('rDown', 600), ST('guard', 300)]; f.state = 'stun'; return; }
+  if (a.t < T1){ f.x = a.x0 + (a.edge - a.x0) * (a.t/T1); f.lift = 0; f.pose = lerp2(f.pose, POSES.run, .3); }
+  else if (a.t < T2){ const k = (a.t-T1)/(T2-T1); f.x = a.edge; f.lift = top*k; f.pose = lerp2(f.pose, POSES.highCh, .3); }
+  else if (a.t < T3){ if (a.tgt === null) a.tgt = o.x - Math.sign(o.x - a.edge)*.8; const k = (a.t-T2)/(T3-T2);
+    f.x = a.edge + (a.tgt - a.edge)*k; f.lift = top*(1-k) + Math.sin(k*Math.PI)*.6*(.4 + f.A.acrobatie/160); f.pose = lerp2(f.pose, k < .55 ? POSES.highCh : POSES.knee, .35);
+    if (k > .9 && !a.hit){ a.hit = true; f.cur = {p:'knee', ms:100}; onEvent(f, H((7 + 10*f.A.acrobatie/100) * (a.boost ? 2.2 : 1), {range:1.7, shake:1.3, react:'rHead', stun:600})); f.cur = null; } }
+  else { if (!a.hit && !a.fail){ a.hit = true; f.x = a.tgt === null ? f.x : a.tgt; f.cur = {p:'knee', ms:100}; onEvent(f, H((7 + 10*f.A.acrobatie/100) * (a.boost ? 2.2 : 1), {range:1.7, shake:1.3, react:'rHead', stun:600})); f.cur = null; } f.lift = 0; f.acro = null; f.state = 'idle'; }
+}
 function updateFighter(f, dt){
+  if (f.acro){ acroTick(f, dt); return; }
   f.slipT = Math.max(0, f.slipT - dt); f.invuln = Math.max(0, f.invuln - dt); f.counter = Math.max(0, f.counter - dt);
   f.parry = Math.max(0, f.parry - dt); f.evade = Math.max(0, f.evade - dt); f.angle = Math.max(0, f.angle - dt); f.parried = Math.max(0, f.parried - dt);
   if (f.cur){
     f.t += dt*1000;
-    const dur = f.cur.ms * f.tm * (1.1 - f.A.coordination/500) * (f.dazed > 0 ? 1.3 : 1) * (f.zone && f.zone.head < 40 ? 1 + .15*(1 - traitsOf(f.data).calme/100) : 1);
+    const dur = f.curDur = f.cur.ms * f.tm * (1.1 - f.A.coordination/500) * (f.dazed > 0 ? 1.3 : 1) * (f.zone && f.zone.head < 40 ? 1 + .15*(1 - traitsOf(f.data).calme/100) : 1);
     const k = Math.min(1, f.t/dur);
     f.pose = lerp2(f.from, POSES[f.cur.p], ease(k));
     if (k >= 1){
@@ -1582,7 +2153,7 @@ function updateFighter(f, dt){
     const bob = Math.sin(performance.now()/260 + (f===A?0:1))*1.2;
     const t = {}; for (const k2 of KEYS) t[k2] = [target[k2][0], target[k2][1] + (k2==='lf'||k2==='rf'?0:bob)];
     f.pose = lerp2(f.pose, t, Math.min(1, dt*14));
-    if (F.phase==='fight' && !['down','ko','stun','thrown'].includes(f.state)) f.st = Math.min(100, f.st + dt*(8 + f.end/100*14) * (.7 + bodyOf(f.data).poumons/170) * (f.state==='guard'?.4:1) * (f.heal||1) * (f.zone && f.zone.body < 40 ? .5 : 1));
+    if (F.phase==='fight' && !['down','ko','stun','thrown'].includes(f.state)) f.st = Math.min(100, f.st + dt*(8 + f.end/100*14) * (.7 + bodyOf(f.data).poumons/170) * (moodOf(f.data).regen || 1) * (f.state==='guard'?.4:1) * (f.heal||1) * (f.zone && f.zone.body < 40 ? .5 : 1));
   }
   // movement
   let mv = 0;
@@ -1597,6 +2168,7 @@ function loop(now){
   if (F && $('fight').classList.contains('on')){
     const dt = rdt * (slowmo>0 ? .35 : 1); slowmo = Math.max(0, slowmo - rdt);
     if (F.lesson) lessonTick(rdt);
+    if (F.mp === 'guest') mpApply(); else {
     if (F.phase==='intro'){ F.phaseT -= rdt; if (F.phaseT<=0){ F.phase='fight'; banner('FIGHT !',700); } }
     else if (F.phase==='fight'){ if (F.test){ F.time = 99; A.gauge = Math.min(100, A.gauge + rdt*25); B.gauge = Math.min(100, B.gauge + rdt*25); } else { F.time -= rdt; if (F.time<=0){ F.time=0; timeUp(); } } }
     else if (F.phase==='roundEnd'){ F.phaseT -= rdt; if (F.phaseT<=0){ if (A.wins===2 || B.wins===2 || F.round===3) endMatch(); else { F.round++; newRound(); } } }
@@ -1605,12 +2177,16 @@ function loop(now){
     const minD = .55;
     if (B.x - A.x < minD && !['thrown'].includes(A.state) && !['thrown'].includes(B.state)){ const c = (A.x+B.x)/2; A.x = c-minD/2; B.x = c+minD/2; }
     A.x = Math.max(-4.2, Math.min(4.2, A.x)); B.x = Math.max(-4.2, Math.min(4.2, B.x));
+    if ((save.arena||'cage') === 'cage'){ A.x = Math.max(-3.4, Math.min(3.4, A.x)); B.x = Math.max(-3.4, Math.min(3.4, B.x)); }
     for (const f of [A,B]) if (F.phase==='fight' && !F.lesson && Math.abs(f.x) > 3.45){
       if (F.test){ pop(f,'HORS DU RING (test)','#f4b942',true); f.x = Math.sign(f.x)*2.5; }
       else { const w = other(f); F.phase = 'roundEnd'; F.phaseT = 2.6; w.wins = 2; F.round = 3; slowmo = .4; banner('HORS DU RING ! ÉLIMINÉ', 2200); }
     }
     if (A.x > B.x - .3) A.x = B.x - .3;
-    pose3(MA, to3(A.pose, A.x, A.face, A.sc)); pose3(MB, to3(B.pose, B.x, B.face, B.sc));
+    if (F.mp === 'host') mpSend(now);
+    }
+    const oA = to3(A.pose, A.x, A.face, A.sc, A.lift||0), oB = to3(B.pose, B.x, B.face, B.sc, B.lift||0); pose3(MA, oA); pose3(MB, oB);
+    fxUpdate(A, oA, B, dt); fxUpdate(B, oB, A, dt);
     // HUD
     $('hpA').style.width = (A.hp/A.hpMax*100)+'%'; $('hpB').style.width = (B.hp/B.hpMax*100)+'%'; $('lifeA').textContent = '❤ '+Math.ceil(A.hp)+'/'+A.hpMax; zoneHUD('zA', A); zoneHUD('zB', B); const sts = f => `⚖ ${Math.round(f.bal)} · 🔋 ${Math.round(f.st)}${f.dazed > 0 ? ' · 💫 SONNÉ' : ''}${f.bal < 40 ? ' · instable' : ''}`; $('stsA').textContent = sts(A); $('stsB').textContent = sts(B); $('lifeB').textContent = '❤ '+Math.ceil(B.hp)+'/'+B.hpMax; $('stA').style.width = A.st+'%'; $('stB').style.width = B.st+'%';
     $('ggA').style.width = A.gauge+'%'; $('ggB').style.width = B.gauge+'%';
@@ -1624,7 +2200,11 @@ function loop(now){
     camera.position.set(mid + (Math.random()-.5)*shake*.08, 1.5 + (Math.random()-.5)*shake*.08, dz);
     camera.lookAt(mid, .85, 0); shake *= .9;
     if (flashT < 1){ flashT += rdt*4.5; flashM.scale.setScalar(.05+.22*Math.sin(Math.min(1,flashT)*Math.PI)); flashMat.opacity = 1-flashT; } else flashMat.opacity = 0;
-    renderer.render(scene, camera);
+    if (save.anime && OUTLINE){
+      // never outline glows / transparent / hidden-by-opacity parts (flashes, auras, energy)
+      scene.traverse(o => { if (o.isMesh && o.material && (o.material.transparent || o.material.isMeshBasicMaterial)) o.material.userData.outlineParameters = NO_OUTLINE; });
+      OUTLINE.render(scene, camera);
+    } else renderer.render(scene, camera);
   }
   requestAnimationFrame(loop);
 }
