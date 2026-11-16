@@ -745,12 +745,16 @@ $('bGo').onclick = () => { const r = Math.max(1,Math.min(NOPP,+$('goRank').value
 let curOpp = null;
 const lookBadge = L => L ? `<span style="font-size:11px"><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.skin};vertical-align:-1px"></i> peau · ${L.bare ? `<i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.nails};vertical-align:-1px"></i> mains nues` : '🥊 gants'}</span>` : '';
 const myId = () => save.myChar || 'tourb';
+// 3D character of the player's fighter: the menu choice, whatever fighter is played
+const myChar3D = () => CHARS.some(c => c[0] === save.char) ? save.char : charOf(myData());
 const myData = () => myId() === 'tourb' ? me() : fighterData(myId());
 function mySwitchHTML(){
-  return `<div class="fusionCard" style="margin:8px 0"><div class="tact"><b style="color:var(--red)">🎮 Ton combattant pour ce combat</b></div><select class="sel2 mySel">${fighterOptions().map(([v,l]) => `<option value="${v}" ${v===myId()?'selected':''}>${l}</option>`).join('')}</select>${myId()!=='tourb' ? '<button class="big alt myBack" style="font-size:16px;margin-top:6px">↩ Reprendre mon Tourbillon</button>' : '<div class="tm" style="font-size:12px;color:var(--mute);margin-top:4px">Si tu ne changes rien, tu gardes ton Tourbillon.</div>'}</div>`;
+  return `<div class="fusionCard" style="margin:8px 0"><div class="tact"><b style="color:var(--red)">🎮 Ton combattant pour ce combat</b></div><select class="sel2 mySel">${fighterOptions().map(([v,l]) => `<option value="${v}" ${v===myId()?'selected':''}>${l}</option>`).join('')}</select>${myId()!=='tourb' ? '<button class="big alt myBack" style="font-size:16px;margin-top:6px">↩ Reprendre mon Tourbillon</button>' : '<div class="tm" style="font-size:12px;color:var(--mute);margin-top:4px">Si tu ne changes rien, tu gardes ton Tourbillon.</div>'}
+    <div class="tact" style="margin-top:10px"><b style="color:var(--red)">🧍 Ton personnage 3D</b></div><div class="artChips" style="margin-top:4px">${CHARS.map(([k,n]) => `<button class="${myChar3D()===k?'on':''}" data-mc="${k}">${n}</button>`).join('')}</div></div>`;
 }
 function bindMySwitch(after){
   document.querySelectorAll('.mySel').forEach(el => el.onchange = () => { save.myChar = el.value === 'tourb' ? null : el.value; persist(); after(); });
+  document.querySelectorAll('[data-mc]').forEach(el => el.onclick = () => { save.char = el.dataset.mc; persist(); after(); });
   document.querySelectorAll('.myBack').forEach(el => el.onclick = () => { save.myChar = null; persist(); after(); });
 }
 function versus(r){ showVs(opponent(r)); }
@@ -1391,7 +1395,6 @@ function init3D(){
   setArena(save.arena || 'cage');
   MA = mannequin({skin:0xd8d4cf, accent:0xe63946, shirt:0x26262e});
   MB = mannequin({skin:0x8f9aab, accent:0x2f80c9, shirt:0x3b4250});
-  loadRigs();
   flashMat = new THREE.MeshBasicMaterial({color:0xffd27a,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});
   flashM = new THREE.Mesh(new THREE.SphereGeometry(1,16,12), flashMat); scene.add(flashM);
   addEventListener('resize', resize);
@@ -1423,6 +1426,9 @@ function to3(p, x, face, sc=1, lift=0){
   return o;
 }
 function pose3(f,o,ft){
+  if (ft){ let c = ft.mine ? myChar3D() : charOf(ft.data);
+    // the fighter on the right never takes the same character as the one on the left: it moves to the next one in the list
+    if (ft === B && A){ const ca = A.mine ? myChar3D() : charOf(A.data); if (c === ca) c = CHARS[(CHARS.findIndex(x => x[0] === c) + 1) % CHARS.length][0]; } if (f.rigWant !== c){ f.rigWant = c; loadRig(f, c); } }
   if (f.rig && ft){ rigPose(f, o, ft); return; }
   f.bones.forEach(b => place(b.mesh,o[b.a],o[b.b],b.r,b.r)); f.joints.forEach(j => j.mesh.position.copy(o[j.k])); f.gloves.forEach(g => g.mesh.position.copy(o[g.k]));
   f.head.position.copy(o.head); place(f.chest,o.mid,o.neck.clone().add(new THREE.Vector3(0,-.02,0)),.11,.2); place(f.belly,o.hip,o.mid,.1,.155);
@@ -1442,21 +1448,42 @@ function paint(M, L, isA){
 // A skinned GLB (Mixamo skeleton) replaces the primitive mannequin. The 2D pose engine still drives everything:
 // torso/head are oriented from the pose, arms and legs are solved with 2-bone IK toward the pose's hands and feet.
 // If the model cannot be loaded, the primitive mannequin stays visible.
-const RIG_URL = 'models/ninja.glb', RIG_HEIGHT = 1.93;
+const RIG_HEIGHT = 1.93;
+const CHARS = [['ninja','Ninja'],['james','James'],['leonar','Leonar'],['racer','Racer'],['swatman','SwatMan'],['megan','Megan'],['louise','Louise']];
 const RIG_NEED = ['Hips','Spine','Spine1','Spine2','Neck','Head','HeadTop_End','LeftShoulder','RightShoulder','LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand','LeftUpLeg','LeftLeg','LeftFoot','RightUpLeg','RightLeg','RightFoot'];
-function loadRigs(){
-  const go = () => fetch(RIG_URL).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
-    .then(buf => [MA, MB].forEach((M, i) => new THREE.GLTFLoader().parse(buf.slice(0), '', g => attachRig(M, g.scene, i), e => console.warn('Character model parse failed', e))))
-    .catch(e => console.warn('Character model load failed, keeping mannequin', e));
+const RIG_BUF = {};
+// the player picks a character in the menu; each opponent always gets the same one (from its name)
+function charOf(d){
+  if (d.char) return d.char;
+  if (!d.person) return CHARS.some(c => c[0] === save.char) ? save.char : 'ninja';
+  let h = 0; for (const ch of d.person) h = (h*31 + ch.charCodeAt(0)) >>> 0;
+  return CHARS[h % CHARS.length][0];
+}
+function loadRig(M, name){
+  const go = () => { RIG_BUF[name] = RIG_BUF[name] || fetch('models/' + name + '.glb').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); });
+    RIG_BUF[name].then(buf => new THREE.GLTFLoader().parse(buf.slice(0), '', g => attachRig(M, g.scene, name), e => console.warn('Character model parse failed', name, e)))
+      .catch(e => { delete RIG_BUF[name]; console.warn('Character model load failed, keeping current fighter', name, e); }); };
   if (THREE.GLTFLoader) go(); else loadScript2(['https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js', 'https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js'], go);
 }
-function attachRig(M, root, idx){
+// when both fighters use the same character, the second one is tinted red
+function rigTint(){
+  if (!MB || !MB.rig) return;
+  const same = MA.rigWant === MB.rigWant;
+  MB.rig.root.traverse(o => { if (!o.isMesh) return; const m = o.material.userData.std || o.material, b = m.userData.base; if (!b) return;
+    m.color.setHex(same ? 0xff7466 : b.color); m.emissive.setHex(same ? 0x5a1410 : b.emissive); m.emissiveMap = same ? m.map : b.emissiveMap; m.needsUpdate = true; delete m.userData.toon; o.material = m; });
+  if (save.anime) setTimeout(refreshToon, 0);
+}
+function attachRig(M, root, name){
+  if (M.rigWant !== name) return;   // the player changed character while this one was loading
   const B = {};
-  root.traverse(o => { if (o.isBone) B[o.name.replace(/^mixamorig:?/, '')] = o;
-    if (o.isMesh){ o.castShadow = true; o.frustumCulled = false; o.material = o.material.clone(); o.material.metalness = 0; o.material.metalnessMap = null; o.material.roughnessMap = null; o.material.roughness = .8;
-      if (idx){ o.material.color.setHex(0xff7466); o.material.emissive.setHex(0x5a1410); o.material.emissiveMap = o.material.map; } } });   // second fighter: red tint
+  root.traverse(o => { if (o.isBone) B[o.name.replace(/^mixamorig\d*:?/, '')] = o;
+    if (o.isMesh){ o.castShadow = true; o.frustumCulled = false; const m = o.material = o.material.clone();
+      m.metalness = 0; m.metalnessMap = null; m.roughnessMap = null; m.roughness = .8;
+      if (m.transparent || /hair|lash/i.test(m.name)){ m.transparent = false; m.alphaTest = .45; m.depthWrite = true; m.side = THREE.DoubleSide; }   // hair cards
+      m.userData.base = {color: m.color.getHex(), emissive: m.emissive.getHex(), emissiveMap: m.emissiveMap}; } });
   const miss = RIG_NEED.filter(k => !B[k]);
   if (miss.length){ console.warn('Character model is missing bones', miss); return; }
+  if (M.rig) scene.remove(M.rig.root);
   scene.add(root); root.updateMatrixWorld(true);
   const R = {root, B, q:{}, p:{}, W:{}};
   for (const k in B){ R.q[k] = B[k].getWorldQuaternion(new THREE.Quaternion()); R.p[k] = B[k].getWorldPosition(new THREE.Vector3()); }
@@ -1471,7 +1498,7 @@ function attachRig(M, root, idx){
     for (const fg of ['Index','Middle','Ring','Pinky']) for (const i of [1,2,3]) curl(S+'Hand'+fg+i, AZ, sg*1.25);
     curl(S+'HandThumb1', AY, sg*.5); curl(S+'HandThumb2', AY, sg*.5); curl(S+'HandThumb3', AY, sg*.6);
   }
-  M.rig = R;
+  M.rig = R; rigTint();
   [...M.bones, ...M.joints, ...M.gloves, ...M.nails].forEach(x => x.mesh.visible = false); [M.head, M.chest, M.belly, M.pelvis].forEach(x => x.visible = false);
   if (save.anime) setTimeout(refreshToon, 0);
 }
@@ -1577,7 +1604,7 @@ function speedLines(ms){ const el = $('speed'); if (!el) return; el.style.transi
 function toonMat(m){
   if (!m || !m.isMeshStandardMaterial || m.transparent || m.opacity < 1 || !m.visible) return m;
   if (!m.userData.toon){ if (!TOON_GRAD){ const d = new Uint8Array([70, 70, 70, 150, 150, 150, 255, 255, 255]); TOON_GRAD = new THREE.DataTexture(d, 3, 1, THREE.RGBFormat); TOON_GRAD.minFilter = TOON_GRAD.magFilter = THREE.NearestFilter; TOON_GRAD.needsUpdate = true; }
-    const t = new THREE.MeshToonMaterial({gradientMap: TOON_GRAD, map: m.map || null, emissiveMap: m.emissiveMap || null, skinning: !!m.skinning, side: m.side, emissive: m.emissive ? m.emissive.clone() : 0x000000, emissiveIntensity: m.emissiveIntensity || 1}); t.color = m.color; t.userData.std = m; m.userData.toon = t; }
+    const t = new THREE.MeshToonMaterial({gradientMap: TOON_GRAD, map: m.map || null, emissiveMap: m.emissiveMap || null, skinning: !!m.skinning, alphaTest: m.alphaTest || 0, side: m.side, emissive: m.emissive ? m.emissive.clone() : 0x000000, emissiveIntensity: m.emissiveIntensity || 1}); t.color = m.color; t.userData.std = m; m.userData.toon = t; }
   return m.userData.toon;
 }
 // swap every figure/arena material between standard and toon
@@ -1612,7 +1639,7 @@ function startFight(test){
   lastTest = !!test; twoSel = null; $('pad2').style.display = 'none'; document.querySelector('.pad').style.display = ''; $('ctl').style.display = '';
   $('fight').classList.add('on'); resize();
   const M = myData();
-  A = makeFighter(M, -1.4, 1, false); B = makeFighter(curOpp, 1.4, -1, true);
+  A = makeFighter(M, -1.4, 1, false); B = makeFighter(curOpp, 1.4, -1, true); A.mine = true;
   if (isTourb(M)) A.aiMoves = ['tjab','vrille','fouet','faux','vent'].concat(M.all ? ['fused'] : []);
   paint(MA, A.data.look, true); paint(MB, B.data.look, false);
   F = {round:1, time:60, phase:'intro', phaseT:1.6, test:!!test};
