@@ -1391,6 +1391,7 @@ function init3D(){
   setArena(save.arena || 'cage');
   MA = mannequin({skin:0xd8d4cf, accent:0xe63946, shirt:0x26262e});
   MB = mannequin({skin:0x8f9aab, accent:0x2f80c9, shirt:0x3b4250});
+  loadRigs();
   flashMat = new THREE.MeshBasicMaterial({color:0xffd27a,transparent:true,opacity:0,blending:THREE.AdditiveBlending,depthWrite:false});
   flashM = new THREE.Mesh(new THREE.SphereGeometry(1,16,12), flashMat); scene.add(flashM);
   addEventListener('resize', resize);
@@ -1421,7 +1422,8 @@ function to3(p, x, face, sc=1, lift=0){
   o.mid = o.hip.clone().lerp(o.neck,.45); o.headB = o.neck.clone().addScaledVector(new THREE.Vector3().subVectors(o.head,o.neck),.45);
   return o;
 }
-function pose3(f,o){
+function pose3(f,o,ft){
+  if (f.rig && ft){ rigPose(f, o, ft); return; }
   f.bones.forEach(b => place(b.mesh,o[b.a],o[b.b],b.r,b.r)); f.joints.forEach(j => j.mesh.position.copy(o[j.k])); f.gloves.forEach(g => g.mesh.position.copy(o[g.k]));
   f.head.position.copy(o.head); place(f.chest,o.mid,o.neck.clone().add(new THREE.Vector3(0,-.02,0)),.11,.2); place(f.belly,o.hip,o.mid,.1,.155);
   f.pelvis.position.copy(o.hip); f.pelvis.scale.set(.1,.09,.17); f.pelvis.quaternion.copy(f.belly.quaternion);
@@ -1432,8 +1434,103 @@ function paint(M, L, isA){
   M.skinMat.color.set(L.skin || (isA ? '#d8d4cf' : '#8f9aab'));
   M.gloveMat.color.set(L.bare ? (L.skin || '#d8d4cf') : M.accent);
   M.gloves.forEach(g => g.mesh.scale.set(L.bare ? .05 : .075, L.bare ? .045 : .068, L.bare ? .05 : .068));
-  M.nailMat.color.set(L.nails || '#f1c9b8'); M.nails.forEach(n => n.mesh.visible = !!L.bare);
+  M.nailMat.color.set(L.nails || '#f1c9b8'); M.nails.forEach(n => n.mesh.visible = !!L.bare && !M.rig);
   if (save.anime) setTimeout(refreshToon, 0);
+}
+
+// ===================== 3D CHARACTER MODELS =====================
+// A skinned GLB (Mixamo skeleton) replaces the primitive mannequin. The 2D pose engine still drives everything:
+// torso/head are oriented from the pose, arms and legs are solved with 2-bone IK toward the pose's hands and feet.
+// If the model cannot be loaded, the primitive mannequin stays visible.
+const RIG_URL = 'models/ninja.glb', RIG_HEIGHT = 1.93;
+const RIG_NEED = ['Hips','Spine','Spine1','Spine2','Neck','Head','HeadTop_End','LeftShoulder','RightShoulder','LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand','LeftUpLeg','LeftLeg','LeftFoot','RightUpLeg','RightLeg','RightFoot'];
+function loadRigs(){
+  const go = () => fetch(RIG_URL).then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
+    .then(buf => [MA, MB].forEach((M, i) => new THREE.GLTFLoader().parse(buf.slice(0), '', g => attachRig(M, g.scene, i), e => console.warn('Character model parse failed', e))))
+    .catch(e => console.warn('Character model load failed, keeping mannequin', e));
+  if (THREE.GLTFLoader) go(); else loadScript2(['https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js', 'https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js'], go);
+}
+function attachRig(M, root, idx){
+  const B = {};
+  root.traverse(o => { if (o.isBone) B[o.name.replace(/^mixamorig:?/, '')] = o;
+    if (o.isMesh){ o.castShadow = true; o.frustumCulled = false; o.material = o.material.clone(); o.material.metalness = 0; o.material.metalnessMap = null; o.material.roughnessMap = null; o.material.roughness = .8;
+      if (idx){ o.material.color.setHex(0xff7466); o.material.emissive.setHex(0x5a1410); o.material.emissiveMap = o.material.map; } } });   // second fighter: red tint
+  const miss = RIG_NEED.filter(k => !B[k]);
+  if (miss.length){ console.warn('Character model is missing bones', miss); return; }
+  scene.add(root); root.updateMatrixWorld(true);
+  const R = {root, B, q:{}, p:{}, W:{}};
+  for (const k in B){ R.q[k] = B[k].getWorldQuaternion(new THREE.Quaternion()); R.p[k] = B[k].getWorldPosition(new THREE.Vector3()); }
+  R.k0 = RIG_HEIGHT / (R.p.HeadTop_End.y + .02); R.ankle = R.p.LeftFoot.y;
+  const d = (a, b) => R.p[a].distanceTo(R.p[b]), dir = (a, b) => R.p[b].clone().sub(R.p[a]).normalize();
+  R.len = {ua: d('LeftArm','LeftForeArm'), fa: d('LeftForeArm','LeftHand'), ul: d('LeftUpLeg','LeftLeg'), ll: d('LeftLeg','LeftFoot')};
+  R.dir = {}; for (const S of ['Left','Right']){ R.dir[S+'Arm'] = dir(S+'Arm', S+'ForeArm'); R.dir[S+'ForeArm'] = dir(S+'ForeArm', S+'Hand'); R.dir[S+'UpLeg'] = dir(S+'UpLeg', S+'Leg'); R.dir[S+'Leg'] = dir(S+'Leg', S+'Foot'); }
+  // close the hands into fists (fingers curl around the depth axis of the T-pose)
+  const curl = (k, axis, ang) => { const bn = B[k]; if (!bn) return; const D = _rq().setFromAxisAngle(axis, ang); bn.quaternion.multiply(R.q[k].clone().invert().multiply(D).multiply(R.q[k])); };
+  const AZ = new THREE.Vector3(0, 0, 1), AY = new THREE.Vector3(0, 1, 0);
+  for (const [S, sg] of [['Left', -1], ['Right', 1]]){
+    for (const fg of ['Index','Middle','Ring','Pinky']) for (const i of [1,2,3]) curl(S+'Hand'+fg+i, AZ, sg*1.25);
+    curl(S+'HandThumb1', AY, sg*.5); curl(S+'HandThumb2', AY, sg*.5); curl(S+'HandThumb3', AY, sg*.6);
+  }
+  M.rig = R;
+  [...M.bones, ...M.joints, ...M.gloves, ...M.nails].forEach(x => x.mesh.visible = false); [M.head, M.chest, M.belly, M.pelvis].forEach(x => x.visible = false);
+  if (save.anime) setTimeout(refreshToon, 0);
+}
+const _rm = new THREE.Matrix4(), _rv = () => new THREE.Vector3(), _rq = () => new THREE.Quaternion();
+// 2-bone IK: returns the joint (elbow/knee) and the reachable end position
+function ik2(root, target, hint, l1, l2, fallback){
+  const n = target.clone().sub(root); let d = n.length(); if (d < 1e-5){ n.set(0,-1,0); d = 1e-5; } n.divideScalar(d);
+  d = Math.max(Math.abs(l1 - l2) + 1e-3, Math.min((l1 + l2) * .999, d));
+  const a = (l1*l1 - l2*l2 + d*d) / (2*d), h = Math.sqrt(Math.max(0, l1*l1 - a*a));
+  let pole = hint.clone().sub(root); pole.addScaledVector(n, -pole.dot(n));
+  if (pole.lengthSq() < 1e-6){ pole = fallback.clone(); pole.addScaledVector(n, -pole.dot(n)); }
+  if (pole.lengthSq() < 1e-6) pole.set(0, 0, 1);
+  pole.normalize();
+  return [root.clone().addScaledVector(n, a).addScaledVector(pole, h), root.clone().addScaledVector(n, d)];
+}
+function rigPose(M, o, f){
+  const R = M.rig, B = R.B, W = R.W, face = f.face, s = R.k0 * f.sc;
+  const setW = (k, q, parentQ) => { W[k] = q; B[k].quaternion.copy(parentQ).invert().multiply(q); };
+  R.root.scale.setScalar(s); B.Hips.parent.updateWorldMatrix(true, false);
+  const P0 = B.Hips.parent.getWorldQuaternion(_rq());
+  // torso frame: left is always the depth axis (the engine is 2D), up follows hip -> neck
+  const left = new THREE.Vector3(0, 0, -face), up = o.neck.clone().sub(o.hip).normalize();
+  const Qt = _rq().setFromRotationMatrix(_rm.makeBasis(left, up, left.clone().cross(up)));
+  const Qy = _rq().setFromRotationMatrix(_rm.makeBasis(left, UP, left.clone().cross(UP)));
+  const w = Math.max(0, Math.min(1, (Math.acos(Math.max(-1, Math.min(1, up.y))) - .6) / .6));
+  const Qh = Qy.clone().slerp(Qt, .55 + .45*w), Qs = Qy.clone().slerp(Qt, .8 + .2*w);
+  setW('Hips', Qh.clone().multiply(R.q.Hips), P0);
+  setW('Spine', Qs.clone().multiply(R.q.Spine), W.Hips);
+  setW('Spine1', Qt.clone().multiply(R.q.Spine1), W.Spine);
+  setW('Spine2', Qt.clone().multiply(R.q.Spine2), W.Spine1);
+  const hd = o.head.clone().sub(o.neck).normalize(), Qhd = _rq().setFromUnitVectors(up, hd).multiply(Qt);
+  setW('Neck', Qt.clone().slerp(Qhd, .5).multiply(R.q.Neck), W.Spine2);
+  setW('Head', Qhd.clone().multiply(R.q.Head), W.Neck);
+  B.Hips.position.copy(B.Hips.parent.worldToLocal(o.hip.clone()));
+  B.Hips.updateMatrixWorld(true);
+  const inv = k => R.q[k].clone().invert();
+  const limb = (S, up1, low1, end1, kMid, kEnd, Qref0, l1, l2, target, fallback, parentQ) => {
+    const root = B[S+up1].getWorldPosition(_rv());
+    const [mid, end] = ik2(root, target, o[kMid], l1*s, l2*s, fallback);
+    const d1 = mid.clone().sub(root).normalize(), d2 = end.clone().sub(mid).normalize();
+    const Qa = _rq().setFromUnitVectors(R.dir[S+up1].clone().applyQuaternion(Qref0), d1).multiply(Qref0);   // rotation applied to the rest pose
+    setW(S+up1, Qa.clone().multiply(R.q[S+up1]), parentQ);
+    const Qb = _rq().setFromUnitVectors(R.dir[S+low1].clone().applyQuaternion(Qa), d2).multiply(Qa);
+    setW(S+low1, Qb.clone().multiply(R.q[S+low1]), W[S+up1]);
+    return {mid, end, d2, Qb};
+  };
+  for (const [S, kE, kH] of [['Left','le','lh'], ['Right','re','rh']]){
+    const fd = o[kH].clone().sub(o[kE]).normalize(), wrist = o[kH].clone().addScaledVector(fd, -.07*s);
+    const shQ = W.Spine2.clone().multiply(B[S+'Shoulder'].quaternion);
+    const r = limb(S, 'Arm', 'ForeArm', 'Hand', kE, kH, Qt, R.len.ua, R.len.fa, wrist, new THREE.Vector3(0, -1, 0), shQ);
+    o[kE].copy(r.mid); o[kH].copy(r.end).addScaledVector(r.d2, .07*s);   // effects and weapons follow the real hands
+  }
+  for (const [S, kK, kF] of [['Left','lk','lf'], ['Right','rk','rf']]){
+    const ankle = o[kF].clone(); ankle.y = Math.max(R.ankle*s, ankle.y - .09 + R.ankle*s);
+    const r = limb(S, 'UpLeg', 'Leg', 'Foot', kK, kF, Qy, R.len.ul, R.len.ll, ankle, new THREE.Vector3(face, 0, 0), W.Hips);
+    // keep the foot flat when it is near the ground and the shin is roughly vertical
+    const flat = Math.max(0, Math.min(1, 1 - (r.end.y - R.ankle*s) / .25)) * Math.max(0, -r.d2.y);
+    setW(S+'Foot', r.Qb.clone().slerp(Qy, flat).multiply(R.q[S+'Foot']), W[S+'Leg']);
+  }
 }
 const lerp2 = (a,b,t) => { const o={}; for (const k of KEYS) o[k] = [a[k][0]+(b[k][0]-a[k][0])*t, a[k][1]+(b[k][1]-a[k][1])*t]; return o; };
 const ease = t => t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
@@ -1480,7 +1577,7 @@ function speedLines(ms){ const el = $('speed'); if (!el) return; el.style.transi
 function toonMat(m){
   if (!m || !m.isMeshStandardMaterial || m.transparent || m.opacity < 1 || !m.visible) return m;
   if (!m.userData.toon){ if (!TOON_GRAD){ const d = new Uint8Array([70, 70, 70, 150, 150, 150, 255, 255, 255]); TOON_GRAD = new THREE.DataTexture(d, 3, 1, THREE.RGBFormat); TOON_GRAD.minFilter = TOON_GRAD.magFilter = THREE.NearestFilter; TOON_GRAD.needsUpdate = true; }
-    const t = new THREE.MeshToonMaterial({gradientMap: TOON_GRAD, map: m.map || null, side: m.side, emissive: m.emissive ? m.emissive.clone() : 0x000000, emissiveIntensity: m.emissiveIntensity || 1}); t.color = m.color; t.userData.std = m; m.userData.toon = t; }
+    const t = new THREE.MeshToonMaterial({gradientMap: TOON_GRAD, map: m.map || null, emissiveMap: m.emissiveMap || null, skinning: !!m.skinning, side: m.side, emissive: m.emissive ? m.emissive.clone() : 0x000000, emissiveIntensity: m.emissiveIntensity || 1}); t.color = m.color; t.userData.std = m; m.userData.toon = t; }
   return m.userData.toon;
 }
 // swap every figure/arena material between standard and toon
@@ -2218,7 +2315,7 @@ function loop(now){
     if (A.x > B.x - .3) A.x = B.x - .3;
     if (F.mp === 'host') mpSend(now);
     }
-    const oA = to3(A.pose, A.x, A.face, A.sc, A.lift||0), oB = to3(B.pose, B.x, B.face, B.sc, B.lift||0); pose3(MA, oA); pose3(MB, oB);
+    const oA = to3(A.pose, A.x, A.face, A.sc, A.lift||0), oB = to3(B.pose, B.x, B.face, B.sc, B.lift||0); pose3(MA, oA, A); pose3(MB, oB, B);
     fxUpdate(A, oA, B, dt); fxUpdate(B, oB, A, dt);
     // HUD
     $('hpA').style.width = (A.hp/A.hpMax*100)+'%'; $('hpB').style.width = (B.hp/B.hpMax*100)+'%'; $('lifeA').textContent = '❤ '+Math.ceil(A.hp)+'/'+A.hpMax; zoneHUD('zA', A); zoneHUD('zB', B); const sts = f => `⚖ ${Math.round(f.bal)} · 🔋 ${Math.round(f.st)}${f.dazed > 0 ? ' · 💫 SONNÉ' : ''}${f.bal < 40 ? ' · instable' : ''}`; $('stsA').textContent = sts(A); $('stsB').textContent = sts(B); $('lifeB').textContent = '❤ '+Math.ceil(B.hp)+'/'+B.hpMax; $('stA').style.width = A.st+'%'; $('stB').style.width = B.st+'%';

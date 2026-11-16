@@ -13,5 +13,5 @@
 - If he explicitly says no, do not merge.
 
 ## Code
-- Single self-contained `index.html` (Three.js r128 from cdnjs).
+- Single `index.html` (Three.js r128 from cdnjs) plus character models in `models/` (GLB, Mixamo skeleton).
 - Code, comments and logs in English; explanations to the user in French, simple words.
