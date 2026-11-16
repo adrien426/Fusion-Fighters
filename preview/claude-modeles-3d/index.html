@@ -710,7 +710,7 @@ function menu(){
     <div class="tact"><b>Tes techniques :</b><ul>${PLAYER.moves.map(m=>`<li><b>${m[1]}</b> : ${m[2]}</li>`).join('')}</ul></div>
     <div class="tact" style="margin-top:8px"><b style="color:var(--gold)">⚡ TA TECHNIQUE (fixe, rien que pour toi) : Technique Fusion</b><br>${SPECIALS.fusion.desc}<br><span style="color:var(--mute)">Bouton ⚡ TECHNIQUE FUSION quand la jauge est dorée.</span></div>${M.all ? `<div class="tact" style="margin-top:8px"><b style="color:var(--gold)">🌍 + TECHNIQUE ULTIME</b><br>${SPECIALS.ultP.desc}<br><span style="color:var(--mute)">Un seul coup en plus de tes techniques : 🥊 Technique Ultime.</span></div>` : ''}`;
   const L = save.look || {};
-  $('meLook').innerHTML = `<div class="tg">Personnage 3D</div><div class="artChips" style="margin-bottom:6px">${CHARS.map(([k,n]) => `<button class="${charOf(M)===k?'on':''}" data-mc="${k}">${n}</button>`).join('')}</div><div class="tg">Apparence de ton Tourbillon</div><div class="artChips">${SKINS.map(([n,v]) => `<button class="${(L.skin||'#d8d4cf')===v?'on':''}" data-ms="${v}"><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${v};vertical-align:-2px;margin-right:4px"></i>${n}</button>`).join('')}</div>
+  $('meLook').innerHTML = `<div class="tg">Apparence de ton Tourbillon</div><div class="artChips">${SKINS.map(([n,v]) => `<button class="${(L.skin||'#d8d4cf')===v?'on':''}" data-ms="${v}"><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${v};vertical-align:-2px;margin-right:4px"></i>${n}</button>`).join('')}</div>
     <div class="artChips" style="margin-top:6px"><button class="${!L.bare?'on':''}" data-mb="0">🥊 Gants</button><button class="${L.bare?'on':''}" data-mb="1">✋ Mains nues</button>${NAILS.map(([n,v]) => `<button class="${L.bare && L.nails===v?'on':''}" data-mn="${v}"><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${v};vertical-align:-2px;margin-right:4px"></i>${n}</button>`).join('')}</div>
     <div class="tg" style="margin-top:6px">Équipement de ton Tourbillon</div><div class="artChips">${Object.entries(GEAR).map(([k,g]) => `<button class="${(save.gear||['nues']).includes(k)?'on':''}" data-mg="${k}">${g.n}</button>`).join('')}</div>
     <div class="tg" style="margin-top:6px">Humeur</div><div class="artChips">${Object.keys(MOODS).map(m => `<button class="${(save.mood||'Calme')===m?'on':''}" data-mm="${m}">${m}</button>`).join('')}</div>
@@ -718,7 +718,6 @@ function menu(){
   const setL = (k,v) => { save.look = Object.assign({skin:'#d8d4cf', nails:NAILS[0][1], bare:false}, save.look||{}, {[k]:v}); persist(); menu(); };
   document.querySelectorAll('[data-ms]').forEach(b => b.onclick = () => setL('skin', b.dataset.ms));
   document.querySelectorAll('[data-mg]').forEach(b => b.onclick = () => { const k = b.dataset.mg; let g = save.gear || ['nues']; if (g.includes(k)) g = g.filter(x => x!==k); else { if (GEAR[k].g) g = g.filter(x => GEAR[x].g !== GEAR[k].g); g.push(k); } save.gear = g; persist(); menu(); });
-  document.querySelectorAll('[data-mc]').forEach(b => b.onclick = () => { save.char = b.dataset.mc; persist(); menu(); });
   document.querySelectorAll('[data-mm]').forEach(b => b.onclick = () => { save.mood = b.dataset.mm; persist(); menu(); });
   document.querySelectorAll('[data-mb]').forEach(b => b.onclick = () => setL('bare', b.dataset.mb==='1'));
   document.querySelectorAll('[data-mn]').forEach(b => b.onclick = () => { setL('nails', b.dataset.mn); setL('bare', true); });
@@ -746,12 +745,16 @@ $('bGo').onclick = () => { const r = Math.max(1,Math.min(NOPP,+$('goRank').value
 let curOpp = null;
 const lookBadge = L => L ? `<span style="font-size:11px"><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.skin};vertical-align:-1px"></i> peau · ${L.bare ? `<i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.nails};vertical-align:-1px"></i> mains nues` : '🥊 gants'}</span>` : '';
 const myId = () => save.myChar || 'tourb';
+// 3D character of the player's fighter: the menu choice, whatever fighter is played
+const myChar3D = () => CHARS.some(c => c[0] === save.char) ? save.char : charOf(myData());
 const myData = () => myId() === 'tourb' ? me() : fighterData(myId());
 function mySwitchHTML(){
-  return `<div class="fusionCard" style="margin:8px 0"><div class="tact"><b style="color:var(--red)">🎮 Ton combattant pour ce combat</b></div><select class="sel2 mySel">${fighterOptions().map(([v,l]) => `<option value="${v}" ${v===myId()?'selected':''}>${l}</option>`).join('')}</select>${myId()!=='tourb' ? '<button class="big alt myBack" style="font-size:16px;margin-top:6px">↩ Reprendre mon Tourbillon</button>' : '<div class="tm" style="font-size:12px;color:var(--mute);margin-top:4px">Si tu ne changes rien, tu gardes ton Tourbillon.</div>'}</div>`;
+  return `<div class="fusionCard" style="margin:8px 0"><div class="tact"><b style="color:var(--red)">🎮 Ton combattant pour ce combat</b></div><select class="sel2 mySel">${fighterOptions().map(([v,l]) => `<option value="${v}" ${v===myId()?'selected':''}>${l}</option>`).join('')}</select>${myId()!=='tourb' ? '<button class="big alt myBack" style="font-size:16px;margin-top:6px">↩ Reprendre mon Tourbillon</button>' : '<div class="tm" style="font-size:12px;color:var(--mute);margin-top:4px">Si tu ne changes rien, tu gardes ton Tourbillon.</div>'}
+    <div class="tact" style="margin-top:10px"><b style="color:var(--red)">🧍 Ton personnage 3D</b></div><div class="artChips" style="margin-top:4px">${CHARS.map(([k,n]) => `<button class="${myChar3D()===k?'on':''}" data-mc="${k}">${n}</button>`).join('')}</div></div>`;
 }
 function bindMySwitch(after){
   document.querySelectorAll('.mySel').forEach(el => el.onchange = () => { save.myChar = el.value === 'tourb' ? null : el.value; persist(); after(); });
+  document.querySelectorAll('[data-mc]').forEach(el => el.onclick = () => { save.char = el.dataset.mc; persist(); after(); });
   document.querySelectorAll('.myBack').forEach(el => el.onclick = () => { save.myChar = null; persist(); after(); });
 }
 function versus(r){ showVs(opponent(r)); }
@@ -1423,7 +1426,7 @@ function to3(p, x, face, sc=1, lift=0){
   return o;
 }
 function pose3(f,o,ft){
-  if (ft){ const c = charOf(ft.data); if (f.rigWant !== c){ f.rigWant = c; loadRig(f, c); } }
+  if (ft){ const c = ft.mine ? myChar3D() : charOf(ft.data); if (f.rigWant !== c){ f.rigWant = c; loadRig(f, c); } }
   if (f.rig && ft){ rigPose(f, o, ft); return; }
   f.bones.forEach(b => place(b.mesh,o[b.a],o[b.b],b.r,b.r)); f.joints.forEach(j => j.mesh.position.copy(o[j.k])); f.gloves.forEach(g => g.mesh.position.copy(o[g.k]));
   f.head.position.copy(o.head); place(f.chest,o.mid,o.neck.clone().add(new THREE.Vector3(0,-.02,0)),.11,.2); place(f.belly,o.hip,o.mid,.1,.155);
@@ -1634,7 +1637,7 @@ function startFight(test){
   lastTest = !!test; twoSel = null; $('pad2').style.display = 'none'; document.querySelector('.pad').style.display = ''; $('ctl').style.display = '';
   $('fight').classList.add('on'); resize();
   const M = myData();
-  A = makeFighter(M, -1.4, 1, false); B = makeFighter(curOpp, 1.4, -1, true);
+  A = makeFighter(M, -1.4, 1, false); B = makeFighter(curOpp, 1.4, -1, true); A.mine = true;
   if (isTourb(M)) A.aiMoves = ['tjab','vrille','fouet','faux','vent'].concat(M.all ? ['fused'] : []);
   paint(MA, A.data.look, true); paint(MB, B.data.look, false);
   F = {round:1, time:60, phase:'intro', phaseT:1.6, test:!!test};
