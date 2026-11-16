@@ -200,7 +200,7 @@ body.anime #banner{font-family:'Bangers','Impact',sans-serif;-webkit-text-stroke
     <div id="persSel" style="font-size:13px;margin:6px 0"></div>
     <button class="big" id="bPersFuse" style="font-size:20px;background:var(--blue)">👥 FUSIONNER LES COMBATTANTS</button>
   </div>
-  <button class="big" id="pAnime" style="font-size:20px;background:linear-gradient(90deg,#ff4fa3,#7b5cff)">🌸 TOUT L'ANIMÉ : tous les pouvoirs d'animé + tout au max</button>
+  <button class="big" id="pAnime" style="font-size:20px;background:linear-gradient(90deg,#ff4fa3,#7b5cff)">🌸 TOUT LE DESSIN ANIMÉ : tous les pouvoirs des dessins animés du monde + tout au max</button>
   <button class="big" id="pAll" style="font-size:22px;background:linear-gradient(90deg,#e63946,#f4b942)">🌍 TOUT METTRE : toutes les techniques + tout au max</button>
   <div class="presets" style="grid-template-columns:1fr 1fr"><button id="pGreen" style="border-color:var(--green)">🟢 Tout le vert<br><span style="font:12px Inter;color:var(--mute)">que des bonus</span></button><button id="pRed" style="border-color:var(--red)">🔴 Tout le rouge<br><span style="font:12px Inter;color:var(--mute)">qui ont un malus</span></button></div>
   <div class="fusionCard">
@@ -810,22 +810,37 @@ const ANIM = {beam:['beam','beam','kdBeam'],jab:['jab','jab',null],cross:['cross
 // TECHS rows: [id, label, category, AI move, step, KO step, mods, art]
 // Anime-style powers: original names, inspired by the codes of Japanese animation
 CAT.push(...[
-  ["Vague d'énergie", 'Animé', 'Animé (pouvoirs)', 'beam', [4,0,0,-1,0]], ["Boule de feu", 'Animé', 'Animé (pouvoirs)', 'beam', [4,1,-1,-1,0]],
-  ["Rayon de foudre", 'Animé', 'Animé (pouvoirs)', 'beam', [3,3,-1,-1,0]], ["Souffle du dragon", 'Animé', 'Animé (pouvoirs)', 'beam', [5,-1,0,-2,0]],
-  ["Canon d'aura", 'Animé', 'Animé (pouvoirs)', 'beam', [5,0,-1,-2,0]], ["Éclair céleste", 'Animé', 'Animé (pouvoirs)', 'beam', [4,2,-1,-1,0]],
-  ["Les cent poings", 'Animé', 'Animé (pouvoirs)', 'chain', [1,5,-1,-1,0]], ["Poing de feu", 'Animé', 'Animé (pouvoirs)', 'cross', [4,1,0,0,0]],
-  ["Poing de glace", 'Animé', 'Animé (pouvoirs)', 'cross', [3,1,1,0,0]], ["Paume du tonnerre", 'Animé', 'Animé (pouvoirs)', 'palm', [4,1,0,0,0]],
-  ["Poing météore", 'Animé', 'Animé (pouvoirs)', 'hook', [5,0,-1,-1,0]], ["Coup de pied tornade", 'Animé', 'Animé (pouvoirs)', 'spin', [3,3,-1,0,0]],
-  ["Pied éclair", 'Animé', 'Animé (pouvoirs)', 'high', [2,4,0,0,0]], ["Lame de vent", 'Animé', 'Animé (pouvoirs)', 'high', [3,3,0,0,0]],
-  ["Genou volant", 'Animé', 'Animé (pouvoirs)', 'knee', [4,2,-1,0,0]], ["Projection céleste", 'Animé', 'Animé (pouvoirs)', 'throw', [3,0,0,0,4]],
-  ["Prise du serpent", 'Animé', 'Animé (pouvoirs)', 'grab', [1,1,1,0,4]], ["Téléportation éclair", 'Animé', 'Animé (pouvoirs)', 'slip', [0,4,3,0,0]],
-  ["Clones d'ombre", 'Animé', 'Animé (pouvoirs)', 'slip', [0,3,4,0,0]], ["Super saut volant", 'Animé', 'Animé (pouvoirs)', 'high', [2,3,0,1,0]],
-  ["Aura de combat", 'Animé', 'Animé (pouvoirs)', null, [2,1,2,2,0]], ["Éveil intérieur", 'Animé', 'Animé (pouvoirs)', null, [4,2,0,0,0]],
-  ["Œil qui prédit", 'Animé', 'Animé (pouvoirs)', null, [0,1,4,0,0]], ["Mode furie", 'Animé', 'Animé (pouvoirs)', null, [5,2,-3,-1,0]],
-  ["Entraînement en gravité x10", 'Animé', 'Animé (pouvoirs)', null, [3,2,1,3,1]], ["Méditation sous la cascade", 'Animé', 'Animé (pouvoirs)', null, [0,0,2,3,0]],
-  ["Cri de guerre", 'Animé', 'Animé (pouvoirs)', null, [2,0,1,1,0]], ["Bouclier d'aura", 'Animé', 'Animé (pouvoirs)', null, [0,0,5,1,0]],
-  ["Endurance sans fin", 'Animé', 'Animé (pouvoirs)', null, [0,0,1,5,0]], ["Coup final de l'étoile", 'Animé', 'Animé (pouvoirs)', 'palm', [5,1,-1,-1,0]],
+  ["Vague d'énergie", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'beam', [4,0,0,-1,0]], ["Boule de feu", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'beam', [4,1,-1,-1,0]],
+  ["Rayon de foudre", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'beam', [3,3,-1,-1,0]], ["Souffle du dragon", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'beam', [5,-1,0,-2,0]],
+  ["Canon d'aura", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'beam', [5,0,-1,-2,0]], ["Éclair céleste", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'beam', [4,2,-1,-1,0]],
+  ["Les cent poings", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'chain', [1,5,-1,-1,0]], ["Poing de feu", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'cross', [4,1,0,0,0]],
+  ["Poing de glace", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'cross', [3,1,1,0,0]], ["Paume du tonnerre", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'palm', [4,1,0,0,0]],
+  ["Poing météore", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'hook', [5,0,-1,-1,0]], ["Coup de pied tornade", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'spin', [3,3,-1,0,0]],
+  ["Pied éclair", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'high', [2,4,0,0,0]], ["Lame de vent", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'high', [3,3,0,0,0]],
+  ["Genou volant", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'knee', [4,2,-1,0,0]], ["Projection céleste", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'throw', [3,0,0,0,4]],
+  ["Prise du serpent", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'grab', [1,1,1,0,4]], ["Téléportation éclair", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'slip', [0,4,3,0,0]],
+  ["Clones d'ombre", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'slip', [0,3,4,0,0]], ["Super saut volant", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'high', [2,3,0,1,0]],
+  ["Aura de combat", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [2,1,2,2,0]], ["Éveil intérieur", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [4,2,0,0,0]],
+  ["Œil qui prédit", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [0,1,4,0,0]], ["Mode furie", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [5,2,-3,-1,0]],
+  ["Entraînement en gravité x10", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [3,2,1,3,1]], ["Méditation sous la cascade", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [0,0,2,3,0]],
+  ["Cri de guerre", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [2,0,1,1,0]], ["Bouclier d'aura", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [0,0,5,1,0]],
+  ["Endurance sans fin", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [0,0,1,5,0]], ["Coup final de l'étoile", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'palm', [5,1,-1,-1,0]],
 ]);
+// Powers in the style of cartoons from all over the world (original names, no existing character)
+{ const C = (cat, art, list) => list.forEach(([n, a, m]) => CAT.push([n, art, 'Dessins animés : ' + cat, a, m]));
+  C('énergie et arts martiaux', 'Animé japonais', [["Transformation de puissance", null, [5,3,1,1,0]], ["Explosion d'aura", 'beam', [5,0,0,-2,0]], ["Rayon des deux mains", 'beam', [5,0,-1,-2,0]], ["Disque d'énergie tranchant", 'beam', [4,2,-1,-1,0]], ["Coup de la comète", 'cross', [5,1,-1,0,0]], ["Vol supersonique", 'slip', [1,5,2,0,0]]]);
+  C('ninjas et samouraïs', 'Animé japonais', [["Clone qui explose", 'slip', [2,2,3,0,0]], ["Shuriken d'énergie", 'beam', [3,3,0,0,0]], ["Pas de l'ombre", 'slip', [0,5,3,0,0]], ["Lame de lune", 'high', [4,3,0,0,0]], ["Tornade de feuilles", 'spin', [2,4,1,0,0]], ["Sceau de paralysie", 'grab', [1,1,2,0,4]]]);
+  C('énergie et arts martiaux', 'Animation chinoise (donghua)', [["Paume des neuf soleils", 'palm', [5,0,0,-1,0]], ["Épée volante", 'beam', [4,3,-1,-1,0]], ["Souffle de jade", 'beam', [3,1,1,0,0]], ["Corps de bronze immortel", null, [0,0,5,3,0]], ["Pas des nuages", 'slip', [0,4,3,1,0]], ["Poing du tigre céleste", 'cross', [4,2,0,0,0]]]);
+  C('énergie et arts martiaux', 'Animation coréenne', [["Coup de pied du phénix", 'high', [4,3,0,0,0]], ["Onde de choc du poing", 'beam', [4,1,0,-1,0]], ["Réflexes surhumains", null, [0,3,4,0,0]], ["Rafale de cent pieds", 'chain', [2,5,-1,-1,0]]]);
+  C('cartoon', 'Cartoon américain', [["Marteau géant", 'palm', [5,-1,-1,0,0]], ["Corps élastique", 'slip', [0,2,5,1,0]], ["Coup qui aplatit", 'hook', [5,0,-1,0,0]], ["Tornade qui tourne", 'spin', [3,4,-1,0,0]], ["Enclume qui tombe", 'beam', [5,-2,0,0,0]], ["Gants à ressort", 'jab', [2,4,0,0,0]], ["Course à toute vitesse", 'slip', [0,5,2,1,0]], ["Peau de banane", 'grab', [0,2,2,0,3]], ["Tarte à la crème", 'beam', [1,3,0,0,0]], ["Bâton de dynamite", 'beam', [5,0,-2,-1,0]], ["Se relever comme si de rien n'était", null, [0,0,3,5,0]], ["Gonfler comme un ballon", null, [0,-1,4,2,0]]]);
+  C('cartoon', 'BD et animation européennes', [["Potion de force", null, [5,1,1,2,0]], ["Gifle qui fait voler", 'palm', [4,1,0,0,0]], ["Coup de tête du costaud", 'cross', [4,0,1,0,0]], ["Lancer de menhir", 'throw', [5,-1,0,0,3]], ["Tourbillon de bagarre", 'chain', [3,3,-1,0,0]], ["Moustache de fer", null, [0,0,3,1,0]]]);
+  C('cartoon', 'Animation russe', [["Coup de l'ours des neiges", 'hook', [5,0,0,0,0]], ["Souffle de l'hiver", 'beam', [3,1,1,0,0]], ["Endurance de la taïga", null, [0,0,2,5,0]]]);
+  C('cartoon', 'Animation brésilienne', [["Ginga de la jungle", 'spin', [2,4,1,0,0]], ["Coup de pied du jaguar", 'high', [4,3,0,0,0]], ["Danse du carnaval", 'slip', [0,4,3,1,0]]]);
+  C('super-héros', 'Super-héros', [["Super force", null, [5,0,1,1,0]], ["Vision laser", 'beam', [4,3,0,0,0]], ["Souffle glacé", 'beam', [3,1,1,0,0]], ["Coup de poing volant", 'cross', [5,3,-1,0,0]], ["Bouclier lancé", 'beam', [3,2,2,0,0]], ["Peau d'acier", null, [0,-1,5,2,0]], ["Super vitesse", 'slip', [1,5,2,0,0]], ["Toile qui attrape", 'grab', [0,3,1,0,4]], ["Griffes rétractables", 'chain', [3,3,0,0,0]], ["Régénération", null, [0,0,2,5,0]], ["Sonar", null, [0,1,3,0,0]], ["Atterrissage de héros", 'palm', [4,1,0,0,0]]]);
+  C('magie', 'Animation magique', [["Boule de feu magique", 'beam', [4,1,-1,0,0]], ["Éclair de foudre", 'beam', [4,3,-1,-1,0]], ["Mur de glace", null, [0,0,5,0,0]], ["Vague d'eau", 'beam', [3,1,1,0,0]], ["Poing de pierre", 'cross', [5,-1,1,0,0]], ["Lame de vent magique", 'high', [3,4,0,0,0]], ["Baguette qui repousse", 'beam', [2,2,2,0,0]], ["Bouclier enchanté", null, [0,0,5,1,0]], ["Sort de lenteur", 'grab', [1,1,2,0,3]], ["Potion de soin", null, [0,0,1,4,0]], ["Transformation en animal", null, [3,3,1,1,0]], ["Pluie d'étoiles", 'beam', [4,2,-1,-1,0]]]);
+  C('animaux et robots', 'Animaux héros', [["Griffes de tigre", 'chain', [3,3,0,0,0]], ["Morsure du crocodile", 'grab', [3,0,1,0,4]], ["Coup de queue", 'spin', [3,3,0,0,0]], ["Charge du rhinocéros", 'cross', [5,1,-1,0,0]], ["Saut du kangourou", 'high', [3,3,0,1,0]], ["Carapace de tortue", null, [0,-1,5,2,0]], ["Rugissement du lion", null, [2,0,1,0,0]], ["Agilité du chat", 'slip', [0,4,3,0,0]]]);
+  C('animaux et robots', 'Robots géants', [["Poing-fusée", 'beam', [5,1,-1,0,0]], ["Canon de poitrine", 'beam', [5,-1,0,-1,0]], ["Armure de titane", null, [0,-1,5,2,0]], ["Propulseurs", 'slip', [1,4,2,0,0]], ["Épée laser", 'high', [4,2,0,0,0]], ["Bras-foreuse", 'chain', [4,2,-1,0,0]]]);
+}
 const TECHS = CAT.map((c,i) => { const a = c[3] ? ANIM[c[3]] : [null,null,null]; return ['t'+i, c[0]+' ('+c[1]+')', c[2], a[0], a[1], a[2], c[4], c[1], c[0]]; });
 const BASIC = ['Jab','Direct','Crochet','Low kick','Teep','High kick','Ushiro-geri','Coude horizontal','Genou droit','Double-leg','O-goshi','Esquive rotative','Paume de fer','Rafale en chaîne'];
 const TT = id => TECHS.find(t => t[0]===id);
@@ -1040,7 +1055,10 @@ function personalMoves(ids){
   const h = fuse(head); if (h) out.pm_head = Object.assign(h, {name:'Tête · ' + h.top, short:'TÊTE', seq: kicksUp ? [ST('highCh',140),ST('highHit',150,H(9,{range:1.14})),ST('guard',220)] : [ST('jab',90,H(3,{stun:200})),ST('cross',130,H(8)),ST('guard',200)]});
   const b = fuse(pick(t => ['knee','teep','hook'].includes(t[3]))); if (b) out.pm_body = Object.assign(b, {name:'Corps · ' + b.top, short:'CORPS', seq:[ST('grab',120),ST('knee',140,H(8,{range:1,target:'body',react:'rBody'})),ST('guard',220)]});
   const l = fuse(pick(t => t[3]==='kick')); if (l) out.pm_leg = Object.assign(l, {name:'Jambes · ' + l.top, short:'JAMBES', seq:[ST('lowWind',130),ST('lowHit',150,H(7,{range:1.1,target:'leg',react:'rLeg',stun:420})),ST('lowWind',120),ST('guard',180)]});
-  const en = fuse(pick(t => t[3]==='beam')); if (en) out.pm_beam = Object.assign(en, {name:'Énergie · ' + en.top, short:'⚡ VAGUE', seq:[FXS('fz2',280,null,'charge'), FXS('fz4',320,H(10,{range:9,target:'body',react:'rBody',stun:300}),'beam'), ST('guard',240)]});
+  const enL = pick(t => t[3]==='beam'), en = fuse(enL);
+  if (en){ const names = enL.map(t => t[8]).join(' ');
+    const col = /feu|soleil|phénix|dynamite|comète/i.test(names) ? 0xff6a2a : /glac|hiver|neige|eau/i.test(names) ? 0x8fe8ff : /foudre|éclair|laser/i.test(names) ? 0xffe14a : /jade|étoile/i.test(names) ? 0x6dff9a : 0x6ad8ff;
+    out.pm_beam = Object.assign(en, {name:'Énergie · ' + en.top, short:'⚡ VAGUE', seq:[FXS('fz2',280,null,'charge',col), FXS('fz4',320,H(10,{range:9,target:'body',react:'rBody',stun:300}),'beam',col), ST('guard',240)]}); }
   const e = fuse(pick(t => t[3]==='elbow')); if (e) out.pm_elbow = Object.assign(e, {name:'Coude · ' + e.top, short:'COUDE', seq:[ST('elbow',120,H(9,{range:.98})),ST('guard',200)]});
   const projL = pick(t => t[3]==='grab' || t[3]==='throw');
   const p = fuse(projL); if (p) out.pm_proj = Object.assign(p, {name:'Projection · ' + p.top, short:'PROJECTION', seq:[ST('grab',150,{grab: projL.filter(t=>t[3]==='throw').length >= projL.length/2 ? 'ippon' : 'plaquage', range:.98})]});
@@ -1254,7 +1272,7 @@ $('bFuse').onclick = () => { const rc = readCustom(); const f = fusedMove(cT, ''
 function fillAll(ids, tn, nm){ cT = ids; cSp = []; cInv = inventTechnique(ids, tn); $('cTN').value = tn; if (!$('cName').value.trim() || ["L'Ultime","Le Vert","Le Rouge"].includes($('cName').value)) $('cName').value = nm; createUI(); }
 $('pGreen').onclick = () => fillAll(TECHS.filter(t => t[6].every(v => v >= 0)).map(t => t[0]), 'Technique Verte', 'Le Vert');
 $('pRed').onclick = () => fillAll(TECHS.filter(t => t[6].some(v => v < 0)).map(t => t[0]), 'Technique Rouge', 'Le Rouge');
-$('pAnime').onclick = () => { $('pAll').onclick(); cT = TECHS.filter(t => t[2] === 'Animé (pouvoirs)').map(t => t[0]); cInv = inventTechnique(cT, 'Technique Animé'); $('cTN').value = 'Technique Animé'; $('cName').value = "Le Héros d'Animé"; cPers = []; cPersDone = false; if (typeof persUI === 'function') persUI(); createUI(); };
+$('pAnime').onclick = () => { $('pAll').onclick(); cT = TECHS.filter(t => /^Dessins animés/.test(t[2])).map(t => t[0]); cInv = inventTechnique(cT, 'Technique Dessin Animé'); $('cTN').value = 'Technique Dessin Animé'; $('cName').value = 'Le Héros des Dessins Animés'; cPers = []; cPersDone = false; if (typeof persUI === 'function') persUI(); createUI(); };
 $('pAll').onclick = () => { cGear = [...ALL_GEAR]; cMood = 'Confiant'; cBody = {age:28, os:99, mains:99, poumons:99}; cTr = {agr:99, iq:99, calme:99, patience:99, ruse:99, courage:99}; $('cLife').value = 1000; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); cPers = candidates().map(x => x.id); cPersDone = true; if (typeof persUI === 'function') persUI(); if ($('cName').value === "L'Ultime") $('cName').value = 'La Fusion de Tous'; createUI(); };
 $('bSaveMe').onclick = () => { if (!cT.length) return;
   if (!cSp.length && !cInv) $('bFuse').onclick();
@@ -1368,6 +1386,7 @@ function fxUpdate(f, o, other, dt){
   const X = f.fx; if (!X.trail.parent) scene.add(X.trail);
   const st = f.cur, kind = st && st.fx, k = st && f.curDur ? Math.min(1, f.t / f.curDur) : 0;
   const hand = o.lh.clone().lerp(o.rh, .5).addScaledVector(new THREE.Vector3(f.face, 0, 0), .08);
+  if (kind){ const c = st.col || 0x6ad8ff; X.ball.material.color.set(c); X.trail.material.color.set(c); }
   X.ball.visible = X.core.visible = !!kind; X.trail.visible = kind === "beam";
   if (kind === 'charge'){ const r = .05 + .13*k + Math.sin(performance.now()/40)*.01; X.ball.position.copy(hand); X.ball.scale.setScalar(r); X.core.position.copy(hand); X.core.scale.setScalar(r*.45); }
   if (kind === 'beam'){
@@ -1855,7 +1874,7 @@ $('mpJoin').onclick = () => {
 $('mpAuto').onclick = mpAuto;
 $('mpBack').onclick = () => { mpClose(); go('sMenu'); };
 $('bMP').onclick = () => go('sMP');
-const animeUI = () => { $('bAnime').textContent = save.anime ? '🌸 MODE ANIMÉ : OUI (toucher pour enlever)' : '🌸 MODE ANIMÉ (style dessin animé japonais)'; };
+const animeUI = () => { $('bAnime').textContent = save.anime ? '🌸 MODE DESSIN ANIMÉ : OUI (toucher pour enlever)' : '🌸 MODE DESSIN ANIMÉ (tous les dessins animés du monde)'; };
 $('bAnime').onclick = () => { save.anime = !save.anime; persist(); animeUI(); refreshToon(); };
 animeUI(); setTimeout(() => { if (save.anime) refreshToon(); }, 300);
 function mpOnData(m){
