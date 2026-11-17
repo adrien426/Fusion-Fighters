@@ -710,9 +710,7 @@ function menu(){
     <div class="tact"><b>Tes techniques :</b><ul>${PLAYER.moves.map(m=>`<li><b>${m[1]}</b> : ${m[2]}</li>`).join('')}</ul></div>
     <div class="tact" style="margin-top:8px"><b style="color:var(--gold)">⚡ TA TECHNIQUE (fixe, rien que pour toi) : Technique Fusion</b><br>${SPECIALS.fusion.desc}<br><span style="color:var(--mute)">Bouton ⚡ TECHNIQUE FUSION quand la jauge est dorée.</span></div>${M.all ? `<div class="tact" style="margin-top:8px"><b style="color:var(--gold)">🌍 + TECHNIQUE ULTIME</b><br>${SPECIALS.ultP.desc}<br><span style="color:var(--mute)">Un seul coup en plus de tes techniques : 🥊 Technique Ultime.</span></div>` : ''}`;
   const L = save.look || {};
-  $('meLook').innerHTML = `<div class="tg">Apparence de ton Tourbillon</div><div class="artChips">${SKINS.map(([n,v]) => `<button class="${(L.skin||'#d8d4cf')===v?'on':''}" data-ms="${v}"><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${v};vertical-align:-2px;margin-right:4px"></i>${n}</button>`).join('')}</div>
-    <div class="artChips" style="margin-top:6px"><button class="${!L.bare?'on':''}" data-mb="0">🥊 Gants</button><button class="${L.bare?'on':''}" data-mb="1">✋ Mains nues</button>${NAILS.map(([n,v]) => `<button class="${L.bare && L.nails===v?'on':''}" data-mn="${v}"><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${v};vertical-align:-2px;margin-right:4px"></i>${n}</button>`).join('')}</div>
-    <div class="tg" style="margin-top:6px">Équipement de ton Tourbillon</div><div class="artChips">${Object.entries(GEAR).map(([k,g]) => `<button class="${(save.gear||['nues']).includes(k)?'on':''}" data-mg="${k}">${g.n}</button>`).join('')}</div>
+  $('meLook').innerHTML = `<div class="tg">Équipement de ton Tourbillon</div><div class="artChips">${Object.entries(GEAR).map(([k,g]) => `<button class="${(save.gear||['nues']).includes(k)?'on':''}" data-mg="${k}">${g.n}</button>`).join('')}</div>
     <div class="tg" style="margin-top:6px">Humeur</div><div class="artChips">${Object.keys(MOODS).map(m => `<button class="${(save.mood||'Calme')===m?'on':''}" data-mm="${m}">${m}</button>`).join('')}</div>
     <div class="tm" style="font-size:12px;color:var(--mute);margin-top:4px">❤ Vie ${M.life || 100} · 🛡 Résistance ${Math.round((M.resist||0)*100)} % · Santé : pleine forme${M.healBonus ? ' · récupération +' + Math.round(M.healBonus*100) + ' %' : ''}</div>`;
   const setL = (k,v) => { save.look = Object.assign({skin:'#d8d4cf', nails:NAILS[0][1], bare:false}, save.look||{}, {[k]:v}); persist(); menu(); };
@@ -1717,7 +1715,7 @@ function fxUpdate(f, o, other, dt){
   if (X.weapon.visible){ const dir = o.rh.clone().sub(o.re).normalize(), len = wpn ? (/couteau|kukri|saï|kama/i.test(wpn.weapon || '') ? .3 : /lance|bâton|bo|échelle|crosse|club|batte|pelle|râteau|balai/i.test(wpn.weapon || '') ? .95 : .65) : .16;
     place(X.weapon, o.rh, o.rh.clone().addScaledVector(dir, len), wpn ? .022 : .035, wpn ? .022 : .05); X.weapon.material.color.set(wpn ? (/bâton|bo|batte|balai|bois|crosse|chaise|échelle/i.test(wpn.weapon || '') ? 0x8a5a2b : 0xb8c2cc) : 0x2b2f36); }
   { const mk = meleeOf(f), rk = rangedOf(f), shooting = f.cur && (f.cur.fx === 'aim' || f.cur.fx === 'shot');
-    weaponShow(X, shooting && rk ? WRANGED[rk].model : mk ? WMELEE[mk].model : rk ? WRANGED[rk].model : null, o, f); }
+    weaponShow(X, shooting && rk ? WRANGED[rk].model : mk ? WMELEE[mk].model : null, o, f); }   // guns are only drawn while aiming and shooting
   const st = f.cur, kind = st && st.fx, k = st && f.curDur ? Math.min(1, f.t / f.curDur) : 0;
   const hand = o.lh.clone().lerp(o.rh, .5).addScaledVector(new THREE.Vector3(f.face, 0, 0), .08);
   if (kind){ const c = st.col || 0x6ad8ff; X.ball.material.color.set(c); X.trail.material.color.set(c); }
