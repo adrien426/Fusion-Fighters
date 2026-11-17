@@ -1488,11 +1488,11 @@ function loadRig(M, name){ loadGLB(name, root => attachRig(M, root, name)); }
 // ---- Weapons: families (3D model, damage, light blood) picked from the fighter's own techniques ----
 const WMELEE = {
   knife: {n:'Couteau', model:'knife', mul:1.15, blood:1, re:/couteau|kukri|saï|kama/i},
-  cyber: {n:'Sabre futuriste', model:'cyber', mul:1.35, re:/lumineuse/i},
+  cyber: {n:'Sabre futuriste', model:'cyber', mul:1.35, blood:1, re:/lumineuse/i},
   blade: {n:'Katana', model:'katana', mul:1.35, blood:1, re:/katana|sabre/i},
   sword: {n:'Épée', model:'sword', mul:1.35, blood:1, re:/épée|machette|hache/i},
-  staff: {n:'Bâton', model:'bokken', mul:1, re:/bâton|\bbo\b|lance|balai|pelle|râteau|parapluie|échelle|escrima|tonfa|planche|panneau/i},
-  blunt: {n:'Batte / objet lourd', model:'bat', mul:1.1, re:/./}
+  staff: {n:'Bâton', model:'bokken', mul:1, blood:1, re:/bâton|\bbo\b|lance|balai|pelle|râteau|parapluie|échelle|escrima|tonfa|planche|panneau/i},
+  blunt: {n:'Batte / objet lourd', model:'bat', mul:1.1, blood:1, re:/./}
 };
 const WRANGED = {
   thrown: {n:'Projectile lancé', model:null, mul:1, re:/à eau|paintball|décharge/i},
@@ -1523,18 +1523,19 @@ function weaponShow(X, type, o, f){
   const obj = X.wm[type].obj; if (!obj) return;   // the simple stick stays visible while the model loads
   X.weapon.visible = false;
   // grip frame: h = direction of the hand, w = axis of the closed fist (thumb side). Blades and sticks are cocked up from the forearm, guns point along it.
-  const gun = type === 'gun' || type === 'rifle', yf = o.rh.clone().sub(o.re).normalize();
+  // guns go in the left hand: it is the arm that stretches out when aiming (the right hand stays by the chin)
+  const gun = type === 'gun' || type === 'rifle', S = gun ? 'Left' : 'Right', hk = gun ? o.lh : o.rh, yf = hk.clone().sub(gun ? o.le : o.re).normalize();
   // u = thumb side of the fist: always the forearm turned a quarter turn in the fight plane, so the palm never flips outward
   const u = new THREE.Vector3(-yf.y*f.face, yf.x*f.face, 0); u.addScaledVector(yf, -u.dot(yf));
   if (u.lengthSq() < 1e-4) u.set(0, 1, 0); u.normalize();
   // a raised forearm (guard) keeps the weapon almost upright instead of tipping it far behind the head
   const th = gun ? Math.PI/2 : 1.05 - .65*Math.max(0, yf.y), w = yf.clone().multiplyScalar(Math.cos(th)).addScaledVector(u, Math.sin(th)).normalize();
   const h = yf.clone().addScaledVector(w, -yf.dot(w)).normalize(), pn = h.clone().cross(w);
-  const M = f === A ? MA : MB, R = M && M.rig; let grip = o.rh;
-  if (R && R.wristR){   // turn the hand so the fist closes around the handle, and put the weapon in the palm
-    const sc = R.k0 * f.sc, Qm = _rq().setFromRotationMatrix(_rm.makeBasis(h.clone().negate(), pn, w));
-    R.B.RightHand.quaternion.copy(R.W.RightForeArm).invert().multiply(Qm.multiply(R.q.RightHand));
-    grip = R.wristR.clone().addScaledVector(h, .085*sc).addScaledVector(pn, -.022*sc);
+  const M = f === A ? MA : MB, R = M && M.rig; let grip = hk;
+  if (R && R['wrist'+S]){   // turn the hand so the fist closes around the handle, and put the weapon in the palm
+    const sc = R.k0 * f.sc, Qm = _rq().setFromRotationMatrix(gun ? _rm.makeBasis(h, pn.clone().negate(), w) : _rm.makeBasis(h.clone().negate(), pn, w));
+    R.B[S+'Hand'].quaternion.copy(R.W[S+'ForeArm']).invert().multiply(Qm.multiply(R.q[S+'Hand']));
+    grip = R['wrist'+S].clone().addScaledVector(h, .085*sc).addScaledVector(pn, (gun ? .022 : -.022)*sc);
   }
   const x = gun ? w.clone().negate() : h, y = gun ? h : w;
   obj.quaternion.setFromRotationMatrix(_rm.makeBasis(x, y, x.clone().cross(y))); obj.position.copy(grip); obj.scale.setScalar(f.sc);
@@ -1571,7 +1572,7 @@ function attachRig(M, root, name){
   if (miss.length){ console.warn('Character model is missing bones', miss); return; }
   if (M.rig) scene.remove(M.rig.root);
   scene.add(root); root.updateMatrixWorld(true);
-  const R = {root, B, q:{}, p:{}, W:{}, hand0: B.RightHand.quaternion.clone(), hip0: B.Hips.position.clone(), hipUp: B.Hips.position.clone().normalize()};
+  const R = {root, B, q:{}, p:{}, W:{}, hand0: {Left: B.LeftHand.quaternion.clone(), Right: B.RightHand.quaternion.clone()}, hip0: B.Hips.position.clone(), hipUp: B.Hips.position.clone().normalize()};
   for (const k in B){ R.q[k] = B[k].getWorldQuaternion(new THREE.Quaternion()); R.p[k] = B[k].getWorldPosition(new THREE.Vector3()); }
   R.k0 = RIG_HEIGHT / (R.p.HeadTop_End.y + .02); R.ankle = R.p.LeftFoot.y;
   const d = (a, b) => R.p[a].distanceTo(R.p[b]), dir = (a, b) => R.p[b].clone().sub(R.p[a]).normalize();
@@ -1635,7 +1636,7 @@ function rigPose(M, o, f){
     const fd = o[kH].clone().sub(o[kE]).normalize(), wrist = o[kH].clone().addScaledVector(fd, -.07*s);
     const shQ = W.Spine2.clone().multiply(B[S+'Shoulder'].quaternion);
     const r = limb(S, 'Arm', 'ForeArm', 'Hand', kE, kH, Qt, R.len.ua, R.len.fa, wrist, new THREE.Vector3(0, -1, 0), shQ);
-    if (S === 'Right'){ R.wristR = r.end; B.RightHand.quaternion.copy(R.hand0); }
+    R['wrist'+S] = r.end; B[S+'Hand'].quaternion.copy(R.hand0[S]);
     o[kE].copy(r.mid); o[kH].copy(r.end).addScaledVector(r.d2, .07*s);   // effects and weapons follow the real hands
   }
   for (const [S, kK, kF] of [['Left','lk','lf'], ['Right','rk','rf']]){
@@ -1694,7 +1695,7 @@ function clipApply(M, o, f, Qy, P0, s){
   for (const [S, kE, kH] of [['Left','le','lh'], ['Right','re','rh']]){
     B[S+'ForeArm'].getWorldPosition(o[kE]); const wr = B[S+'Hand'].getWorldPosition(_rv());
     o[kH].copy(wr).addScaledVector(wr.clone().sub(o[kE]).normalize(), .07*s);
-    if (S === 'Right'){ R.wristR = wr; B.RightForeArm.getWorldQuaternion(R.W.RightForeArm); }
+    R['wrist'+S] = wr; B[S+'ForeArm'].getWorldQuaternion(R.W[S+'ForeArm']);
   }
 }
 const lerp2 = (a,b,t) => { const o={}; for (const k of KEYS) o[k] = [a[k][0]+(b[k][0]-a[k][0])*t, a[k][1]+(b[k][1]-a[k][1])*t]; return o; };
@@ -1716,7 +1717,7 @@ function fxUpdate(f, o, other, dt){
   X.weapon.visible = !!(wpn || gun);
   if (X.weapon.visible){ const dir = o.rh.clone().sub(o.re).normalize(), len = wpn ? (/couteau|kukri|saï|kama/i.test(wpn.weapon || '') ? .3 : /lance|bâton|bo|échelle|crosse|club|batte|pelle|râteau|balai/i.test(wpn.weapon || '') ? .95 : .65) : .16;
     place(X.weapon, o.rh, o.rh.clone().addScaledVector(dir, len), wpn ? .022 : .035, wpn ? .022 : .05); X.weapon.material.color.set(wpn ? (/bâton|bo|batte|balai|bois|crosse|chaise|échelle/i.test(wpn.weapon || '') ? 0x8a5a2b : 0xb8c2cc) : 0x2b2f36); }
-  { const mk = meleeOf(f), rk = rangedOf(f), shooting = f.cur && (f.cur.fx === 'aim' || f.cur.fx === 'shot');
+  { const mk = meleeOf(f), rk = rangedOf(f), shooting = f.cur && (f.cur.fx === 'shot' || (f.cur.fx === 'aim' && f.t > .45 * (f.curDur || 1)));   // the gun appears once the arm is raised, never next to the head
     weaponShow(X, shooting && rk ? WRANGED[rk].model : mk ? WMELEE[mk].model : null, o, f); }   // guns are only drawn while aiming and shooting
   const st = f.cur, kind = st && st.fx, k = st && f.curDur ? Math.min(1, f.t / f.curDur) : 0;
   const hand = o.lh.clone().lerp(o.rh, .5).addScaledVector(new THREE.Vector3(f.face, 0, 0), .08);
