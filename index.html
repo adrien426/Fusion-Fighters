@@ -1361,7 +1361,20 @@ $('bSaveOpp').onclick = () => { if (!cT.length) return;
 
 // ===================== 3D =====================
 let cageG, ringG;
-function setArena(t){ save.arena = t; persist(); if (cageG){ cageG.visible = t==='cage'; ringG.visible = t==='ring'; } document.querySelectorAll('[data-arena]').forEach(b => b.classList.toggle('on', b.dataset.arena===t)); }
+// 3D arena models replace the simple cage / ring once loaded (only the chosen arena is downloaded)
+const ARENA_LOADED = {};
+function loadArena(t){
+  if (ARENA_LOADED[t] || !cageG) return; ARENA_LOADED[t] = true;
+  const G = t === 'cage' ? cageG : ringG;
+  loadGLB('a_' + t, root => {
+    root.traverse(o => { if (!o.isMesh) return; o.receiveShadow = true; const m = o.material; m.metalness = 0; m.metalnessMap = null; m.roughnessMap = null; m.roughness = Math.max(.7, m.roughness);
+      if (m.transparent){ m.transparent = false; m.alphaTest = .5; m.depthWrite = true; m.side = THREE.DoubleSide; }   // wire fence
+      if (t === 'ring') m.color.multiplyScalar(.8); });   // the white canvas is too bright under the lights
+    while (G.children.length) G.remove(G.children[0]);
+    root.position.y = .004; G.add(root); if (save.anime) setTimeout(refreshToon, 0);
+  });
+}
+function setArena(t){ save.arena = t; persist(); if (cageG){ cageG.visible = t==='cage'; ringG.visible = t==='ring'; loadArena(t); } document.querySelectorAll('[data-arena]').forEach(b => b.classList.toggle('on', b.dataset.arena===t)); }
 let renderer, scene, camera, MA, MB, flashM, flashMat, flashT = 9;
 const SC = 0.0118, UP = new THREE.Vector3(0,1,0);
 const ZD = {head:0,neck:0,hip:0,le:-0.21,lh:-0.08,re:0.21,rh:0.08,lk:-0.11,lf:-0.14,rk:0.11,rf:0.15};
@@ -1380,7 +1393,7 @@ function init3D(){
   const floor = new THREE.Mesh(new THREE.CylinderGeometry(6.5,6.5,.06,8), new THREE.MeshStandardMaterial({color:0x1d1d24,roughness:.9}));
   floor.position.y = -.03; floor.receiveShadow = true; scene.add(floor);
   const ring = new THREE.Mesh(new THREE.RingGeometry(3.4,3.46,64), new THREE.MeshBasicMaterial({color:0xe63946,transparent:true,opacity:.35,side:THREE.DoubleSide}));
-  ring.rotation.x = -Math.PI/2; ring.position.y = .005; scene.add(ring);
+  ring.rotation.x = -Math.PI/2; ring.position.y = .012; scene.add(ring);
   // Arenas: MMA cage (octagon, radius 3.7) and boxing ring (3 ropes, half-size 3.6)
   cageG = new THREE.Group(); ringG = new THREE.Group(); scene.add(cageG); scene.add(ringG);
   const R = 3.7, fencePts = [];
