@@ -1482,7 +1482,7 @@ function charOf(d){
 // fetch a GLB once (cached by name) and parse a fresh copy for each user
 function loadGLB(name, done){
   const go = () => { RIG_BUF[name] = RIG_BUF[name] || fetch('models/' + name + '.glb').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); });
-    RIG_BUF[name].then(buf => new THREE.GLTFLoader().parse(buf.slice(0), '', g => done(g.scene), e => console.warn('Model parse failed', name, e)))
+    RIG_BUF[name].then(buf => new THREE.GLTFLoader().parse(buf.slice(0), '', g => done(g.scene, g), e => console.warn('Model parse failed', name, e)))
       .catch(e => { delete RIG_BUF[name]; console.warn('Model load failed', name, e); }); };
   if (THREE.GLTFLoader) go(); else loadScript2(['https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js', 'https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js'], go);
 }
@@ -1571,7 +1571,7 @@ function attachRig(M, root, name){
   if (miss.length){ console.warn('Character model is missing bones', miss); return; }
   if (M.rig) scene.remove(M.rig.root);
   scene.add(root); root.updateMatrixWorld(true);
-  const R = {root, B, q:{}, p:{}, W:{}, hand0: B.RightHand.quaternion.clone()};
+  const R = {root, B, q:{}, p:{}, W:{}, hand0: B.RightHand.quaternion.clone(), hip0: B.Hips.position.clone(), hipUp: B.Hips.position.clone().normalize()};
   for (const k in B){ R.q[k] = B[k].getWorldQuaternion(new THREE.Quaternion()); R.p[k] = B[k].getWorldPosition(new THREE.Vector3()); }
   R.k0 = RIG_HEIGHT / (R.p.HeadTop_End.y + .02); R.ankle = R.p.LeftFoot.y;
   const d = (a, b) => R.p[a].distanceTo(R.p[b]), dir = (a, b) => R.p[b].clone().sub(R.p[a]).normalize();
@@ -1644,6 +1644,57 @@ function rigPose(M, o, f){
     // keep the foot flat when it is near the ground and the shin is roughly vertical
     const flat = Math.max(0, Math.min(1, 1 - (r.end.y - R.ankle*s) / .25)) * Math.max(0, -r.d2.y);
     setW(S+'Foot', r.Qb.clone().slerp(Qy, flat).multiply(R.q[S+'Foot']), W[S+'Leg']);
+  }
+  clipApply(M, o, f, Qy, P0, s);
+}
+
+// ===================== MOTION CLIPS =====================
+// Mixamo animations blended over the pose-driven skeleton for a few moments: ready stance, K.O. fall, winner, loser.
+// The fight logic still runs on the 2D poses; clips only change what the body looks like.
+const CLIP_DEF = {stance:{hold:1}, ko:{once:1, speed:2.2}, victory:{loop:1}, defeated:{loop:1}};   // the K.O. fall is sped up to finish before the next round
+const CLIPS = {}, CLIP_SKIP = /Hand(Thumb|Index|Middle|Ring|Pinky)|_End|ToeBase/, CLIP_HIP = .99;   // hip height (m) of the skeleton the clips were made on
+function loadClip(name){
+  if (CLIPS[name]) return; const C = CLIPS[name] = {ready:false, q:{}};
+  loadGLB('an_' + name, (root, g) => { const a = g.animations && g.animations[0]; if (!a) return; C.dur = a.duration;
+    for (const t of a.tracks){ const m = t.name.match(/^(.*)\.(quaternion|position)$/); if (!m) continue; const b = m[1].replace(/^mixamorig\d*:?/, '');
+      if (m[2] === 'quaternion' && !CLIP_SKIP.test(b)) C.q[b] = t.createInterpolant();
+      if (m[2] === 'position' && b === 'Hips'){ C.hp = t.createInterpolant(); C.hp0 = Array.from(C.hp.evaluate(0)); C.unit = Math.hypot(...C.hp0) > 10 ? .01 : 1; } }
+    C.ready = !!(C.q.Hips && C.hp); });
+}
+function clipFor(f){
+  if (!F) return null;
+  if (f.state === 'ko') return 'ko';
+  if (f.cur || f.acro || !['idle','walk'].includes(f.state)) return null;
+  if (F.phase === 'roundEnd') return f.won ? 'victory' : 'defeated';
+  return 'stance';
+}
+const _cq = new THREE.Quaternion(), _cv = new THREE.Vector3();
+function clipApply(M, o, f, Qy, P0, s){
+  const R = M.rig, B = R.B, now = performance.now(), dt = Math.min(.05, (now - (R.clipNow || now)) / 1000); R.clipNow = now;
+  let want = clipFor(f); if (want){ loadClip(want); if (!CLIPS[want].ready) want = null; }
+  if (R.clip && R.clip === want) R.clipW = Math.min(1, R.clipW + dt/.22);
+  else { R.clipW = Math.max(0, (R.clipW || 0) - dt/.1); if (R.clipW <= 0){ R.clip = want; R.clipT = 0; } }
+  if (!R.clip || R.clipW <= 0) return;
+  const C = CLIPS[R.clip], D = CLIP_DEF[R.clip], w = R.clipW*R.clipW*(3 - 2*R.clipW);
+  R.clipT += dt * (D.speed || 1); const t = D.hold ? C.dur : D.loop ? R.clipT % C.dur : Math.min(R.clipT, C.dur - .001);
+  const mir = f.face < 0, P0i = P0.clone().invert();   // the fighter on the right plays the mirrored clip so both open their chest to the camera
+  for (const k in C.q){ const b = B[k], I = C.q[mir ? k.replace(/^(Left|Right)/, x => x === 'Left' ? 'Right' : 'Left') : k]; if (!b || !I) continue;
+    const v = I.evaluate(t); _cq.set(v[0], mir ? -v[1] : v[1], mir ? -v[2] : v[2], v[3]);
+    if (k === 'Hips') _cq.premultiply(P0).premultiply(Qy).premultiply(P0i);   // turn the whole body to face the opponent
+    b.quaternion.slerp(_cq, w); }
+  // hips position: height along the skeleton's own up axis, plus the clip's sideways travel (none for a held stance), scaled to this body
+  const v = C.hp.evaluate(t), up = R.hipUp, r = R.hip0.length() * C.unit / CLIP_HIP, par = B.Hips.parent;
+  const hgt = (v[0]*up.x + v[1]*up.y + v[2]*up.z) * r;
+  _cv.set(v[0] - C.hp0[0], v[1] - C.hp0[1], v[2] - C.hp0[2]).multiplyScalar(D.hold ? 0 : r); _cv.addScaledVector(up, -_cv.dot(up)); if (mir) _cv.x = -_cv.x;
+  _cv.addScaledVector(up, hgt);
+  par.localToWorld(_cv).applyQuaternion(Qy); _cv.x += f.x; _cv.y += f.lift || 0;
+  B.Hips.position.copy(par.worldToLocal(o.hip.clone().lerp(_cv, w)));
+  // weapons and effects follow the real hands
+  B.Hips.updateMatrixWorld(true);
+  for (const [S, kE, kH] of [['Left','le','lh'], ['Right','re','rh']]){
+    B[S+'ForeArm'].getWorldPosition(o[kE]); const wr = B[S+'Hand'].getWorldPosition(_rv());
+    o[kH].copy(wr).addScaledVector(wr.clone().sub(o[kE]).normalize(), .07*s);
+    if (S === 'Right'){ R.wristR = wr; B.RightForeArm.getWorldQuaternion(R.W.RightForeArm); }
   }
 }
 const lerp2 = (a,b,t) => { const o={}; for (const k of KEYS) o[k] = [a[k][0]+(b[k][0]-a[k][0])*t, a[k][1]+(b[k][1]-a[k][1])*t]; return o; };
@@ -1756,7 +1807,7 @@ function setControl(f){
 }
 $('ctl').onclick = () => { if (F && !F.lesson) { setControl(P===A ? B : A); banner(P===A ? 'TU CONTRÔLES ' + nameOf(A.data).toUpperCase() : 'TU CONTRÔLES ' + curOpp.person.toUpperCase(), 1000); } };
 function newRound(){
-  A.x=-1.4; B.x=1.4; for (const f of [A,B]){ f.hp=Math.round(f.hpMax*healthOf(f.data.health)[2]); f.st=100; f.zone={head:100, body:100, leg:100}; f.bal=100; f.dazed=0; f.kds=0; f.ribs=false; f.handHurt=false; f.acro=null; f.lift=0; f.q=[]; f.cur=null; f.state='idle'; f.pose={...G}; f.from={...G}; f.armor=0; f.invuln=0; }
+  A.x=-1.4; B.x=1.4; for (const f of [A,B]){ f.hp=Math.round(f.hpMax*healthOf(f.data.health)[2]); f.st=100; f.zone={head:100, body:100, leg:100}; f.bal=100; f.dazed=0; f.kds=0; f.ribs=false; f.handHurt=false; f.acro=null; f.lift=0; f.won=false; f.q=[]; f.cur=null; f.state='idle'; f.pose={...G}; f.from={...G}; f.armor=0; f.invuln=0; }
   F.time = 60; F.phase='intro'; F.phaseT=1.4; banner('ROUND '+F.round);
 }
 function zoneHUD(id, f){ const c = v => v > 60 ? '#52b788' : v > 40 ? '#f4b942' : '#e63946'; $(id).innerHTML = [['🧠','head'],['🫁','body'],['🦵','leg']].map(([i,k]) => `<span>${i}<i style="width:${f.zone[k]*.22}px;background:${c(f.zone[k])}"></i></span>`).join(''); }
@@ -1929,12 +1980,12 @@ function onEvent(f, ev){
 }
 function roundOver(winner){
   if (F.phase !== 'fight') return;
-  F.phase = 'roundEnd'; F.phaseT = 2.4; winner.wins++; slowmo = .3;
+  F.phase = 'roundEnd'; F.phaseT = 2.4; winner.wins++; winner.won = true; slowmo = .3;
   banner(winner===A ? 'K.O. !' : 'K.O....', 1800);
 }
 function timeUp(){
   F.phase = 'roundEnd'; F.phaseT = 2.2;
-  const w = A.hp/A.hpMax >= B.hp/B.hpMax ? A : B; w.wins++; banner('TEMPS ! ' + (w===A ? 'ROUND GAGNÉ' : 'ROUND PERDU'), 1800);
+  const w = A.hp/A.hpMax >= B.hp/B.hpMax ? A : B; w.wins++; w.won = true; banner('TEMPS ! ' + (w===A ? 'ROUND GAGNÉ' : 'ROUND PERDU'), 1800);
 }
 function endMatch(){
   F.phase = 'over';
