@@ -1488,7 +1488,9 @@ function loadRig(M, name){ loadGLB(name, root => attachRig(M, root, name)); }
 // ---- Weapons: families (3D model, damage, light blood) picked from the fighter's own techniques ----
 const WMELEE = {
   knife: {n:'Couteau', model:'knife', mul:1.15, blood:1, re:/couteau|kukri|saï|kama/i},
-  blade: {n:'Katana / épée', model:'katana', mul:1.35, blood:1, re:/épée|katana|sabre|machette|hache/i},
+  cyber: {n:'Sabre futuriste', model:'cyber', mul:1.35, re:/lumineuse/i},
+  blade: {n:'Katana', model:'katana', mul:1.35, blood:1, re:/katana|sabre/i},
+  sword: {n:'Épée', model:'sword', mul:1.35, blood:1, re:/épée|machette|hache/i},
   staff: {n:'Bâton', model:'bokken', mul:1, re:/bâton|\bbo\b|lance|balai|pelle|râteau|parapluie|échelle|escrima|tonfa|planche|panneau/i},
   blunt: {n:'Batte / objet lourd', model:'bat', mul:1.1, re:/./}
 };
@@ -1500,7 +1502,7 @@ const WRANGED = {
 const wFam = (T, name, dflt) => Object.keys(T).find(k => T[k].re.test(name || '')) || dflt;
 // weapon families a fighter may use: one per kind of weapon technique he owns (first technique first)
 function weaponsOf(d){
-  if (d.all) return {melee:['blade','knife','staff','blunt'], ranged:['pistol','rifle','thrown']};
+  if (d.all) return {melee:['blade','sword','cyber','knife','staff','blunt'], ranged:['pistol','rifle','thrown']};
   const L = (d.techIds || []).map(TT).filter(Boolean), uniq = a => [...new Set(a)];
   const melee = uniq(L.filter(t => t[3] === 'swing').map(t => wFam(WMELEE, t[8], 'blunt'))), ranged = uniq(L.filter(t => t[3] === 'shot').map(t => wFam(WRANGED, t[8], 'thrown')));
   const pm = d.pmoves || {};
