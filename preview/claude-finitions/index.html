@@ -157,7 +157,7 @@ body.anime #banner{font-family:'Bangers','Impact',sans-serif;-webkit-text-stroke
   <div class="rankbox">Ton classement<b id="myRank">Non classé</b></div>
   <div class="fusionCard" id="meCard"></div>
   <div class="fusionCard" id="meLook" style="padding:10px 14px"></div>
-  <button class="big" id="bEverything" style="font-size:24px;padding:16px 10px;background:linear-gradient(90deg,#e63946,#f4b942,#ff4fa3,#7b5cff,#2fa36b);border:3px solid #fff">🌍 TOUT CE QU'IL Y A<br><span style="font-size:13px">ton Tourbillon et ton adversaire ont tout, puis combat</span></button>
+  <button class="big" id="bEverything" style="font-size:24px;padding:16px 10px;background:linear-gradient(90deg,#e63946,#f4b942,#ff4fa3,#7b5cff,#2fa36b);border:3px solid #fff">🌍 METTRE TOUT CE QU'IL Y A<br><span style="font-size:13px">ton Tourbillon et ton adversaire ont tout, puis combat</span></button>
   <button class="big alt" id="bMeAll" style="font-size:19px;border-color:var(--gold)"></button>
   <button class="big" id="bOpp">🏆 Classement : choisir un adversaire</button>
   <button class="big alt" id="bCreate">🛠 Créer mon propre adversaire</button>
@@ -190,7 +190,7 @@ body.anime #banner{font-family:'Bangers','Impact',sans-serif;-webkit-text-stroke
 <section class="screen" id="sCreate">
   <h2>Créer un adversaire</h2>
   <p class="sub">Choisis son physique et ses techniques. Chaque choix fait monter ou baisser ses stats et sa note.</p>
-  <button class="big" id="pAll" style="font-size:26px;padding:18px 10px;background:linear-gradient(90deg,#e63946,#f4b942,#ff4fa3,#7b5cff,#2fa36b);border:3px solid #fff">🌍 TOUT CE QU'IL Y A</button>
+  <button class="big" id="pAll" style="font-size:26px;padding:18px 10px;background:#d62839;border:3px solid #fff;color:#fff">😀 METTRE TOUT CE QU'IL Y A</button>
   <p class="sub" style="text-align:center;margin-top:-4px">Vraiment tout : combat, armes, pistolets, couteaux, films, dessins animés, tout au max.</p>
   <div id="myOpps"></div>
   <div class="fusionCard" id="cTop" style="border:2px solid var(--gold);background:linear-gradient(135deg,#2a2210,#16161c)"></div>
@@ -706,13 +706,11 @@ function me(){
 function menu(){
   $('myRank').textContent = save.rank>NOPP ? 'Non classé' : '#'+save.rank;
   const M = me();
-  $('meCard').innerHTML = `<div style="font-size:12px;color:var(--mute)">TON COMBATTANT · TON STYLE${M.all?' · 🌍 TOUT MIS (${TECHS.length} techniques)':''}</div><div class="fn">🌀 ${PLAYER.name}</div>${sheetHTML(M)}
+  $('meCard').innerHTML = `<div style="font-size:12px;color:var(--mute)">TON COMBATTANT · TON STYLE${M.all?' · 🌍 TOUT MIS (' + TECHS.length + ' techniques)':''}</div><div class="fn">🌀 ${PLAYER.name}</div>${sheetHTML(M)}
     <div class="tact"><b>Tes techniques :</b><ul>${PLAYER.moves.map(m=>`<li><b>${m[1]}</b> : ${m[2]}</li>`).join('')}</ul></div>
     <div class="tact" style="margin-top:8px"><b style="color:var(--gold)">⚡ TA TECHNIQUE (fixe, rien que pour toi) : Technique Fusion</b><br>${SPECIALS.fusion.desc}<br><span style="color:var(--mute)">Bouton ⚡ TECHNIQUE FUSION quand la jauge est dorée.</span></div>${M.all ? `<div class="tact" style="margin-top:8px"><b style="color:var(--gold)">🌍 + TECHNIQUE ULTIME</b><br>${SPECIALS.ultP.desc}<br><span style="color:var(--mute)">Un seul coup en plus de tes techniques : 🥊 Technique Ultime.</span></div>` : ''}`;
   const L = save.look || {};
-  $('meLook').innerHTML = `<div class="tg">Apparence de ton Tourbillon</div><div class="artChips">${SKINS.map(([n,v]) => `<button class="${(L.skin||'#d8d4cf')===v?'on':''}" data-ms="${v}"><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${v};vertical-align:-2px;margin-right:4px"></i>${n}</button>`).join('')}</div>
-    <div class="artChips" style="margin-top:6px"><button class="${!L.bare?'on':''}" data-mb="0">🥊 Gants</button><button class="${L.bare?'on':''}" data-mb="1">✋ Mains nues</button>${NAILS.map(([n,v]) => `<button class="${L.bare && L.nails===v?'on':''}" data-mn="${v}"><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${v};vertical-align:-2px;margin-right:4px"></i>${n}</button>`).join('')}</div>
-    <div class="tg" style="margin-top:6px">Équipement de ton Tourbillon</div><div class="artChips">${Object.entries(GEAR).map(([k,g]) => `<button class="${(save.gear||['nues']).includes(k)?'on':''}" data-mg="${k}">${g.n}</button>`).join('')}</div>
+  $('meLook').innerHTML = `<div class="tg">Équipement de ton Tourbillon</div><div class="artChips">${Object.entries(GEAR).map(([k,g]) => `<button class="${(save.gear||['nues']).includes(k)?'on':''}" data-mg="${k}">${g.n}</button>`).join('')}</div>
     <div class="tg" style="margin-top:6px">Humeur</div><div class="artChips">${Object.keys(MOODS).map(m => `<button class="${(save.mood||'Calme')===m?'on':''}" data-mm="${m}">${m}</button>`).join('')}</div>
     <div class="tm" style="font-size:12px;color:var(--mute);margin-top:4px">❤ Vie ${M.life || 100} · 🛡 Résistance ${Math.round((M.resist||0)*100)} % · Santé : pleine forme${M.healBonus ? ' · récupération +' + Math.round(M.healBonus*100) + ' %' : ''}</div>`;
   const setL = (k,v) => { save.look = Object.assign({skin:'#d8d4cf', nails:NAILS[0][1], bare:false}, save.look||{}, {[k]:v}); persist(); menu(); };
@@ -722,7 +720,7 @@ function menu(){
   document.querySelectorAll('[data-mb]').forEach(b => b.onclick = () => setL('bare', b.dataset.mb==='1'));
   document.querySelectorAll('[data-mn]').forEach(b => b.onclick = () => { setL('nails', b.dataset.mn); setL('bare', true); });
   $('meCard').insertAdjacentHTML('afterbegin', mySwitchHTML()); bindMySwitch(menu);
-  $('bMeAll').textContent = M.all ? '↩ Revenir au Tourbillon normal' : `🌍 TOUT CE QU'IL Y A à mon Tourbillon (${TECHS.length} techniques)`;
+  $('bMeAll').textContent = M.all ? '↩ Revenir au Tourbillon normal' : `🌍 METTRE TOUT CE QU'IL Y A à mon Tourbillon (${TECHS.length} techniques)`;
 }
 $('bOpp').onclick = () => go('sOpp');
 document.querySelectorAll('[data-arena]').forEach(b => b.onclick = () => setArena(b.dataset.arena));
@@ -745,12 +743,23 @@ $('bGo').onclick = () => { const r = Math.max(1,Math.min(NOPP,+$('goRank').value
 let curOpp = null;
 const lookBadge = L => L ? `<span style="font-size:11px"><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.skin};vertical-align:-1px"></i> peau · ${L.bare ? `<i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.nails};vertical-align:-1px"></i> mains nues` : '🥊 gants'}</span>` : '';
 const myId = () => save.myChar || 'tourb';
+// 3D character of the player's fighter: the menu choice, whatever fighter is played
+const myChar3D = () => CHARS.some(c => c[0] === save.char) ? save.char : charOf(myData());
 const myData = () => myId() === 'tourb' ? me() : fighterData(myId());
 function mySwitchHTML(){
-  return `<div class="fusionCard" style="margin:8px 0"><div class="tact"><b style="color:var(--red)">🎮 Ton combattant pour ce combat</b></div><select class="sel2 mySel">${fighterOptions().map(([v,l]) => `<option value="${v}" ${v===myId()?'selected':''}>${l}</option>`).join('')}</select>${myId()!=='tourb' ? '<button class="big alt myBack" style="font-size:16px;margin-top:6px">↩ Reprendre mon Tourbillon</button>' : '<div class="tm" style="font-size:12px;color:var(--mute);margin-top:4px">Si tu ne changes rien, tu gardes ton Tourbillon.</div>'}</div>`;
+  return `<div class="fusionCard" style="margin:8px 0"><div class="tact"><b style="color:var(--red)">🎮 Ton combattant pour ce combat</b></div><select class="sel2 mySel">${fighterOptions().map(([v,l]) => `<option value="${v}" ${v===myId()?'selected':''}>${l}</option>`).join('')}</select>${myId()!=='tourb' ? '<button class="big alt myBack" style="font-size:16px;margin-top:6px">↩ Reprendre mon Tourbillon</button>' : '<div class="tm" style="font-size:12px;color:var(--mute);margin-top:4px">Si tu ne changes rien, tu gardes ton Tourbillon.</div>'}
+    <div class="tact" style="margin-top:10px"><b style="color:var(--red)">🧍 Ton personnage 3D</b></div><div class="artChips" style="margin-top:4px">${CHARS.map(([k,n]) => `<button class="${myChar3D()===k?'on':''}" data-mc="${k}">${n}</button>`).join('')}</div>${myWeaponsHTML()}</div>`;
+}
+function myWeaponsHTML(){
+  const wp = weaponsOf(myData()), row = (title, L, T, sv, attr) => !L.length ? '' : `<div class="tact" style="margin-top:10px"><b style="color:var(--red)">${title}</b></div><div class="artChips" style="margin-top:4px">${L.map(k => `<button class="${wPick(L, sv)===k?'on':''}" ${attr}="${k}">${T[k].n} · dégâts ×${String(T[k].mul).replace('.',',')}</button>`).join('')}</div>`;
+  return row('🗡 Ton arme', wp.melee, WMELEE, save.wpn, 'data-mw') + row('🔫 Ton arme de tir', wp.ranged, WRANGED, save.gun, 'data-mr')
+    + (!wp.melee.length && !wp.ranged.length ? '<div class="tm" style="font-size:12px;color:var(--mute);margin-top:8px">Pas d\'arme : ce combattant n\'a aucune technique d\'arme ni de tir.</div>' : '');
 }
 function bindMySwitch(after){
+  document.querySelectorAll('[data-mw]').forEach(el => el.onclick = () => { save.wpn = el.dataset.mw; persist(); after(); });
+  document.querySelectorAll('[data-mr]').forEach(el => el.onclick = () => { save.gun = el.dataset.mr; persist(); after(); });
   document.querySelectorAll('.mySel').forEach(el => el.onchange = () => { save.myChar = el.value === 'tourb' ? null : el.value; persist(); after(); });
+  document.querySelectorAll('[data-mc]').forEach(el => el.onclick = () => { save.char = el.dataset.mc; persist(); after(); });
   document.querySelectorAll('.myBack').forEach(el => el.onclick = () => { save.myChar = null; persist(); after(); });
 }
 function versus(r){ showVs(opponent(r)); }
@@ -1350,7 +1359,20 @@ $('bSaveOpp').onclick = () => { if (!cT.length) return;
 
 // ===================== 3D =====================
 let cageG, ringG;
-function setArena(t){ save.arena = t; persist(); if (cageG){ cageG.visible = t==='cage'; ringG.visible = t==='ring'; } document.querySelectorAll('[data-arena]').forEach(b => b.classList.toggle('on', b.dataset.arena===t)); }
+// 3D arena models replace the simple cage / ring once loaded (only the chosen arena is downloaded)
+const ARENA_LOADED = {};
+function loadArena(t){
+  if (ARENA_LOADED[t] || !cageG) return; ARENA_LOADED[t] = true;
+  const G = t === 'cage' ? cageG : ringG;
+  loadGLB('a_' + t, root => {
+    root.traverse(o => { if (!o.isMesh) return; o.receiveShadow = true; const m = o.material; m.metalness = 0; m.metalnessMap = null; m.roughnessMap = null; m.roughness = Math.max(.7, m.roughness);
+      if (m.transparent){ m.transparent = false; m.alphaTest = .5; m.depthWrite = true; m.side = THREE.DoubleSide; }   // wire fence
+      if (t === 'ring') m.color.multiplyScalar(.8); });   // the white canvas is too bright under the lights
+    while (G.children.length) G.remove(G.children[0]);
+    root.position.y = .004; G.add(root); if (save.anime) setTimeout(refreshToon, 0);
+  });
+}
+function setArena(t){ save.arena = t; persist(); if (cageG){ cageG.visible = t==='cage'; ringG.visible = t==='ring'; loadArena(t); } document.querySelectorAll('[data-arena]').forEach(b => b.classList.toggle('on', b.dataset.arena===t)); }
 let renderer, scene, camera, MA, MB, flashM, flashMat, flashT = 9;
 const SC = 0.0118, UP = new THREE.Vector3(0,1,0);
 const ZD = {head:0,neck:0,hip:0,le:-0.21,lh:-0.08,re:0.21,rh:0.08,lk:-0.11,lf:-0.14,rk:0.11,rf:0.15};
@@ -1369,7 +1391,7 @@ function init3D(){
   const floor = new THREE.Mesh(new THREE.CylinderGeometry(6.5,6.5,.06,8), new THREE.MeshStandardMaterial({color:0x1d1d24,roughness:.9}));
   floor.position.y = -.03; floor.receiveShadow = true; scene.add(floor);
   const ring = new THREE.Mesh(new THREE.RingGeometry(3.4,3.46,64), new THREE.MeshBasicMaterial({color:0xe63946,transparent:true,opacity:.35,side:THREE.DoubleSide}));
-  ring.rotation.x = -Math.PI/2; ring.position.y = .005; scene.add(ring);
+  ring.rotation.x = -Math.PI/2; ring.position.y = .012; scene.add(ring);
   // Arenas: MMA cage (octagon, radius 3.7) and boxing ring (3 ropes, half-size 3.6)
   cageG = new THREE.Group(); ringG = new THREE.Group(); scene.add(cageG); scene.add(ringG);
   const R = 3.7, fencePts = [];
@@ -1421,7 +1443,11 @@ function to3(p, x, face, sc=1, lift=0){
   o.mid = o.hip.clone().lerp(o.neck,.45); o.headB = o.neck.clone().addScaledVector(new THREE.Vector3().subVectors(o.head,o.neck),.45);
   return o;
 }
-function pose3(f,o){
+function pose3(f,o,ft){
+  if (ft){ let c = ft.mine ? myChar3D() : charOf(ft.data);
+    // the fighter on the right never takes the same character as the one on the left: it moves to the next one in the list
+    if (ft === B && A){ const ca = A.mine ? myChar3D() : charOf(A.data); if (c === ca) c = CHARS[(CHARS.findIndex(x => x[0] === c) + 1) % CHARS.length][0]; } if (f.rigWant !== c){ f.rigWant = c; loadRig(f, c); } }
+  if (f.rig && ft){ rigPose(f, o, ft); return; }
   f.bones.forEach(b => place(b.mesh,o[b.a],o[b.b],b.r,b.r)); f.joints.forEach(j => j.mesh.position.copy(o[j.k])); f.gloves.forEach(g => g.mesh.position.copy(o[g.k]));
   f.head.position.copy(o.head); place(f.chest,o.mid,o.neck.clone().add(new THREE.Vector3(0,-.02,0)),.11,.2); place(f.belly,o.hip,o.mid,.1,.155);
   f.pelvis.position.copy(o.hip); f.pelvis.scale.set(.1,.09,.17); f.pelvis.quaternion.copy(f.belly.quaternion);
@@ -1432,8 +1458,242 @@ function paint(M, L, isA){
   M.skinMat.color.set(L.skin || (isA ? '#d8d4cf' : '#8f9aab'));
   M.gloveMat.color.set(L.bare ? (L.skin || '#d8d4cf') : M.accent);
   M.gloves.forEach(g => g.mesh.scale.set(L.bare ? .05 : .075, L.bare ? .045 : .068, L.bare ? .05 : .068));
-  M.nailMat.color.set(L.nails || '#f1c9b8'); M.nails.forEach(n => n.mesh.visible = !!L.bare);
+  M.nailMat.color.set(L.nails || '#f1c9b8'); M.nails.forEach(n => n.mesh.visible = !!L.bare && !M.rig);
   if (save.anime) setTimeout(refreshToon, 0);
+}
+
+// ===================== 3D CHARACTER MODELS =====================
+// A skinned GLB (Mixamo skeleton) replaces the primitive mannequin. The 2D pose engine still drives everything:
+// torso/head are oriented from the pose, arms and legs are solved with 2-bone IK toward the pose's hands and feet.
+// If the model cannot be loaded, the primitive mannequin stays visible.
+const RIG_HEIGHT = 1.93;
+const CHARS = [['ninja','Ninja'],['james','James'],['leonar','Leonar'],['racer','Racer'],['swatman','SwatMan'],['megan','Megan'],['louise','Louise']];
+const RIG_NEED = ['Hips','Spine','Spine1','Spine2','Neck','Head','HeadTop_End','LeftShoulder','RightShoulder','LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand','LeftUpLeg','LeftLeg','LeftFoot','RightUpLeg','RightLeg','RightFoot'];
+const RIG_BUF = {};
+// the player picks a character in the menu; each opponent always gets the same one (from its name)
+function charOf(d){
+  if (d.char) return d.char;
+  if (!d.person) return CHARS.some(c => c[0] === save.char) ? save.char : 'ninja';
+  let h = 0; for (const ch of d.person) h = (h*31 + ch.charCodeAt(0)) >>> 0;
+  return CHARS[h % CHARS.length][0];
+}
+// fetch a GLB once (cached by name) and parse a fresh copy for each user
+function loadGLB(name, done){
+  const go = () => { RIG_BUF[name] = RIG_BUF[name] || fetch('models/' + name + '.glb').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); });
+    RIG_BUF[name].then(buf => new THREE.GLTFLoader().parse(buf.slice(0), '', g => done(g.scene, g), e => console.warn('Model parse failed', name, e)))
+      .catch(e => { delete RIG_BUF[name]; console.warn('Model load failed', name, e); }); };
+  if (THREE.GLTFLoader) go(); else loadScript2(['https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js', 'https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js'], go);
+}
+function loadRig(M, name){ loadGLB(name, root => attachRig(M, root, name)); }
+// ---- Weapons: families (3D model, damage, light blood) picked from the fighter's own techniques ----
+const WMELEE = {
+  knife: {n:'Couteau', model:'knife', mul:1.15, blood:1, re:/couteau|kukri|saï|kama/i},
+  blade: {n:'Katana / épée', model:'katana', mul:1.35, blood:1, re:/épée|katana|sabre|machette|hache/i},
+  staff: {n:'Bâton', model:'bokken', mul:1, re:/bâton|\bbo\b|lance|balai|pelle|râteau|parapluie|échelle|escrima|tonfa|planche|panneau/i},
+  blunt: {n:'Batte / objet lourd', model:'bat', mul:1.1, re:/./}
+};
+const WRANGED = {
+  thrown: {n:'Projectile lancé', model:null, mul:1, re:/à eau|paintball|décharge/i},
+  rifle: {n:'Fusil', model:'rifle', mul:2.5, blood:1, re:/fusil|tireur|arbalète/i},
+  pistol: {n:'Pistolet', model:'gun', mul:2, blood:1, re:/pistolet|revolver|gun-fu/i}
+};
+const wFam = (T, name, dflt) => Object.keys(T).find(k => T[k].re.test(name || '')) || dflt;
+// weapon families a fighter may use: one per kind of weapon technique he owns (first technique first)
+function weaponsOf(d){
+  if (d.all) return {melee:['blade','knife','staff','blunt'], ranged:['pistol','rifle','thrown']};
+  const L = (d.techIds || []).map(TT).filter(Boolean), uniq = a => [...new Set(a)];
+  const melee = uniq(L.filter(t => t[3] === 'swing').map(t => wFam(WMELEE, t[8], 'blunt'))), ranged = uniq(L.filter(t => t[3] === 'shot').map(t => wFam(WRANGED, t[8], 'thrown')));
+  const pm = d.pmoves || {};
+  if (!melee.length && pm.pm_swing) melee.push(wFam(WMELEE, pm.pm_swing.weapon, 'blunt'));
+  if (!ranged.length && pm.pm_shot) ranged.push('pistol');
+  return {melee, ranged};
+}
+const wPick = (L, wanted) => !L.length ? null : L.includes(wanted) ? wanted : L[0];
+const meleeOf = f => wPick(weaponsOf(f.data).melee, f.mine ? save.wpn : null);
+const rangedOf = f => wPick(weaponsOf(f.data).ranged, f.mine ? save.gun : null);
+// ---- 3D weapons held in the right hand (models: tip along +Y, edge / pistol grip along +X, origin at the hand) ----
+function weaponShow(X, type, o, f){
+  X.wm = X.wm || {};
+  for (const k in X.wm) if (X.wm[k].obj) X.wm[k].obj.visible = k === type;
+  if (!type){ X.weapon.visible = false; return; }
+  if (!X.wm[type]){ const slot = X.wm[type] = {obj: null};
+    loadGLB('w_' + type, root => { root.traverse(m => { if (m.isMesh) m.castShadow = true; }); root.visible = false; scene.add(root); slot.obj = root; if (save.anime) setTimeout(refreshToon, 0); }); }
+  const obj = X.wm[type].obj; if (!obj) return;   // the simple stick stays visible while the model loads
+  X.weapon.visible = false;
+  // grip frame: h = direction of the hand, w = axis of the closed fist (thumb side). Blades and sticks are cocked up from the forearm, guns point along it.
+  const gun = type === 'gun' || type === 'rifle', yf = o.rh.clone().sub(o.re).normalize();
+  // u = thumb side of the fist: always the forearm turned a quarter turn in the fight plane, so the palm never flips outward
+  const u = new THREE.Vector3(-yf.y*f.face, yf.x*f.face, 0); u.addScaledVector(yf, -u.dot(yf));
+  if (u.lengthSq() < 1e-4) u.set(0, 1, 0); u.normalize();
+  // a raised forearm (guard) keeps the weapon almost upright instead of tipping it far behind the head
+  const th = gun ? Math.PI/2 : 1.05 - .65*Math.max(0, yf.y), w = yf.clone().multiplyScalar(Math.cos(th)).addScaledVector(u, Math.sin(th)).normalize();
+  const h = yf.clone().addScaledVector(w, -yf.dot(w)).normalize(), pn = h.clone().cross(w);
+  const M = f === A ? MA : MB, R = M && M.rig; let grip = o.rh;
+  if (R && R.wristR){   // turn the hand so the fist closes around the handle, and put the weapon in the palm
+    const sc = R.k0 * f.sc, Qm = _rq().setFromRotationMatrix(_rm.makeBasis(h.clone().negate(), pn, w));
+    R.B.RightHand.quaternion.copy(R.W.RightForeArm).invert().multiply(Qm.multiply(R.q.RightHand));
+    grip = R.wristR.clone().addScaledVector(h, .085*sc).addScaledVector(pn, -.022*sc);
+  }
+  const x = gun ? w.clone().negate() : h, y = gun ? h : w;
+  obj.quaternion.setFromRotationMatrix(_rm.makeBasis(x, y, x.clone().cross(y))); obj.position.copy(grip); obj.scale.setScalar(f.sc);
+}
+// ---- light blood drops for blades and guns ----
+const BLOOD = []; let bloodMat = null;
+function bloodBurst(p, dir){
+  if (!bloodMat){ bloodMat = new THREE.MeshBasicMaterial({color:0x9b0f12}); bloodMat.userData.outlineParameters = NO_OUTLINE; }
+  for (let i = 0; i < 7; i++){
+    let b = BLOOD.find(x => x.t <= 0);
+    if (!b){ if (BLOOD.length >= 28) break; b = {m: new THREE.Mesh(US, bloodMat), v: new THREE.Vector3(), t: 0}; scene.add(b.m); BLOOD.push(b); }
+    b.m.position.copy(p); b.m.position.z += .14; b.v.set(dir*(.5 + Math.random()*1.3), .5 + Math.random()*1.5, (Math.random() - .5)*1.2);
+    b.t = .4 + Math.random()*.25; b.m.scale.setScalar(.011 + Math.random()*.013); b.m.visible = true;
+  }
+}
+function bloodUpdate(dt){ for (const b of BLOOD){ if (b.t <= 0) continue; b.t -= dt; b.v.y -= 6*dt; b.m.position.addScaledVector(b.v, dt); if (b.t <= 0 || b.m.position.y < .03){ b.t = 0; b.m.visible = false; } } }
+// when both fighters use the same character, the second one is tinted red
+function rigTint(){
+  if (!MB || !MB.rig) return;
+  const same = MA.rigWant === MB.rigWant;
+  MB.rig.root.traverse(o => { if (!o.isMesh) return; const m = o.material.userData.std || o.material, b = m.userData.base; if (!b) return;
+    m.color.setHex(same ? 0xff7466 : b.color); m.emissive.setHex(same ? 0x5a1410 : b.emissive); m.emissiveMap = same ? m.map : b.emissiveMap; m.needsUpdate = true; delete m.userData.toon; o.material = m; });
+  if (save.anime) setTimeout(refreshToon, 0);
+}
+function attachRig(M, root, name){
+  if (M.rigWant !== name) return;   // the player changed character while this one was loading
+  const B = {};
+  root.traverse(o => { if (o.isBone) B[o.name.replace(/^mixamorig\d*:?/, '')] = o;
+    if (o.isMesh){ o.castShadow = true; o.frustumCulled = false; const m = o.material = o.material.clone();
+      m.metalness = 0; m.metalnessMap = null; m.roughnessMap = null; m.roughness = .8;
+      if (m.transparent || /hair|lash/i.test(m.name)){ m.transparent = false; m.alphaTest = .45; m.depthWrite = true; m.side = THREE.DoubleSide; }   // hair cards
+      m.userData.base = {color: m.color.getHex(), emissive: m.emissive.getHex(), emissiveMap: m.emissiveMap}; } });
+  const miss = RIG_NEED.filter(k => !B[k]);
+  if (miss.length){ console.warn('Character model is missing bones', miss); return; }
+  if (M.rig) scene.remove(M.rig.root);
+  scene.add(root); root.updateMatrixWorld(true);
+  const R = {root, B, q:{}, p:{}, W:{}, hand0: B.RightHand.quaternion.clone(), hip0: B.Hips.position.clone(), hipUp: B.Hips.position.clone().normalize()};
+  for (const k in B){ R.q[k] = B[k].getWorldQuaternion(new THREE.Quaternion()); R.p[k] = B[k].getWorldPosition(new THREE.Vector3()); }
+  R.k0 = RIG_HEIGHT / (R.p.HeadTop_End.y + .02); R.ankle = R.p.LeftFoot.y;
+  const d = (a, b) => R.p[a].distanceTo(R.p[b]), dir = (a, b) => R.p[b].clone().sub(R.p[a]).normalize();
+  R.len = {ua: d('LeftArm','LeftForeArm'), fa: d('LeftForeArm','LeftHand'), ul: d('LeftUpLeg','LeftLeg'), ll: d('LeftLeg','LeftFoot')};
+  R.dir = {}; for (const S of ['Left','Right']){ R.dir[S+'Arm'] = dir(S+'Arm', S+'ForeArm'); R.dir[S+'ForeArm'] = dir(S+'ForeArm', S+'Hand'); R.dir[S+'UpLeg'] = dir(S+'UpLeg', S+'Leg'); R.dir[S+'Leg'] = dir(S+'Leg', S+'Foot'); }
+  // close the hands into fists (fingers curl around the depth axis of the T-pose)
+  const curl = (k, axis, ang) => { const bn = B[k]; if (!bn) return; const D = _rq().setFromAxisAngle(axis, ang); bn.quaternion.multiply(R.q[k].clone().invert().multiply(D).multiply(R.q[k])); };
+  const AZ = new THREE.Vector3(0, 0, 1), AX = new THREE.Vector3(1, 0, 0);
+  for (const [S, sg] of [['Left', -1], ['Right', 1]]){
+    for (const fg of ['Index','Middle','Ring','Pinky']) for (const i of [1,2,3]) curl(S+'Hand'+fg+i, AZ, sg*1.25);
+    curl(S+'HandThumb1', AX, .9); curl(S+'HandThumb2', AX, .45); curl(S+'HandThumb3', AX, .35);   // thumb folds down over the fingers
+  }
+  M.rig = R; rigTint();
+  [...M.bones, ...M.joints, ...M.gloves, ...M.nails].forEach(x => x.mesh.visible = false); [M.head, M.chest, M.belly, M.pelvis].forEach(x => x.visible = false);
+  if (save.anime) setTimeout(refreshToon, 0);
+}
+const _rm = new THREE.Matrix4(), _rv = () => new THREE.Vector3(), _rq = () => new THREE.Quaternion();
+// 2-bone IK: returns the joint (elbow/knee) and the reachable end position
+function ik2(root, target, hint, l1, l2, fallback){
+  const n = target.clone().sub(root); let d = n.length(); if (d < 1e-5){ n.set(0,-1,0); d = 1e-5; } n.divideScalar(d);
+  d = Math.max(Math.abs(l1 - l2) + 1e-3, Math.min((l1 + l2) * .999, d));
+  const a = (l1*l1 - l2*l2 + d*d) / (2*d), h = Math.sqrt(Math.max(0, l1*l1 - a*a));
+  let pole = hint.clone().sub(root); pole.addScaledVector(n, -pole.dot(n));
+  if (pole.lengthSq() < 1e-6){ pole = fallback.clone(); pole.addScaledVector(n, -pole.dot(n)); }
+  if (pole.lengthSq() < 1e-6) pole.set(0, 0, 1);
+  pole.normalize();
+  return [root.clone().addScaledVector(n, a).addScaledVector(pole, h), root.clone().addScaledVector(n, d)];
+}
+function rigPose(M, o, f){
+  const R = M.rig, B = R.B, W = R.W, face = f.face, s = R.k0 * f.sc;
+  const setW = (k, q, parentQ) => { W[k] = q; B[k].quaternion.copy(parentQ).invert().multiply(q); };
+  R.root.scale.setScalar(s); B.Hips.parent.updateWorldMatrix(true, false);
+  const P0 = B.Hips.parent.getWorldQuaternion(_rq());
+  // torso frame: left is always the depth axis (the engine is 2D), up follows hip -> neck
+  const left = new THREE.Vector3(0, 0, -face), up = o.neck.clone().sub(o.hip).normalize();
+  const Qt = _rq().setFromRotationMatrix(_rm.makeBasis(left, up, left.clone().cross(up)));
+  const Qy = _rq().setFromRotationMatrix(_rm.makeBasis(left, UP, left.clone().cross(UP)));
+  const w = Math.max(0, Math.min(1, (Math.acos(Math.max(-1, Math.min(1, up.y))) - .6) / .6));
+  const Qh = Qy.clone().slerp(Qt, .55 + .45*w), Qs = Qy.clone().slerp(Qt, .8 + .2*w);
+  setW('Hips', Qh.clone().multiply(R.q.Hips), P0);
+  setW('Spine', Qs.clone().multiply(R.q.Spine), W.Hips);
+  setW('Spine1', Qt.clone().multiply(R.q.Spine1), W.Spine);
+  setW('Spine2', Qt.clone().multiply(R.q.Spine2), W.Spine1);
+  const hd = o.head.clone().sub(o.neck).normalize(), Qhd = _rq().setFromUnitVectors(up, hd).multiply(Qt);
+  setW('Neck', Qt.clone().slerp(Qhd, .5).multiply(R.q.Neck), W.Spine2);
+  setW('Head', Qhd.clone().multiply(R.q.Head), W.Neck);
+  B.Hips.position.copy(B.Hips.parent.worldToLocal(o.hip.clone()));
+  B.Hips.updateMatrixWorld(true);
+  const inv = k => R.q[k].clone().invert();
+  const limb = (S, up1, low1, end1, kMid, kEnd, Qref0, l1, l2, target, fallback, parentQ) => {
+    const root = B[S+up1].getWorldPosition(_rv());
+    const [mid, end] = ik2(root, target, o[kMid], l1*s, l2*s, fallback);
+    const d1 = mid.clone().sub(root).normalize(), d2 = end.clone().sub(mid).normalize();
+    const Qa = _rq().setFromUnitVectors(R.dir[S+up1].clone().applyQuaternion(Qref0), d1).multiply(Qref0);   // rotation applied to the rest pose
+    setW(S+up1, Qa.clone().multiply(R.q[S+up1]), parentQ);
+    const Qb = _rq().setFromUnitVectors(R.dir[S+low1].clone().applyQuaternion(Qa), d2).multiply(Qa);
+    setW(S+low1, Qb.clone().multiply(R.q[S+low1]), W[S+up1]);
+    return {mid, end, d2, Qb};
+  };
+  for (const [S, kE, kH] of [['Left','le','lh'], ['Right','re','rh']]){
+    const fd = o[kH].clone().sub(o[kE]).normalize(), wrist = o[kH].clone().addScaledVector(fd, -.07*s);
+    const shQ = W.Spine2.clone().multiply(B[S+'Shoulder'].quaternion);
+    const r = limb(S, 'Arm', 'ForeArm', 'Hand', kE, kH, Qt, R.len.ua, R.len.fa, wrist, new THREE.Vector3(0, -1, 0), shQ);
+    if (S === 'Right'){ R.wristR = r.end; B.RightHand.quaternion.copy(R.hand0); }
+    o[kE].copy(r.mid); o[kH].copy(r.end).addScaledVector(r.d2, .07*s);   // effects and weapons follow the real hands
+  }
+  for (const [S, kK, kF] of [['Left','lk','lf'], ['Right','rk','rf']]){
+    const ankle = o[kF].clone(); ankle.y = Math.max(R.ankle*s, ankle.y - .09 + R.ankle*s);
+    const r = limb(S, 'UpLeg', 'Leg', 'Foot', kK, kF, Qy, R.len.ul, R.len.ll, ankle, new THREE.Vector3(face, 0, 0), W.Hips);
+    // keep the foot flat when it is near the ground and the shin is roughly vertical
+    const flat = Math.max(0, Math.min(1, 1 - (r.end.y - R.ankle*s) / .25)) * Math.max(0, -r.d2.y);
+    setW(S+'Foot', r.Qb.clone().slerp(Qy, flat).multiply(R.q[S+'Foot']), W[S+'Leg']);
+  }
+  clipApply(M, o, f, Qy, P0, s);
+}
+
+// ===================== MOTION CLIPS =====================
+// Mixamo animations blended over the pose-driven skeleton for a few moments: ready stance, K.O. fall, winner, loser.
+// The fight logic still runs on the 2D poses; clips only change what the body looks like.
+const CLIP_DEF = {stance:{hold:1}, ko:{once:1, speed:2.2}, victory:{loop:1}, defeated:{loop:1}};   // the K.O. fall is sped up to finish before the next round
+const CLIPS = {}, CLIP_SKIP = /Hand(Thumb|Index|Middle|Ring|Pinky)|_End|ToeBase/, CLIP_HIP = .99;   // hip height (m) of the skeleton the clips were made on
+function loadClip(name){
+  if (CLIPS[name]) return; const C = CLIPS[name] = {ready:false, q:{}};
+  loadGLB('an_' + name, (root, g) => { const a = g.animations && g.animations[0]; if (!a) return; C.dur = a.duration;
+    for (const t of a.tracks){ const m = t.name.match(/^(.*)\.(quaternion|position)$/); if (!m) continue; const b = m[1].replace(/^mixamorig\d*:?/, '');
+      if (m[2] === 'quaternion' && !CLIP_SKIP.test(b)) C.q[b] = t.createInterpolant();
+      if (m[2] === 'position' && b === 'Hips'){ C.hp = t.createInterpolant(); C.hp0 = Array.from(C.hp.evaluate(0)); C.unit = Math.hypot(...C.hp0) > 10 ? .01 : 1; } }
+    C.ready = !!(C.q.Hips && C.hp); });
+}
+function clipFor(f){
+  if (!F) return null;
+  if (f.state === 'ko') return 'ko';
+  if (f.cur || f.acro || !['idle','walk'].includes(f.state)) return null;
+  if (F.phase === 'roundEnd') return f.won ? 'victory' : 'defeated';
+  return 'stance';
+}
+const _cq = new THREE.Quaternion(), _cv = new THREE.Vector3();
+function clipApply(M, o, f, Qy, P0, s){
+  const R = M.rig, B = R.B, now = performance.now(), dt = Math.min(.05, (now - (R.clipNow || now)) / 1000); R.clipNow = now;
+  let want = clipFor(f); if (want){ loadClip(want); if (!CLIPS[want].ready) want = null; }
+  if (R.clip && R.clip === want) R.clipW = Math.min(1, R.clipW + dt/.22);
+  else { R.clipW = Math.max(0, (R.clipW || 0) - dt/.1); if (R.clipW <= 0){ R.clip = want; R.clipT = 0; } }
+  if (!R.clip || R.clipW <= 0) return;
+  const C = CLIPS[R.clip], D = CLIP_DEF[R.clip], w = R.clipW*R.clipW*(3 - 2*R.clipW);
+  R.clipT += dt * (D.speed || 1); const t = D.hold ? C.dur : D.loop ? R.clipT % C.dur : Math.min(R.clipT, C.dur - .001);
+  const mir = f.face < 0, P0i = P0.clone().invert();   // the fighter on the right plays the mirrored clip so both open their chest to the camera
+  for (const k in C.q){ const b = B[k], I = C.q[mir ? k.replace(/^(Left|Right)/, x => x === 'Left' ? 'Right' : 'Left') : k]; if (!b || !I) continue;
+    const v = I.evaluate(t); _cq.set(v[0], mir ? -v[1] : v[1], mir ? -v[2] : v[2], v[3]);
+    if (k === 'Hips') _cq.premultiply(P0).premultiply(Qy).premultiply(P0i);   // turn the whole body to face the opponent
+    b.quaternion.slerp(_cq, w); }
+  // hips position: height along the skeleton's own up axis, plus the clip's sideways travel (none for a held stance), scaled to this body
+  const v = C.hp.evaluate(t), up = R.hipUp, r = R.hip0.length() * C.unit / CLIP_HIP, par = B.Hips.parent;
+  const hgt = (v[0]*up.x + v[1]*up.y + v[2]*up.z) * r;
+  _cv.set(v[0] - C.hp0[0], v[1] - C.hp0[1], v[2] - C.hp0[2]).multiplyScalar(D.hold ? 0 : r); _cv.addScaledVector(up, -_cv.dot(up)); if (mir) _cv.x = -_cv.x;
+  _cv.addScaledVector(up, hgt);
+  par.localToWorld(_cv).applyQuaternion(Qy); _cv.x += f.x; _cv.y += f.lift || 0;
+  B.Hips.position.copy(par.worldToLocal(o.hip.clone().lerp(_cv, w)));
+  // weapons and effects follow the real hands
+  B.Hips.updateMatrixWorld(true);
+  for (const [S, kE, kH] of [['Left','le','lh'], ['Right','re','rh']]){
+    B[S+'ForeArm'].getWorldPosition(o[kE]); const wr = B[S+'Hand'].getWorldPosition(_rv());
+    o[kH].copy(wr).addScaledVector(wr.clone().sub(o[kE]).normalize(), .07*s);
+    if (S === 'Right'){ R.wristR = wr; B.RightForeArm.getWorldQuaternion(R.W.RightForeArm); }
+  }
 }
 const lerp2 = (a,b,t) => { const o={}; for (const k of KEYS) o[k] = [a[k][0]+(b[k][0]-a[k][0])*t, a[k][1]+(b[k][1]-a[k][1])*t]; return o; };
 const ease = t => t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
@@ -1454,6 +1714,8 @@ function fxUpdate(f, o, other, dt){
   X.weapon.visible = !!(wpn || gun);
   if (X.weapon.visible){ const dir = o.rh.clone().sub(o.re).normalize(), len = wpn ? (/couteau|kukri|saï|kama/i.test(wpn.weapon || '') ? .3 : /lance|bâton|bo|échelle|crosse|club|batte|pelle|râteau|balai/i.test(wpn.weapon || '') ? .95 : .65) : .16;
     place(X.weapon, o.rh, o.rh.clone().addScaledVector(dir, len), wpn ? .022 : .035, wpn ? .022 : .05); X.weapon.material.color.set(wpn ? (/bâton|bo|batte|balai|bois|crosse|chaise|échelle/i.test(wpn.weapon || '') ? 0x8a5a2b : 0xb8c2cc) : 0x2b2f36); }
+  { const mk = meleeOf(f), rk = rangedOf(f), shooting = f.cur && (f.cur.fx === 'aim' || f.cur.fx === 'shot');
+    weaponShow(X, shooting && rk ? WRANGED[rk].model : mk ? WMELEE[mk].model : null, o, f); }   // guns are only drawn while aiming and shooting
   const st = f.cur, kind = st && st.fx, k = st && f.curDur ? Math.min(1, f.t / f.curDur) : 0;
   const hand = o.lh.clone().lerp(o.rh, .5).addScaledVector(new THREE.Vector3(f.face, 0, 0), .08);
   if (kind){ const c = st.col || 0x6ad8ff; X.ball.material.color.set(c); X.trail.material.color.set(c); }
@@ -1480,7 +1742,7 @@ function speedLines(ms){ const el = $('speed'); if (!el) return; el.style.transi
 function toonMat(m){
   if (!m || !m.isMeshStandardMaterial || m.transparent || m.opacity < 1 || !m.visible) return m;
   if (!m.userData.toon){ if (!TOON_GRAD){ const d = new Uint8Array([70, 70, 70, 150, 150, 150, 255, 255, 255]); TOON_GRAD = new THREE.DataTexture(d, 3, 1, THREE.RGBFormat); TOON_GRAD.minFilter = TOON_GRAD.magFilter = THREE.NearestFilter; TOON_GRAD.needsUpdate = true; }
-    const t = new THREE.MeshToonMaterial({gradientMap: TOON_GRAD, map: m.map || null, side: m.side, emissive: m.emissive ? m.emissive.clone() : 0x000000, emissiveIntensity: m.emissiveIntensity || 1}); t.color = m.color; t.userData.std = m; m.userData.toon = t; }
+    const t = new THREE.MeshToonMaterial({gradientMap: TOON_GRAD, map: m.map || null, emissiveMap: m.emissiveMap || null, skinning: !!m.skinning, alphaTest: m.alphaTest || 0, side: m.side, emissive: m.emissive ? m.emissive.clone() : 0x000000, emissiveIntensity: m.emissiveIntensity || 1}); t.color = m.color; t.userData.std = m; m.userData.toon = t; }
   return m.userData.toon;
 }
 // swap every figure/arena material between standard and toon
@@ -1515,7 +1777,7 @@ function startFight(test){
   lastTest = !!test; twoSel = null; $('pad2').style.display = 'none'; document.querySelector('.pad').style.display = ''; $('ctl').style.display = '';
   $('fight').classList.add('on'); resize();
   const M = myData();
-  A = makeFighter(M, -1.4, 1, false); B = makeFighter(curOpp, 1.4, -1, true);
+  A = makeFighter(M, -1.4, 1, false); B = makeFighter(curOpp, 1.4, -1, true); A.mine = true;
   if (isTourb(M)) A.aiMoves = ['tjab','vrille','fouet','faux','vent'].concat(M.all ? ['fused'] : []);
   paint(MA, A.data.look, true); paint(MB, B.data.look, false);
   F = {round:1, time:60, phase:'intro', phaseT:1.6, test:!!test};
@@ -1543,7 +1805,7 @@ function setControl(f){
 }
 $('ctl').onclick = () => { if (F && !F.lesson) { setControl(P===A ? B : A); banner(P===A ? 'TU CONTRÔLES ' + nameOf(A.data).toUpperCase() : 'TU CONTRÔLES ' + curOpp.person.toUpperCase(), 1000); } };
 function newRound(){
-  A.x=-1.4; B.x=1.4; for (const f of [A,B]){ f.hp=Math.round(f.hpMax*healthOf(f.data.health)[2]); f.st=100; f.zone={head:100, body:100, leg:100}; f.bal=100; f.dazed=0; f.kds=0; f.ribs=false; f.handHurt=false; f.acro=null; f.lift=0; f.q=[]; f.cur=null; f.state='idle'; f.pose={...G}; f.from={...G}; f.armor=0; f.invuln=0; }
+  A.x=-1.4; B.x=1.4; for (const f of [A,B]){ f.hp=Math.round(f.hpMax*healthOf(f.data.health)[2]); f.st=100; f.zone={head:100, body:100, leg:100}; f.bal=100; f.dazed=0; f.kds=0; f.ribs=false; f.handHurt=false; f.acro=null; f.lift=0; f.won=false; f.q=[]; f.cur=null; f.state='idle'; f.pose={...G}; f.from={...G}; f.armor=0; f.invuln=0; }
   F.time = 60; F.phase='intro'; F.phaseT=1.4; banner('ROUND '+F.round);
 }
 function zoneHUD(id, f){ const c = v => v > 60 ? '#52b788' : v > 40 ? '#f4b942' : '#e63946'; $(id).innerHTML = [['🧠','head'],['🫁','body'],['🦵','leg']].map(([i,k]) => `<span>${i}<i style="width:${f.zone[k]*.22}px;background:${c(f.zone[k])}"></i></span>`).join(''); }
@@ -1574,6 +1836,9 @@ function act(f, name){
   f.st = Math.max(0, f.st - m.cost); play(f, m.seq, (name==='slip'||name==='vent') ? 'slip' : 'attack');
   f.vmul = 1; if (name==='fused'){ f.vmul = f.data.fusedMove.mul; pop(f, f.data.fusedMove.name, '#f4b942'); }
   if (PM){ f.vmul = PM.mul; }
+  f.wHit = null;   // weapon family of this move: scales the damage, blades and guns draw a little blood
+  if (name === 'pm_swing' || name === 'swing'){ const k = meleeOf(f); if (k){ f.vmul *= WMELEE[k].mul; f.wHit = k; } }
+  if (name === 'pm_shot' || name === 'shot'){ const k = rangedOf(f); if (k) f.vmul *= WRANGED[k].mul; }
   const vb = .8 + f.A.vue/250 + (f.A.timing-50)/400;
   if (name==='slip') f.slipT = .35*vb; if (m.parry) f.parry = m.parry*vb; if (m.evade) f.evade = m.evade*vb; if (m.angle) f.angle = m.angle; return true;
 }
@@ -1685,6 +1950,7 @@ function onEvent(f, ev){
     if (Z==='head' && (d > o.hpMax*.1 || o.zone.head < 40) && o.dazed <= 0){ o.dazed = 2.2 * (1.3 - traitsOf(o.data).calme/100*.6); pop(o, '💫 SONNÉ', '#f4b942', true); }
     if (Z==='head') ev = Object.assign({}, ev, {stun: (ev.stun||300) * (1.2 - o.A.douleur/250) * (1.3 - o.A.menton/100*.6) * (o.zone.head < 40 ? 1.4 : 1)});
     flash(f3[f.cur.p && POSES[f.cur.p].hit || 'rh'] || o3.head);
+    { const wk = f.cur && f.cur.fx === 'shot' ? WRANGED[rangedOf(f)] : f.wHit && !f.special ? WMELEE[f.wHit] : null; if (wk && wk.blood) bloodBurst(({head:o3.head, body:o3.mid, leg:o3.lk})[Z], f.face); }
     if (ev.kdIfStun && wasStun) ev = Object.assign({}, ev, {kd:1});
     if (ev.count){ if (ev.count % 7 === 1) pop(f, ev.tag, '#f4b942'); $('banner').textContent = `${ev.count} / ${ev.total}`; $('banner').style.opacity = 1; clearTimeout($('banner')._t); $('banner')._t = setTimeout(()=>$('banner').style.opacity=0, 600); }
     else pop(o, (q >= .95 ? 'COUP PARFAIT ' : '') + (ev.kiai ? 'KIAI ! ' : '') + tag + vp + ' -'+Math.round(d) + ' (' + pct(q) + ')', ev.kd||tag||q >= .95 ? '#f4b942' : q < .35 ? '#9a9aa8' : '#e63946', ev.kd || q >= .95);
@@ -1712,12 +1978,12 @@ function onEvent(f, ev){
 }
 function roundOver(winner){
   if (F.phase !== 'fight') return;
-  F.phase = 'roundEnd'; F.phaseT = 2.4; winner.wins++; slowmo = .3;
+  F.phase = 'roundEnd'; F.phaseT = 2.4; winner.wins++; winner.won = true; slowmo = .3;
   banner(winner===A ? 'K.O. !' : 'K.O....', 1800);
 }
 function timeUp(){
   F.phase = 'roundEnd'; F.phaseT = 2.2;
-  const w = A.hp/A.hpMax >= B.hp/B.hpMax ? A : B; w.wins++; banner('TEMPS ! ' + (w===A ? 'ROUND GAGNÉ' : 'ROUND PERDU'), 1800);
+  const w = A.hp/A.hpMax >= B.hp/B.hpMax ? A : B; w.wins++; w.won = true; banner('TEMPS ! ' + (w===A ? 'ROUND GAGNÉ' : 'ROUND PERDU'), 1800);
 }
 function endMatch(){
   F.phase = 'over';
@@ -2218,7 +2484,7 @@ function loop(now){
     if (A.x > B.x - .3) A.x = B.x - .3;
     if (F.mp === 'host') mpSend(now);
     }
-    const oA = to3(A.pose, A.x, A.face, A.sc, A.lift||0), oB = to3(B.pose, B.x, B.face, B.sc, B.lift||0); pose3(MA, oA); pose3(MB, oB);
+    const oA = to3(A.pose, A.x, A.face, A.sc, A.lift||0), oB = to3(B.pose, B.x, B.face, B.sc, B.lift||0); pose3(MA, oA, A); pose3(MB, oB, B);
     fxUpdate(A, oA, B, dt); fxUpdate(B, oB, A, dt);
     // HUD
     $('hpA').style.width = (A.hp/A.hpMax*100)+'%'; $('hpB').style.width = (B.hp/B.hpMax*100)+'%'; $('lifeA').textContent = '❤ '+Math.ceil(A.hp)+'/'+A.hpMax; zoneHUD('zA', A); zoneHUD('zB', B); const sts = f => `⚖ ${Math.round(f.bal)} · 🔋 ${Math.round(f.st)}${f.dazed > 0 ? ' · 💫 SONNÉ' : ''}${f.bal < 40 ? ' · instable' : ''}`; $('stsA').textContent = sts(A); $('stsB').textContent = sts(B); $('lifeB').textContent = '❤ '+Math.ceil(B.hp)+'/'+B.hpMax; $('stA').style.width = A.st+'%'; $('stB').style.width = B.st+'%';
@@ -2232,6 +2498,7 @@ function loop(now){
     const asp = camera.aspect, dz = (asp < .9 ? 5.6 : 4.4) + spread*.7;
     camera.position.set(mid + (Math.random()-.5)*shake*.08, 1.5 + (Math.random()-.5)*shake*.08, dz);
     camera.lookAt(mid, .85, 0); shake *= .9;
+    bloodUpdate(rdt);
     if (flashT < 1){ flashT += rdt*4.5; flashM.scale.setScalar(.05+.22*Math.sin(Math.min(1,flashT)*Math.PI)); flashMat.opacity = 1-flashT; } else flashMat.opacity = 0;
     if (save.anime && OUTLINE){
       // never outline glows / transparent / hidden-by-opacity parts (flashes, auras, energy)
