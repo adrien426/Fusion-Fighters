@@ -228,9 +228,7 @@ body.anime #banner{font-family:'Bangers','Impact',sans-serif;-webkit-text-stroke
   </div>
   <div class="fusionCard">
     <div class="tact"><b>Apparence et santé</b></div>
-    <div class="tg">Couleur de peau</div><div class="artChips" id="cSkin"></div>
-    <div class="tg">Mains</div><div class="artChips" id="cHands"></div>
-    <div class="tg">Ongles</div><div class="artChips" id="cNails"></div>
+    <div class="tg">Personnage 3D</div><div class="artChips" id="cChar"></div>
     <div class="tg">État de santé</div><div class="artChips" id="cHealth"></div>
     <div class="tg">Humeur</div><div class="artChips" id="cMood"></div>
     <div class="tg">Équipement</div><div class="artChips" id="cGear"></div>
@@ -741,7 +739,7 @@ $('pPrev').onclick = () => { page = Math.max(0,page-1); oppUI(); window.scrollTo
 $('pNext').onclick = () => { page = Math.min(Math.ceil(NOPP/50)-1,page+1); oppUI(); window.scrollTo(0,0); };
 $('bGo').onclick = () => { const r = Math.max(1,Math.min(NOPP,+$('goRank').value||1)); page = Math.floor((r-1)/50); oppUI(); };
 let curOpp = null;
-const lookBadge = L => L ? `<span style="font-size:11px"><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.skin};vertical-align:-1px"></i> peau · ${L.bare ? `<i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.nails};vertical-align:-1px"></i> mains nues` : '🥊 gants'}</span>` : '';
+const lookBadge = L => '';   // skin and glove colours are not used by the 3D characters any more
 const myId = () => save.myChar || 'tourb';
 // 3D character of the player's fighter: the menu choice, whatever fighter is played
 const myChar3D = () => CHARS.some(c => c[0] === save.char) ? save.char : charOf(myData());
@@ -1153,14 +1151,14 @@ function buildCustom(c){
   const pmv = personalMoves(c.techs);
   if (!/^technique ultime/i.test(fmv.name)) SPECIALS[key].name = 'Technique ultime : ' + fmv.name;
   return {rank:null, custom:c.id, style, gear: c.gear || ['nues'], mood: c.mood || 'Calme', body: bodyOf(c), traits: c.traits, techIds: c.techs, fusedMove: fmv, pmoves: pmv, level:overall(s), s, moves: Object.keys(pmv).filter(k => k!=='pm_dodge').length ? Object.keys(pmv).filter(k => k!=='pm_dodge') : ['fused'], sps:[key], arts: c.techs.filter(id=>TT(id)).map(id=>TT(id)[8]),
-    h:c.h, w:c.w, title:'Créé par toi', person:c.name, idleP:'guard', life: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life, resist: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).res, healBonus: bonusOf(c.techs).heal, health: c.health || 'En forme', look: lookOf(c), m: c.m};
+    h:c.h, w:c.w, title:'Créé par toi', person:c.name, idleP:'guard', life: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).life, resist: vitals(c.life||100, c.techs, c.health||'En forme', c.w, c.m, c.traits, customStats(c), bodyOf(c)).res, healBonus: bonusOf(c.techs).heal, health: c.health || 'En forme', look: lookOf(c), m: c.m, char: CHARS.some(x => x[0] === c.char) ? c.char : undefined};
 }
 const byName = n => TECHS.find(t => t[8]===n)[0];
 let cInv = null, cPers = [], pq = '', cPersDone = false;
 let cT = ['Jab','Direct','Low kick','Double-leg'].map(byName), cSp = ['Jab','Direct','Double-leg'].map(byName), showAll = false, tq = '', tcat = 'Tout';
 function readCustom(){
   return {id: Date.now(), name: ($('cName').value.trim() || 'Adversaire mystère'), h:+$('cH').value/100, w:+$('cW').value, m:+$('cM').value, level:+$('cL').value,
-    techs:[...cT], spec:[], traits:{...cTr}, body:{...cBody}, gear:[...cGear], mood:cMood, tn:$('cTN').value.trim(), life:+$('cLife').value, health:cLook.health, skin:cLook.skin, nails:cLook.nails, bare:cLook.bare};
+    techs:[...cT], spec:[], traits:{...cTr}, body:{...cBody}, gear:[...cGear], mood:cMood, tn:$('cTN').value.trim(), life:+$('cLife').value, health:cLook.health, skin:cLook.skin, nails:cLook.nails, bare:cLook.bare, char:cLook.char || ''};
 }
 const MUSC = m => m < 20 ? 'Mince' : m < 45 ? 'Normal' : m < 70 ? 'Musclé' : m < 90 ? 'Très musclé' : 'Colosse';
 const modTxt = mods => mods.map((v,i) => v ? `<span class="${v>0?'up':'dn'}">${STAT[i]} ${v>0?'+':''}${v}</span>` : '').filter(Boolean).join(' · ');
@@ -1277,13 +1275,11 @@ function traitsUI(){
 let cLook = {skin:'#e8bd9c', nails:NAILS[0][1], bare:false, health:'En forme'};
 function lookUI(){
   const chip = (arr, key, sw) => arr.map(([n,v]) => `<button class="${cLook[key]===(sw?v:n)?'on':''}" data-${key}="${sw?v:n}">${sw?`<i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${v};vertical-align:-2px;margin-right:4px;border:1px solid #0006"></i>`:''}${n}</button>`).join('');
-  $('cSkin').innerHTML = chip(SKINS,'skin',true); $('cNails').innerHTML = chip(NAILS,'nails',true);
+  // 3D body of the created fighter ('' = picked automatically from his name)
+  $('cChar').innerHTML = [['','Automatique']].concat(CHARS).map(([k,n]) => `<button class="${(cLook.char||'')===k?'on':''}" data-char="${k}">${n}</button>`).join('');
+  document.querySelectorAll('#cChar [data-char]').forEach(b => b.onclick = () => { cLook.char = b.dataset.char; lookUI(); });
   $('cHealth').innerHTML = HEALTH.map(([n]) => `<button class="${cLook.health===n?'on':''}" data-health="${n}">${n}</button>`).join('');
-  $('cHands').innerHTML = `<button class="${!cLook.bare?'on':''}" data-bare="0">🥊 Gants</button><button class="${cLook.bare?'on':''}" data-bare="1">✋ Mains nues (ongles visibles)</button>`;
-  document.querySelectorAll('#cSkin [data-skin]').forEach(b => b.onclick = () => { cLook.skin = b.dataset.skin; lookUI(); });
-  document.querySelectorAll('#cNails [data-nails]').forEach(b => b.onclick = () => { cLook.nails = b.dataset.nails; cLook.bare = true; lookUI(); });
   document.querySelectorAll('#cHealth [data-health]').forEach(b => b.onclick = () => { cLook.health = b.dataset.health; lookUI(); seqUI(); });
-  document.querySelectorAll('#cHands [data-bare]').forEach(b => b.onclick = () => { cLook.bare = b.dataset.bare==='1'; lookUI(); });
   $('cMood').innerHTML = Object.keys(MOODS).map(m => `<button class="${cMood===m?'on':''}" data-mood="${m}">${m}</button>`).join('');
   $('cGear').innerHTML = Object.entries(GEAR).map(([k,g]) => `<button class="${cGear.includes(k)?'on':''}" data-gear="${k}" title="${gearFx(k).join(', ')}">${g.n}<br><small style="opacity:.75">${gearFx(k).slice(0,2).join(' · ')}</small></button>`).join('');
   document.querySelectorAll('#cMood [data-mood]').forEach(b => b.onclick = () => { cMood = b.dataset.mood; lookUI(); seqUI(); });
