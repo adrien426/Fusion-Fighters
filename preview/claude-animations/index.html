@@ -157,6 +157,7 @@ body.anime #banner{font-family:'Bangers','Impact',sans-serif;-webkit-text-stroke
   <div class="rankbox">Ton classement<b id="myRank">Non classé</b></div>
   <div class="fusionCard" id="meCard"></div>
   <div class="fusionCard" id="meLook" style="padding:10px 14px"></div>
+  <button class="big" id="bEverything" style="font-size:24px;padding:16px 10px;background:linear-gradient(90deg,#e63946,#f4b942,#ff4fa3,#7b5cff,#2fa36b);border:3px solid #fff">🌍 METTRE TOUT CE QU'IL Y A<br><span style="font-size:13px">ton Tourbillon et ton adversaire ont tout, puis combat</span></button>
   <button class="big alt" id="bMeAll" style="font-size:19px;border-color:var(--gold)"></button>
   <button class="big" id="bOpp">🏆 Classement : choisir un adversaire</button>
   <button class="big alt" id="bCreate">🛠 Créer mon propre adversaire</button>
@@ -189,6 +190,8 @@ body.anime #banner{font-family:'Bangers','Impact',sans-serif;-webkit-text-stroke
 <section class="screen" id="sCreate">
   <h2>Créer un adversaire</h2>
   <p class="sub">Choisis son physique et ses techniques. Chaque choix fait monter ou baisser ses stats et sa note.</p>
+  <button class="big" id="pAll" style="font-size:26px;padding:18px 10px;background:#d62839;border:3px solid #fff;color:#fff">😀 METTRE TOUT CE QU'IL Y A</button>
+  <p class="sub" style="text-align:center;margin-top:-4px">Vraiment tout : combat, armes, pistolets, couteaux, films, dessins animés, tout au max.</p>
   <div id="myOpps"></div>
   <div class="fusionCard" id="cTop" style="border:2px solid var(--gold);background:linear-gradient(135deg,#2a2210,#16161c)"></div>
   <div class="presets"><button id="pWorst">😵 Créer le pire</button><button id="pAvg">😐 Créer le moyen</button><button id="pBest">🏆 Créer le meilleur</button></div>
@@ -200,8 +203,10 @@ body.anime #banner{font-family:'Bangers','Impact',sans-serif;-webkit-text-stroke
     <div id="persSel" style="font-size:13px;margin:6px 0"></div>
     <button class="big" id="bPersFuse" style="font-size:20px;background:var(--blue)">👥 FUSIONNER LES COMBATTANTS</button>
   </div>
+  <button class="big" id="pMix" style="font-size:18px;background:linear-gradient(90deg,#e63946,#ff4fa3,#7b5cff)">⚔️🌸 COMBAT + DESSIN ANIMÉ : toutes les techniques de combat et tous les pouvoirs</button>
+  <button class="big" id="pWorld" style="font-size:18px;background:linear-gradient(90deg,#2f80c9,#2fa36b)">🌎 TOUT DU MONDE : toutes les techniques de combat du monde + armes, couteaux, pistolets, films d'action, objets…</button>
+  <button class="big" id="pNormal" style="font-size:16px;background:#3a3a46">🥋 Combat seulement (sans armes ni dessins animés)</button>
   <button class="big" id="pAnime" style="font-size:20px;background:linear-gradient(90deg,#ff4fa3,#7b5cff)">🌸 TOUT LE DESSIN ANIMÉ : tous les pouvoirs des dessins animés du monde + tout au max</button>
-  <button class="big" id="pAll" style="font-size:22px;background:linear-gradient(90deg,#e63946,#f4b942)">🌍 TOUT METTRE : toutes les techniques + tout au max</button>
   <div class="presets" style="grid-template-columns:1fr 1fr"><button id="pGreen" style="border-color:var(--green)">🟢 Tout le vert<br><span style="font:12px Inter;color:var(--mute)">que des bonus</span></button><button id="pRed" style="border-color:var(--red)">🔴 Tout le rouge<br><span style="font:12px Inter;color:var(--mute)">qui ont un malus</span></button></div>
   <div class="fusionCard">
     <div class="ovr"><div><div class="tact"><b>Nom</b></div><div class="pager" style="margin:4px 0"><input id="cName" maxlength="28" placeholder="Ex : Marco le Titan"></div></div><div class="note"><span>NOTE</span><b id="cOvr">--</b></div></div>
@@ -332,6 +337,8 @@ const ST = (p,ms,ev) => ({p,ms,ev});
 const H = (hit,o={}) => Object.assign({hit,range:1.08,target:'head',react:'rHead',stun:300},o);
 const FXS = (p, ms, ev, fx, col) => { const s = ST(p, ms, ev); s.fx = fx; s.col = col; return s; };
 const MOVES = {
+  shot:   {cost:12, seq:[FXS('jab',220,null,'aim'), FXS('jab',140,H(9,{range:9,target:'body',react:'rBody',stun:260}),'shot',0xffd34a), ST('guard',220)]},
+  swing:  {cost:11, seq:[ST('fz1',140), ST('fz4',140,H(11,{range:1.5,react:'rHead',stun:320})), ST('guard',220)]},
   beam:   {cost:16, seq:[FXS('fz2',300,null,'charge'), FXS('fz4',330,H(10,{range:9,target:'body',react:'rBody',stun:300}),'beam'), ST('guard',240)]},
   // --- Tourbillon (player) ---
   vrille: {cost:10, parry:.3, seq:[ST('vrille',140,H(9)),ST('vGuard',200)]},
@@ -415,6 +422,10 @@ const ARTS = [
 
 // ---- Signature technique builder (each opponent fuses his own perfect technique) ----
 const STEPS = {
+  shot:{n:'Tir',seq:()=>[FXS('jab',180,null,'aim'), FXS('jab',120,H(9,{range:9,target:'body',react:'rBody'}),'shot',0xffd34a)]},
+  kdShot:{n:'Rafale de tirs',seq:()=>[FXS('jab',160,null,'aim'), FXS('jab',110,H(7,{range:9}),'shot',0xffd34a), FXS('jab',110,H(7,{range:9}),'shot',0xffd34a), FXS('jab',120,H(12,{range:9,kd:1,shake:1.3}),'shot',0xffd34a), ST('guard',260)]},
+  swing:{n:"Coup d'arme",seq:()=>[ST('fz1',120), ST('fz4',130,H(12,{range:1.5}))]},
+  kdSwing:{n:"Coup d'arme final",seq:()=>[ST('fz1',150), ST('fz4',150,H(20,{range:1.55,kd:1,shake:1.4})), ST('guard',280)]},
   beam:{n:"Vague d'énergie",seq:()=>[FXS('fz2',260,null,'charge'), FXS('fz4',300,H(11,{range:9,target:'body',react:'rBody'}),'beam')]},
   kdBeam:{n:"Canon d'énergie",seq:()=>[FXS('fz2',420,null,'charge'), FXS('fz4',360,H(20,{range:9,kd:1,shake:1.6}),'beam'), ST('guard',300)]},
   jab:{n:'Jab',seq:()=>[ST('jab',90,H(4))]},
@@ -470,6 +481,9 @@ const NICK = ['le Roc','la Foudre',"l'Enclume",'le Cobra','la Tempête','le Gran
 
 // ---- Fighting style: each ranked fighter gets his own way of fighting ----
 const STY = {
+  toon:   ['🌸','Héros de dessin animé',"pouvoirs, énergie et accessoires de dessin animé"],
+  arsenal:['🗡','Guerrier armé',"armes et objets du monde entier"],
+  ultime: ['💥','Le Tout',"combat, armes, films et dessins animés réunis"],
   combo:  ['🥊','Mitrailleur',"plein de coups très vite, en rafale"],
   throw:  ['🤼','Projeteur',"il t'attrape et te jette au sol"],
   ground: ['⬇','Plaqueur',"il te plaque et frappe au sol"],
@@ -511,6 +525,10 @@ function customStyle(c, s){
     counter:(tr.patience + tr.iq + tr.calme)/110 + def/45,
     acro:   spd/40 + Math.max(0, 80-w)/12 - Math.max(0, w-90)/10 + share(t => /capoeira|lucha|parkour|gymn|wushu|540|tornado|saut|volant/i.test(t[7]+' '+t[8]))*6,
   };
+  const toonN = cnt(t => /^Dessins animés/.test(t[2])), worldN = cnt(t => /^Tout le monde/.test(t[2])), normN = N - toonN - worldN;
+  if (toonN >= 5 && worldN >= 5 && normN >= 5) return 'ultime';
+  if (toonN >= 5 && toonN >= worldN) return 'toon';
+  if (worldN >= 5) return 'arsenal';
   return Object.entries(sc).sort((a,b) => b[1]-a[1])[0][0];
 }
 function styleSpecial(style, fmv){
@@ -523,7 +541,11 @@ function styleSpecial(style, fmv){
     clinch: () => [...S('knee'),...S('elbow'),...S('knee'),...S('kdKnee')],
     power:  () => [...S('slip'),...S('kdPalm')],
     counter:() => [...S('slip'),...S('kdCross')],
+    toon:   () => [...S('chain'),...S('beam'),...S('kdBeam')],
+    arsenal:() => [...S('swing'),...S('swing'),...S('kdShot')],
+    ultime: () => [...S('chain'),...S('swing'),...S('shot'),...S('beam'),...S('kdBeam')],
   };
+  if (style === 'toon' || style === 'ultime') sp.power = 1.25;
   if (seqs[style]) sp.seq = seqs[style]();
   if (style === 'acro') sp.acro = true;
   if (style === 'counter'){ sp.counter = .8; sp.evade = .5; }
@@ -559,7 +581,7 @@ function opponent(r){
 }
 const STAT = ['Puissance','Vitesse','Défense','Endurance','Lutte'];
 const STC = ['#e63946','#4ea8de','#52b788','#f4b942','#b07cf0'];
-const MOVE_FR = {beam:"Vague d'énergie",fused:'Technique',jab:'Jab',cross:'Direct',hook:'Crochet',kick:'Low kick',high:'Coup de pied haut',spin:'Retourné',teep:'Teep',knee:'Genou',elbow:'Coude',chain:'Rafale',palm:'Paume',grab:'Plaquage',throw:'Projection',slip:'Esquive'};
+const MOVE_FR = {beam:"Vague d'énergie",shot:'Tir',swing:"Coup d'arme",fused:'Technique',jab:'Jab',cross:'Direct',hook:'Crochet',kick:'Low kick',high:'Coup de pied haut',spin:'Retourné',teep:'Teep',knee:'Genou',elbow:'Coude',chain:'Rafale',palm:'Paume',grab:'Plaquage',throw:'Projection',slip:'Esquive'};
 
 // ===================== SAVE =====================
 let save = {rank:NOPP+1, beaten:{}};
@@ -587,6 +609,12 @@ const GEAR = {
   coudes: {n:'💪 Coudières', at:{precision:-1, douleur:3}, elbow:.9},
   genoux: {n:'🦿 Genouillères', at:{jambes:4, acrobatie:2}},
   kimono: {n:'🥋 Kimono', grab:.1, at:{souplesse:-2}},
+  gilet:   {n:'🦺 Gilet pare-balles', shot:.35, body:.8, at:{acrobatie:-6, souplesse:-4}},
+  armure:  {n:'🛡 Armure complète', shot:.5, head:.75, body:.7, leg:.75, at:{acrobatie:-20, reflexes:-8, souplesse:-10}},
+  emeute:  {n:'🛡 Bouclier anti-émeute', shot:.4, guard:.2, at:{acrobatie:-8}},
+  integral:{n:'🪖 Casque intégral', shot:.7, head:.65, at:{vue:-12, reflexes:-3}},
+  coques:  {n:'🧤 Gants coqués', punch:1.08, noHand:1, at:{precision:-1}},
+  avbras:  {n:'🦾 Protège-avant-bras', guard:.06, at:{douleur:3}},
   chaussures:{n:'👟 Chaussures de lutte', grab:.05, bal:10, at:{coordination:4, acrobatie:3}},
 };
 const AT_FR = {precision:'précision', mains:'mains', menton:'menton', acrobatie:'acrobatie', vue:'vue', reflexes:'réflexes', jambes:'jambes', corps:'corps', douleur:'douleur', souplesse:'souplesse', coordination:'coordination'};
@@ -594,9 +622,10 @@ const gearFx = k => { const G = GEAR[k], fx = Object.entries(G.at||{}).map(([a,v
   if (G.punch && G.punch !== 1) fx.push(`${G.punch>1?'+':''}${Math.round((G.punch-1)*100)} % coups de poing`);
   if (G.guard) fx.push(`+${Math.round(G.guard*100)} % garde`); if (G.grab) fx.push(`${G.grab>0?'+':''}${Math.round(G.grab*100)} % prises`);
   if (G.ko) fx.push(`-${Math.round((1-G.ko)*100)} % risque K.O.`); for (const [z,l] of [['head','tête'],['body','corps'],['leg','jambes']]) if (G[z]) fx.push(`-${Math.round((1-G[z])*100)} % dégâts ${l}`);
+  if (G.shot) fx.push(`-${Math.round((1-G.shot)*100)} % dégâts des tirs`);
   if (G.noHand) fx.push('mains protégées'); if (G.bal) fx.push(`+${G.bal} équilibre`); return fx; };
-const BEST_GEAR = ['mma','bandes','dents','tibias','coquille','genoux','chaussures'];
-const ALL_GEAR = ['mma','bandes','dents','casque','tibias','coquille','plastron','coudes','genoux','kimono','chaussures'];
+const BEST_GEAR = ['mma','bandes','dents','tibias','coquille','genoux','chaussures','avbras'];
+const ALL_GEAR = ['mma','bandes','dents','casque','tibias','coquille','plastron','coudes','genoux','kimono','chaussures','gilet','armure','emeute','integral','avbras'];
 const MOODS = {'Motivé':{regen:1.15, q:.02}, 'Calme':{q:.05}, 'En colère':{dmg:1.1, q:-.05}, 'Stressé':{q:-.07, regen:.9}, 'Confiant':{q:.04}, 'Triste':{dmg:.92, regen:.9}};
 const gearOf = d => d.gear || ['nues'];
 const gearVal = (d, k, def) => gearOf(d).reduce((v, g) => GEAR[g] && GEAR[g][k] !== undefined ? (def===1 ? v*GEAR[g][k] : v + GEAR[g][k]) : v, def);
@@ -677,7 +706,7 @@ function me(){
 function menu(){
   $('myRank').textContent = save.rank>NOPP ? 'Non classé' : '#'+save.rank;
   const M = me();
-  $('meCard').innerHTML = `<div style="font-size:12px;color:var(--mute)">TON COMBATTANT · TON STYLE${M.all?' · 🌍 TOUT MIS (${TECHS.length} techniques)':''}</div><div class="fn">🌀 ${PLAYER.name}</div>${sheetHTML(M)}
+  $('meCard').innerHTML = `<div style="font-size:12px;color:var(--mute)">TON COMBATTANT · TON STYLE${M.all?' · 🌍 TOUT MIS (' + TECHS.length + ' techniques)':''}</div><div class="fn">🌀 ${PLAYER.name}</div>${sheetHTML(M)}
     <div class="tact"><b>Tes techniques :</b><ul>${PLAYER.moves.map(m=>`<li><b>${m[1]}</b> : ${m[2]}</li>`).join('')}</ul></div>
     <div class="tact" style="margin-top:8px"><b style="color:var(--gold)">⚡ TA TECHNIQUE (fixe, rien que pour toi) : Technique Fusion</b><br>${SPECIALS.fusion.desc}<br><span style="color:var(--mute)">Bouton ⚡ TECHNIQUE FUSION quand la jauge est dorée.</span></div>${M.all ? `<div class="tact" style="margin-top:8px"><b style="color:var(--gold)">🌍 + TECHNIQUE ULTIME</b><br>${SPECIALS.ultP.desc}<br><span style="color:var(--mute)">Un seul coup en plus de tes techniques : 🥊 Technique Ultime.</span></div>` : ''}`;
   const L = save.look || {};
@@ -693,7 +722,7 @@ function menu(){
   document.querySelectorAll('[data-mb]').forEach(b => b.onclick = () => setL('bare', b.dataset.mb==='1'));
   document.querySelectorAll('[data-mn]').forEach(b => b.onclick = () => { setL('nails', b.dataset.mn); setL('bare', true); });
   $('meCard').insertAdjacentHTML('afterbegin', mySwitchHTML()); bindMySwitch(menu);
-  $('bMeAll').textContent = M.all ? '↩ Revenir au Tourbillon normal' : `🌍 TOUT METTRE à mon Tourbillon (${TECHS.length} techniques)`;
+  $('bMeAll').textContent = M.all ? '↩ Revenir au Tourbillon normal' : `🌍 METTRE TOUT CE QU'IL Y A à mon Tourbillon (${TECHS.length} techniques)`;
 }
 $('bOpp').onclick = () => go('sOpp');
 document.querySelectorAll('[data-arena]').forEach(b => b.onclick = () => setArena(b.dataset.arena));
@@ -716,12 +745,23 @@ $('bGo').onclick = () => { const r = Math.max(1,Math.min(NOPP,+$('goRank').value
 let curOpp = null;
 const lookBadge = L => L ? `<span style="font-size:11px"><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.skin};vertical-align:-1px"></i> peau · ${L.bare ? `<i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${L.nails};vertical-align:-1px"></i> mains nues` : '🥊 gants'}</span>` : '';
 const myId = () => save.myChar || 'tourb';
+// 3D character of the player's fighter: the menu choice, whatever fighter is played
+const myChar3D = () => CHARS.some(c => c[0] === save.char) ? save.char : charOf(myData());
 const myData = () => myId() === 'tourb' ? me() : fighterData(myId());
 function mySwitchHTML(){
-  return `<div class="fusionCard" style="margin:8px 0"><div class="tact"><b style="color:var(--red)">🎮 Ton combattant pour ce combat</b></div><select class="sel2 mySel">${fighterOptions().map(([v,l]) => `<option value="${v}" ${v===myId()?'selected':''}>${l}</option>`).join('')}</select>${myId()!=='tourb' ? '<button class="big alt myBack" style="font-size:16px;margin-top:6px">↩ Reprendre mon Tourbillon</button>' : '<div class="tm" style="font-size:12px;color:var(--mute);margin-top:4px">Si tu ne changes rien, tu gardes ton Tourbillon.</div>'}</div>`;
+  return `<div class="fusionCard" style="margin:8px 0"><div class="tact"><b style="color:var(--red)">🎮 Ton combattant pour ce combat</b></div><select class="sel2 mySel">${fighterOptions().map(([v,l]) => `<option value="${v}" ${v===myId()?'selected':''}>${l}</option>`).join('')}</select>${myId()!=='tourb' ? '<button class="big alt myBack" style="font-size:16px;margin-top:6px">↩ Reprendre mon Tourbillon</button>' : '<div class="tm" style="font-size:12px;color:var(--mute);margin-top:4px">Si tu ne changes rien, tu gardes ton Tourbillon.</div>'}
+    <div class="tact" style="margin-top:10px"><b style="color:var(--red)">🧍 Ton personnage 3D</b></div><div class="artChips" style="margin-top:4px">${CHARS.map(([k,n]) => `<button class="${myChar3D()===k?'on':''}" data-mc="${k}">${n}</button>`).join('')}</div>${myWeaponsHTML()}</div>`;
+}
+function myWeaponsHTML(){
+  const wp = weaponsOf(myData()), row = (title, L, T, sv, attr) => !L.length ? '' : `<div class="tact" style="margin-top:10px"><b style="color:var(--red)">${title}</b></div><div class="artChips" style="margin-top:4px">${L.map(k => `<button class="${wPick(L, sv)===k?'on':''}" ${attr}="${k}">${T[k].n} · dégâts ×${String(T[k].mul).replace('.',',')}</button>`).join('')}</div>`;
+  return row('🗡 Ton arme', wp.melee, WMELEE, save.wpn, 'data-mw') + row('🔫 Ton arme de tir', wp.ranged, WRANGED, save.gun, 'data-mr')
+    + (!wp.melee.length && !wp.ranged.length ? '<div class="tm" style="font-size:12px;color:var(--mute);margin-top:8px">Pas d\'arme : ce combattant n\'a aucune technique d\'arme ni de tir.</div>' : '');
 }
 function bindMySwitch(after){
+  document.querySelectorAll('[data-mw]').forEach(el => el.onclick = () => { save.wpn = el.dataset.mw; persist(); after(); });
+  document.querySelectorAll('[data-mr]').forEach(el => el.onclick = () => { save.gun = el.dataset.mr; persist(); after(); });
   document.querySelectorAll('.mySel').forEach(el => el.onchange = () => { save.myChar = el.value === 'tourb' ? null : el.value; persist(); after(); });
+  document.querySelectorAll('[data-mc]').forEach(el => el.onclick = () => { save.char = el.dataset.mc; persist(); after(); });
   document.querySelectorAll('.myBack').forEach(el => el.onclick = () => { save.myChar = null; persist(); after(); });
 }
 function versus(r){ showVs(opponent(r)); }
@@ -798,13 +838,13 @@ const CAT = [
 ];
 CAT.push(...[["Hiza-guruma", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Sasae-tsurikomi-ashi", "Judo", "Projections", "throw", [2, 0, 1, 0, 4]], ["Uki-goshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["O-uchi-gari", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Ko-soto-gari", "Judo", "Projections", "throw", [1, 0, 1, 1, 4]], ["Ko-uchi-gari", "Judo", "Projections", "throw", [1, 0, 1, 1, 4]], ["Koshi-guruma", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Tsurikomi-goshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 5]], ["Okuri-ashi-harai", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Tai-otoshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Ko-soto-gake", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Tsuri-goshi", "Judo", "Projections", "throw", [1, 0, 2, 0, 4]], ["Yoko-otoshi", "Judo", "Projections", "throw", [1, 0, 1, 1, 4]], ["Ashi-guruma", "Judo", "Projections", "throw", [1, 0, 1, 1, 4]], ["Hane-goshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Harai-tsurikomi-ashi", "Judo", "Projections", "throw", [1, 0, 1, 1, 4]], ["Kata-guruma", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Sumi-gaeshi", "Judo", "Projections", "throw", [1, 0, 1, 1, 4]], ["Tani-otoshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Hane-makikomi", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Sukui-nage", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Utsuri-goshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["O-guruma", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Soto-makikomi", "Judo", "Projections", "throw", [2, 0, 1, 0, 4]], ["Uki-otoshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["O-soto-guruma", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Uki-waza", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Yoko-wakare", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Yoko-guruma", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Ushiro-goshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Ura-nage", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Sumi-otoshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Yoko-gake", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Obi-otoshi", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Seoi-otoshi", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Yama-arashi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["O-soto-otoshi", "Judo", "Projections", "throw", [2, 0, 1, 0, 4]], ["Daki-wakare", "Judo", "Projections", "throw", [1, 0, 1, 1, 4]], ["Hikikomi-gaeshi", "Judo", "Projections", "throw", [2, 0, 1, 0, 4]], ["Tawara-gaeshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Uchi-makikomi", "Judo", "Projections", "throw", [1, 0, 1, 0, 5]], ["Morote-gari", "Judo", "Projections", "throw", [1, 0, 1, 0, 5]], ["Kuchiki-taoshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Kibisu-gaeshi", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Ippon-seoi-nage", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Sode-tsurikomi-goshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Obi-tori-gaeshi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Harai-makikomi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Kani-basami", "Judo", "Projections", "throw", [1, 1, 1, 0, 4]], ["Uchi-mata-sukashi", "Judo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Kesa-gatame", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Yoko-shiho-gatame", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Kami-shiho-gatame", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Tate-shiho-gatame", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Juji-gatame", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Ude-garami", "Judo", "Sol et soumissions", "grab", [1, 0, 0, 1, 5]], ["Hadaka-jime", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Okuri-eri-jime", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 6]], ["Sankaku-jime", "Judo", "Sol et soumissions", "grab", [0, 1, 0, 1, 5]], ["Kata-gatame", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Hiza-gatame", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Waki-gatame", "Judo", "Sol et soumissions", "grab", [1, 0, 0, 1, 5]], ["Nami-juji-jime", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Kata-ha-jime", "Judo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Étranglement arrière", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 1, 1, 5]], ["Triangle", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Armbar", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Kimura", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 1, 0, 1, 5]], ["Guillotine", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Omoplata", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 6]], ["Ezekiel", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["D'Arce", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [1, 0, 0, 1, 5]], ["Anaconda", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Clé de cheville", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Passage de garde", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Montée", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Prise de dos", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Balayage de garde", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Berimbolo", "Jiu-jitsu brésilien", "Sol et soumissions", "grab", [0, 0, 0, 1, 6]], ["Clé de talon", "Sambo", "Sol et soumissions", "grab", [0, 1, 0, 1, 5]], ["Clé de genou", "Sambo", "Sol et soumissions", "grab", [0, 0, 0, 1, 6]], ["Projection-frappe", "Sambo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Balayage arrière", "Sambo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coup de pied bas militaire", "Sambo", "Pieds", "kick", [3, 0, 0, 1, 1]], ["Clé de cou", "Catch wrestling", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Double wristlock", "Catch wrestling", "Sol et soumissions", "grab", [1, 0, 0, 1, 5]], ["Ceinture arrière", "Catch wrestling", "Projections", "grab", [0, -1, 1, 2, 5]], ["Projection de catch", "Catch wrestling", "Projections", "grab", [0, -1, 0, 2, 5]], ["Souplesse arrière", "Lutte gréco-romaine", "Projections", "grab", [0, -1, 0, 2, 5]], ["Projection de bras", "Lutte gréco-romaine", "Projections", "throw", [2, 0, 1, 0, 4]], ["Tour de hanche", "Lutte gréco-romaine", "Projections", "throw", [2, 0, 1, 0, 4]], ["Ceinture avant", "Lutte gréco-romaine", "Projections", "grab", [0, -1, 0, 2, 5]], ["Fireman's carry", "Lutte libre", "Projections", "grab", [0, -1, 0, 2, 5]], ["Ankle pick", "Lutte libre", "Projections", "grab", [0, 0, 0, 2, 5]], ["Duck under", "Lutte libre", "Défense", "slip", [0, 2, 3, 0, 0]], ["Snap down", "Lutte libre", "Projections", "throw", [1, 0, 1, 0, 4]], ["High crotch", "Lutte libre", "Projections", "grab", [0, 0, 0, 2, 5]], ["Coup de poing vertical", "Marines (MCMAP)", "Poings", "cross", [3, 0, 0, 1, 0]], ["Coup de coude MCMAP", "Marines (MCMAP)", "Coudes et genoux", "elbow", [3, 1, 1, 0, 0]], ["Coup de genou MCMAP", "Marines (MCMAP)", "Coudes et genoux", "knee", [3, 0, 0, 1, 1]], ["Coup de pied frontal MCMAP", "Marines (MCMAP)", "Pieds", "teep", [1, 0, 2, 1, 0]], ["Balayage MCMAP", "Marines (MCMAP)", "Projections", "throw", [1, 1, 1, 0, 4]], ["Contre-étranglement", "Marines (MCMAP)", "Défense", "slip", [1, 2, 3, 0, 0]], ["Amenée au sol MCMAP", "Marines (MCMAP)", "Projections", "grab", [0, -1, 0, 2, 6]], ["Désarmement à mains nues", "Marines (MCMAP)", "Défense", "slip", [1, 2, 3, 0, 0]], ["Défense 360°", "Krav Maga (Tsahal)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Riposte simultanée", "Krav Maga (Tsahal)", "Poings", "cross", [3, 1, 0, 0, 0]], ["Coup de pied aux parties", "Krav Maga (Tsahal)", "Pieds", "teep", [1, 0, 2, 0, 0]], ["Paume au menton", "Krav Maga (Tsahal)", "Poings", "palm", [4, 0, 1, 0, 0]], ["Coude à 360°", "Krav Maga (Tsahal)", "Coudes et genoux", "elbow", [3, 1, 1, 0, 0]], ["Sortie d'étranglement", "Krav Maga (Tsahal)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Défense contre couteau", "Krav Maga (Tsahal)", "Défense", "slip", [0, 3, 3, 0, 0]], ["Défense contre saisie", "Krav Maga (Tsahal)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Genou de combat", "Krav Maga (Tsahal)", "Coudes et genoux", "knee", [3, 0, 0, 1, 1]], ["Rafale de rue", "Krav Maga (Tsahal)", "Poings", "chain", [-1, 4, 0, -1, 1]], ["Frappe relâchée", "Systema (Spetsnaz)", "Poings", "palm", [5, 0, 1, -1, 0]], ["Frappe courte", "Systema (Spetsnaz)", "Poings", "chain", [-1, 4, 0, -1, 0]], ["Déséquilibre", "Systema (Spetsnaz)", "Projections", "throw", [1, 0, 1, 1, 4]], ["Roulade Systema", "Systema (Spetsnaz)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Frappe au plexus", "Systema (Spetsnaz)", "Poings", "palm", [5, 0, 1, -1, 0]], ["Travail au sol Systema", "Systema (Spetsnaz)", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Tranche de la main", "Fairbairn (Defendu)", "Poings", "palm", [4, 0, 1, -1, 1]], ["Coup de menton", "Fairbairn (Defendu)", "Poings", "palm", [4, 1, 1, -1, 0]], ["Chute du tigre", "Fairbairn (Defendu)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coup de pied latéral", "Fairbairn (Defendu)", "Pieds", "teep", [2, 0, 2, 0, 0]], ["Coude Fairbairn", "Fairbairn (Defendu)", "Coudes et genoux", "elbow", [3, 1, 1, 0, 0]], ["Combat rapproché Kapap", "Kapap", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Projection Kapap", "Kapap", "Projections", "throw", [1, 0, 1, 1, 4]], ["Riposte Kapap", "Kapap", "Poings", "cross", [3, 0, 0, 0, 0]], ["Coude transperçant", "Lerdrit (armée thaï)", "Coudes et genoux", "elbow", [4, 1, 0, 0, 0]], ["Genou de guerre", "Lerdrit (armée thaï)", "Coudes et genoux", "knee", [3, 1, 0, 1, 1]], ["Pied tranchant", "Lerdrit (armée thaï)", "Pieds", "kick", [3, 0, 0, 1, 1]], ["Coude de rupture", "Lerdrit (armée thaï)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Frappe-projection", "Sambo de combat", "Projections", "throw", [2, 0, 1, 0, 4]], ["Coup de poing de combat", "Sambo de combat", "Poings", "cross", [3, 0, 0, 0, 0]], ["Clé de bras de combat", "Sambo de combat", "Sol et soumissions", "grab", [1, 0, 0, 1, 5]], ["Clé d'intervention", "Combat militaire", "Projections", "throw", [1, 0, 1, 0, 5]], ["Amenée au sol", "Combat militaire", "Projections", "grab", [0, -1, 0, 3, 5]], ["Frappe de dégagement", "Combat militaire", "Poings", "cross", [3, 0, 0, 0, 0]], ["Coup de crosse (mains nues)", "Combat militaire", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Coup de pied de rupture", "Combat militaire", "Pieds", "teep", [1, 0, 3, 0, 0]], ["Age-uke", "Shotokan", "Défense", "slip", [1, 2, 3, 0, 0]], ["Gedan-barai", "Shotokan", "Défense", "slip", [0, 2, 3, 0, 0]], ["Shuto-uchi", "Shotokan", "Poings", "palm", [4, 0, 1, -1, 0]], ["Empi-uchi", "Shotokan", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Hiza-geri", "Shotokan", "Coudes et genoux", "knee", [3, 0, 0, 1, 1]], ["Tobi-geri", "Shotokan", "Pieds", "high", [4, -1, -1, 0, 0]], ["Shita-tsuki", "Kyokushin", "Poings", "hook", [3, 1, -1, 0, 0]], ["Gedan mawashi-geri", "Kyokushin", "Pieds", "kick", [3, 0, 0, 2, 0]], ["Jodan mawashi-geri", "Kyokushin", "Pieds", "high", [4, -1, -1, 1, 0]], ["Kakato-otoshi", "Kyokushin", "Pieds", "high", [4, -1, -1, 0, 0]], ["Tobi-hiza-geri", "Kyokushin", "Coudes et genoux", "knee", [3, 0, 0, 1, 2]], ["Sanchin-dachi", "Goju-ryu", "Défense", "slip", [0, 3, 3, 0, 0]], ["Tora-guchi", "Goju-ryu", "Défense", "slip", [0, 2, 3, 0, 1]], ["Shotei-uchi", "Goju-ryu", "Poings", "palm", [4, 0, 1, -1, 0]], ["Nagashi-zuki", "Wado-ryu", "Poings", "cross", [3, 0, 0, 0, 0]], ["Tai sabaki Wado", "Wado-ryu", "Défense", "slip", [0, 2, 3, 0, 0]], ["Coup de tête Kudo", "Kudo", "Coudes et genoux", "elbow", [4, 1, 0, 0, 0]], ["Projection Kudo", "Kudo", "Projections", "throw", [1, 0, 1, 0, 4]], ["Uchi-uke-zuki", "Shorinji Kempo", "Poings", "cross", [3, 0, 0, 1, 0]], ["Kote-nuki", "Shorinji Kempo", "Défense", "slip", [0, 2, 3, 1, 0]], ["Ukemi", "Ninjutsu", "Défense", "slip", [1, 2, 3, 0, 0]], ["Shuto ninja", "Ninjutsu", "Poings", "palm", [4, 0, 2, -1, 0]], ["Projection ninja", "Ninjutsu", "Projections", "throw", [1, 0, 1, 0, 4]], ["Irimi-nage", "Aïkido", "Projections", "throw", [1, 0, 1, 1, 4]], ["Ikkyo", "Aïkido", "Projections", "throw", [1, 0, 1, 0, 4]], ["Nikyo", "Aïkido", "Projections", "throw", [1, 1, 1, 0, 4]], ["Sankyo", "Aïkido", "Projections", "throw", [1, 0, 1, 0, 4]], ["Kaiten-nage", "Aïkido", "Projections", "throw", [1, 0, 1, 0, 4]], ["Tenchi-nage", "Aïkido", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coup de pied bas Hapkido", "Hapkido", "Pieds", "kick", [3, 1, 0, 1, 0]], ["Projection circulaire", "Hapkido", "Projections", "throw", [1, 0, 2, 0, 4]], ["Coup de pied sauté", "Tang Soo Do", "Pieds", "high", [4, -1, -1, 0, 0]], ["Coup de pied retourné", "Tang Soo Do", "Pieds", "spin", [4, -1, -3, -1, 0]], ["Clé de doigt", "Kuk Sool Won", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coup de pied Kuk Sool", "Kuk Sool Won", "Pieds", "high", [4, -1, -1, 0, 0]], ["Projection Ssireum", "Ssireum", "Projections", "throw", [1, 0, 1, 0, 4]], ["Pont de fer", "Hung Gar", "Défense", "slip", [0, 3, 3, 0, 0]], ["Poing du tigre noir", "Hung Gar", "Poings", "cross", [3, 0, 0, 0, 0]], ["Gwa choi (marteau)", "Choy Li Fut", "Poings", "hook", [3, 1, -1, 0, 0]], ["Sow choi (balayage)", "Choy Li Fut", "Poings", "hook", [3, 1, -1, 0, 0]], ["Chop choi", "Choy Li Fut", "Poings", "cross", [3, 1, 0, 0, 0]], ["Ding zhou (coude)", "Bajiquan", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Tie shan kao", "Bajiquan", "Poings", "palm", [4, 0, 1, -1, 0]], ["Paume du serpent", "Baguazhang", "Poings", "palm", [4, 0, 1, -1, 0]], ["Changement de paume", "Baguazhang", "Défense", "slip", [0, 2, 3, 0, 0]], ["Pi Quan", "Xing Yi", "Poings", "palm", [4, 1, 1, -1, 0]], ["Zuan Quan", "Xing Yi", "Poings", "hook", [4, 1, -1, 0, 0]], ["Pao Quan", "Xing Yi", "Poings", "cross", [3, 0, 0, 0, 0]], ["Heng Quan", "Xing Yi", "Poings", "hook", [3, 1, -1, 0, 0]], ["Pousser les mains", "Tai chi", "Défense", "slip", [0, 2, 3, 0, 0]], ["Fouet simple", "Tai chi", "Poings", "palm", [4, 0, 1, -1, 0]], ["Peng Lu Ji An", "Tai chi", "Défense", "slip", [1, 2, 3, 0, 0]], ["Crochet de mante", "Mante religieuse", "Poings", "chain", [-1, 4, 0, -1, 0]], ["Saisie de mante", "Mante religieuse", "Projections", "throw", [2, 0, 1, 0, 4]], ["Serre d'aigle", "Griffe d'aigle", "Projections", "throw", [1, 1, 1, 0, 4]], ["Griffe aux yeux (feinte)", "Griffe d'aigle", "Poings", "jab", [0, 3, 1, 1, 0]], ["Coupe renversée", "Boxe de l'homme ivre", "Poings", "hook", [3, 1, -1, 1, 0]], ["Chute de l'ivrogne", "Boxe de l'homme ivre", "Défense", "slip", [0, 2, 3, 0, 0]], ["Saut du singe", "Style du singe", "Pieds", "spin", [4, -1, -3, 0, 0]], ["Griffe du singe", "Style du singe", "Poings", "chain", [-1, 4, 1, -1, 0]], ["Bec de la grue", "Style de la grue", "Poings", "jab", [0, 3, 1, 0, 0]], ["Ailes de la grue", "Style de la grue", "Défense", "slip", [0, 2, 3, 0, 0]], ["Langue du serpent", "Style du serpent", "Poings", "jab", [0, 3, 1, 0, 0]], ["Serpent enroulé", "Style du serpent", "Projections", "throw", [1, 0, 1, 0, 5]], ["Phénix (poing)", "Bak Mei", "Poings", "cross", [3, 0, 0, 0, 0]], ["Bak Mei court", "Bak Mei", "Poings", "chain", [-1, 4, 0, -1, 0]], ["Stop-hit", "Jeet Kune Do", "Poings", "jab", [0, 3, 1, 0, 0]], ["Lead straight", "Jeet Kune Do", "Poings", "jab", [0, 3, 1, 0, 0]], ["Interception", "Jeet Kune Do", "Défense", "slip", [0, 2, 3, 1, 0]], ["Coup de pied d'arrêt", "Jeet Kune Do", "Pieds", "teep", [1, 0, 2, 1, 0]], ["Rafale du Kenpo", "Kenpo", "Poings", "chain", [-1, 4, 0, -1, 0]], ["Coup de pied de Kenpo", "Kenpo", "Pieds", "kick", [3, 0, 1, 1, 0]], ["Combinaison Kajukenbo", "Kajukenbo", "Poings", "chain", [-1, 5, 0, -1, 0]], ["Destruction du bras", "Panantukan (Kali)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Coup de poing Panantukan", "Panantukan (Kali)", "Poings", "hook", [3, 1, -1, 0, 0]], ["Tigre au sol", "Silat Harimau", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Balayage Harimau", "Silat Harimau", "Projections", "throw", [1, 0, 1, 0, 4]], ["Frappe du sanglier", "Bando", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Frappe de Banshay", "Banshay", "Poings", "palm", [4, 0, 1, -1, 1]], ["Coude de Kuntao", "Kuntao", "Coudes et genoux", "elbow", [3, 1, 1, 0, 0]], ["Frappe aux points vitaux", "Varma kalai", "Poings", "palm", [4, 0, 1, -1, 0]], ["Lutte de Malla-yuddha", "Malla-yuddha", "Projections", "grab", [0, -1, 0, 2, 6]], ["Dhobi pachad", "Pehlwani", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coup de pied antique", "Pankration", "Pieds", "kick", [3, 0, 1, 1, 0]], ["Prise antique", "Pankration", "Projections", "grab", [1, -1, 0, 2, 5]], ["Coup de pied bas savate", "Boxe française", "Pieds", "kick", [3, 0, 0, 1, 0]], ["Direct savate", "Boxe française", "Poings", "cross", [3, 0, 0, 0, 0]], ["Moulinet (mains nues)", "Canne de combat", "Poings", "hook", [3, 2, -1, 0, 0]], ["Projection Bartitsu", "Bartitsu", "Projections", "throw", [1, 0, 1, 0, 5]], ["Kliked", "Gouren", "Projections", "throw", [1, 0, 2, 0, 4]], ["Clé de Luta Livre", "Luta Livre", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Ground and pound", "Vale tudo", "Sol et soumissions", "grab", [0, 0, 0, 1, 5]], ["Lutte à genoux", "Huka-huka", "Projections", "grab", [0, -1, 0, 2, 5]], ["Esquive du Nguni", "Nguni (Afrique du Sud)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Parade du Tahtib", "Tahtib (Égypte)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Projection Evala", "Evala (Togo)", "Projections", "grab", [0, -1, 0, 2, 5]], ["Coup de tête Lethwei", "Lethwei", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Coude sauté", "Lethwei", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Coude volant", "Muay Boran", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Genou volant", "Muay Boran", "Coudes et genoux", "knee", [3, 0, 0, 1, 1]], ["Écraser la tête du serpent", "Muay Boran", "Pieds", "kick", [3, 0, 0, 1, 0]], ["Combo K-1", "Kickboxing japonais", "Poings", "chain", [0, 4, 0, -1, 0]], ["Coup de pied retourné K-1", "Kickboxing japonais", "Pieds", "spin", [4, -1, -3, -1, 1]], ["Coude au sol", "MMA", "Sol et soumissions", "grab", [0, 0, 1, 1, 5]], ["Takedown MMA", "MMA", "Projections", "grab", [0, -1, 0, 2, 5]], ["Switch kick", "MMA", "Pieds", "high", [5, -1, -1, 0, 0]], ["Coup de pied à la tête", "MMA", "Pieds", "high", [4, -1, -1, 0, 0]], ["Clinch contre la cage", "MMA", "Coudes et genoux", "knee", [3, 1, 0, 1, 1]], ["Parcours du combattant", "Armée", "Militaire", null, [0, 2, 0, 3, 0]], ["Marche commando avec sac", "Forces spéciales", "Militaire", null, [0, 0, 0, 4, 0]], ["Pompes militaires", "Armée", "Militaire", null, [2, 0, 0, 1, 0]], ["Tractions commando", "Armée", "Militaire", null, [2, 0, 0, 1, 1]], ["Nage de combat", "Marine", "Militaire", null, [0, 0, 0, 3, 0]], ["Résistance au froid", "Commandos", "Militaire", null, [0, 0, 1, 2, 0]], ["Hell Week", "Navy SEAL", "Militaire", null, [0, 0, 1, 4, 0]], ["Inoculation au stress", "Forces spéciales", "Militaire", null, [0, 1, 2, 1, 0]], ["Course en treillis", "Armée", "Militaire", null, [0, 1, 0, 3, 0]], ["Corde lisse", "Armée", "Militaire", null, [1, 0, 0, 1, 2]], ["Combat à plusieurs", "Krav Maga", "Militaire", null, [0, 1, 2, 1, 0]], ["Squat", "Musculation", "Physique", null, [3, 0, 0, 0, 1]], ["Soulevé de terre", "Musculation", "Physique", null, [3, -1, 0, 0, 2]], ["Développé couché", "Musculation", "Physique", null, [3, -1, 0, 0, 0]], ["Développé militaire", "Musculation", "Physique", null, [2, 0, 0, 0, 0]], ["Dips", "Musculation", "Physique", null, [2, 0, 0, 0, 0]], ["Arraché", "Haltérophilie", "Physique", null, [3, 2, 0, 0, 0]], ["Épaulé-jeté", "Haltérophilie", "Physique", null, [3, 1, 0, 0, 1]], ["Pneu et Atlas stones", "Strongman", "Physique", null, [3, -1, 0, 1, 2]], ["Pliométrie", "Athlétisme", "Physique", null, [1, 3, 0, 0, 0]], ["Fractionné HIIT", "Cardio", "Physique", null, [0, 1, 0, 3, 0]], ["Marathon", "Course", "Physique", null, [0, -1, 0, 4, 0]], ["Natation", "Sport", "Physique", null, [0, 0, 0, 3, 0]], ["Vélo", "Sport", "Physique", null, [0, 0, 0, 3, 0]], ["Escalade", "Sport", "Physique", null, [1, 0, 0, 1, 2]], ["Calisthenics", "Gymnastique", "Physique", null, [2, 1, 0, 1, 0]], ["Gymnastique", "Gymnastique", "Physique", null, [1, 2, 1, 0, 0]], ["Yoga", "Yoga", "Physique", null, [0, 1, 1, 1, 0]], ["Pilates", "Gainage", "Physique", null, [0, 0, 1, 1, 0]], ["Gainage", "Gainage", "Physique", null, [0, 0, 2, 1, 0]], ["Corde à sauter", "Boxe", "Physique", null, [0, 2, 0, 1, 0]], ["Shadow boxing", "Boxe", "Physique", null, [0, 2, 1, 0, 0]], ["Sac lourd", "Boxe", "Physique", null, [2, 0, 0, 1, 0]], ["Pattes d'ours", "Boxe", "Physique", null, [1, 2, 0, 0, 0]], ["Battle rope", "Cardio", "Physique", null, [1, 0, 0, 2, 0]], ["Poussée de traîneau", "Strongman", "Physique", null, [2, 0, 0, 2, 0]], ["Grip", "Escalade", "Physique", null, [0, 0, 0, 0, 2]], ["Étirements", "Souplesse", "Physique", null, [0, 1, 1, 0, 0]], ["Nutrition", "Hygiène de vie", "Physique", null, [1, 0, 0, 1, 0]], ["Sommeil", "Hygiène de vie", "Physique", null, [0, 1, 1, 1, 0]], ["Récupération chaud-froid", "Hygiène de vie", "Physique", null, [0, 0, 1, 1, 0]]]);
 CAT.push(...[["Poing nu du Musangwe", "Musangwe (Afrique du Sud)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Crochet du Venda", "Musangwe (Afrique du Sud)", "Poings", "hook", [3, 1, -1, 0, 0]], ["Coup de tête Gidigbo", "Gidigbo (Nigeria)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Saisie Gidigbo", "Gidigbo (Nigeria)", "Projections", "grab", [0, -1, 1, 2, 5]], ["Projection Kokawa", "Kokawa (Nigeria)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coup de pied tournant Ngolo", "Ngolo (Angola)", "Pieds", "spin", [4, -1, -3, -1, 0]], ["Balayage Ngolo", "Ngolo (Angola)", "Projections", "throw", [1, 0, 1, 0, 5]], ["Esquive Istunka", "Istunka (Somalie)", "Défense", "slip", [0, 2, 4, 0, 0]], ["Projection Mukna", "Mukna (Inde)", "Projections", "throw", [1, 0, 2, 0, 4]], ["Ceinture Mukna", "Mukna (Inde)", "Projections", "grab", [0, -1, 0, 2, 5]], ["Projection Khuresh", "Khuresh (Touva)", "Projections", "throw", [1, 0, 1, 1, 4]], ["Projection Chidaoba", "Chidaoba (Géorgie)", "Projections", "throw", [1, 1, 1, 0, 4]], ["Saisie de veste", "Chidaoba (Géorgie)", "Projections", "grab", [1, -1, 0, 2, 5]], ["Projection Koch", "Koch (Arménie)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Ceinture Karakucak", "Karakucak (Turquie)", "Projections", "grab", [0, -1, 0, 2, 5]], ["Projection canarienne", "Lucha canaria (Espagne)", "Projections", "throw", [2, 0, 1, 0, 4]], ["Agarre canario", "Lucha canaria (Espagne)", "Projections", "grab", [0, -1, 0, 3, 5]], ["Projection Ranggeln", "Ranggeln (Autriche)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Backhold de Cumberland", "Cumberland (Angleterre)", "Projections", "grab", [1, -1, 0, 2, 5]], ["Coup de poing irlandais", "Boxe irlandaise à mains nues", "Poings", "cross", [3, 0, 1, 0, 0]], ["Esquive irlandaise", "Boxe irlandaise à mains nues", "Défense", "slip", [0, 2, 3, 0, 1]], ["Projection Marajoara", "Luta Marajoara (Brésil)", "Projections", "throw", [1, 0, 2, 0, 4]], ["Rabo de arraia", "Capoeira Angola", "Pieds", "spin", [4, 0, -3, -1, 0]], ["Cabeçada", "Capoeira Angola", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Rasteira", "Capoeira Angola", "Projections", "throw", [1, 0, 1, 0, 4]], ["Ciseau de jambes", "Vovinam (Vietnam)", "Projections", "throw", [2, 0, 1, 0, 4]], ["Coup de coude Vovinam", "Vovinam (Vietnam)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 1]], ["Coup de pied sauté Vovinam", "Vovinam (Vietnam)", "Pieds", "high", [4, -1, -1, 0, 0]], ["Coude Kun Khmer", "Kun Khmer (Cambodge)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Genou Kun Khmer", "Kun Khmer (Cambodge)", "Coudes et genoux", "knee", [3, 0, 0, 1, 1]], ["Low kick Kun Khmer", "Kun Khmer (Cambodge)", "Pieds", "kick", [3, 0, 1, 1, 0]], ["Coude Muay Lao", "Muay Lao (Laos)", "Coudes et genoux", "elbow", [3, 1, 1, 0, 0]], ["Pied Muay Lao", "Muay Lao (Laos)", "Pieds", "kick", [3, 1, 0, 1, 0]], ["Frappe Betawi", "Pencak Silat Betawi", "Poings", "palm", [4, 0, 1, -1, 0]], ["Balayage Betawi", "Pencak Silat Betawi", "Projections", "throw", [1, 1, 1, 0, 4]], ["Coups en rafale Arnis", "Arnis mano mano (Philippines)", "Poings", "chain", [-1, 4, 0, -1, 0]], ["Clé Arnis", "Arnis mano mano (Philippines)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Projection Tegumi", "Tegumi (Okinawa)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Frappe Lua", "Lua (Hawaï)", "Poings", "palm", [4, 0, 1, -1, 0]], ["Clé Lua", "Lua (Hawaï)", "Sol et soumissions", "grab", [0, 0, 0, 2, 5]], ["Projection Pahlavani", "Koshti Pahlavani (Iran)", "Projections", "throw", [1, 0, 1, 1, 4]], ["Ceinture Pahlavani", "Koshti Pahlavani (Iran)", "Projections", "grab", [0, -1, 0, 2, 5]], ["Coup de pied militaire chinois", "Sanshou militaire (Chine)", "Pieds", "kick", [3, 0, 0, 1, 0]], ["Projection militaire chinoise", "Sanshou militaire (Chine)", "Projections", "throw", [1, 1, 1, 0, 4]], ["Coup de pied latéral US", "Kickboxing américain", "Pieds", "teep", [1, 0, 2, 0, 0]], ["Combinaison US", "Kickboxing américain", "Poings", "chain", [-1, 4, 0, -1, 1]], ["Coup de pied de Kyokushin brésilien", "Kyokushin brésilien", "Pieds", "high", [4, -1, -1, 0, 0]], ["Coude de rue", "Boxe thaïe de rue (Lethwei moderne)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Crochet au foie mexicain", "Boxe mexicaine", "Poings", "hook", [3, 1, 0, 0, 0]], ["Uppercut mexicain", "Boxe mexicaine", "Poings", "hook", [3, 2, -1, 0, 0]], ["Jab cubain", "Boxe cubaine", "Poings", "jab", [0, 3, 1, 0, 0]], ["Esquive cubaine", "Boxe cubaine", "Défense", "slip", [0, 2, 3, 0, 0]], ["Direct soviétique", "Boxe soviétique", "Poings", "cross", [3, 0, 0, 0, 0]], ["Jeu de jambes soviétique", "Boxe soviétique", "Défense", "slip", [0, 2, 3, 0, 0]], ["Destruction Suntukan", "Boxe philippine (Suntukan)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Genou royal", "Bokator (combat royal)", "Coudes et genoux", "knee", [3, 1, 0, 1, 1]], ["Coude royal", "Bokator (combat royal)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Coup de pied Kalari du Sud", "Kalaripayattu du Sud", "Pieds", "high", [4, -1, 0, 0, 0]], ["Saisie Kalari", "Kalaripayattu du Sud", "Projections", "throw", [1, 0, 1, 0, 4]], ["Rafale Silambam", "Silambam (mains nues)", "Poings", "chain", [-1, 4, 0, 0, 0]], ["Parade Gatka", "Gatka (mains nues)", "Défense", "slip", [0, 2, 3, 1, 0]], ["Dhak (projection)", "Kushti de Delhi", "Projections", "throw", [2, 0, 1, 0, 4]], ["Oshidashi (poussée)", "Sumo amateur", "Projections", "grab", [0, -1, 0, 2, 5]], ["Uwatenage", "Sumo amateur", "Projections", "throw", [1, 0, 1, 0, 4]], ["Mjaðmarhnykkur", "Glima (ceinture)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Parade irlandaise", "Bataireacht (Irlande, mains nues)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Projection Kurash", "Kurash (Ouzbékistan)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coup de pied Hopak", "Combat Hopak (Ukraine)", "Pieds", "spin", [4, -1, -3, 0, 0]], ["Projection Hopak", "Combat Hopak (Ukraine)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Frappe Svaroh", "Svaroh (Ukraine)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Riposte Krav Panim", "Krav Panim (Israël)", "Poings", "cross", [3, 1, 0, 0, 0]], ["Coup de pied Zipota", "Zipota (Pays basque)", "Pieds", "high", [4, -1, -1, 0, 0]], ["Esquive portugaise", "Jogo do pau (Portugal, mains nues)", "Défense", "slip", [0, 2, 3, 0, 0]], ["Pankration au sol", "Pankration moderne", "Sol et soumissions", "grab", [0, 1, 0, 1, 5]], ["Coup de pied pankration", "Pankration moderne", "Pieds", "kick", [3, 0, 0, 1, 1]], ["Course en altitude", "Kenya", "Vie et endurance (monde)", null, [0, 1, 0, 4, 0]], ["Vie en haute montagne", "Sherpas (Népal)", "Vie et endurance (monde)", null, [0, 0, 1, 4, 0]], ["Plongée en apnée", "Ama (Japon)", "Vie et endurance (monde)", null, [0, 0, 1, 3, 0]], ["Marche du désert", "Touaregs (Sahara)", "Vie et endurance (monde)", null, [0, 0, 0, 4, 0]], ["Ultra-trail", "Tarahumaras (Mexique)", "Vie et endurance (monde)", null, [0, 1, 0, 5, 0]], ["Résistance au froid", "Inuits (Arctique)", "Vie et endurance (monde)", null, [0, 0, 2, 3, 0]], ["Pêche en mer froide", "Vikings (Scandinavie)", "Vie et endurance (monde)", null, [1, 0, 1, 3, 0]], ["Course de fond", "Éthiopie", "Vie et endurance (monde)", null, [0, 1, 0, 4, 0]], ["Chasse à l'endurance", "San (Kalahari)", "Vie et endurance (monde)", null, [0, 1, 0, 4, 0]], ["Marathon des moines", "Moines de Hiei (Japon)", "Vie et endurance (monde)", null, [0, 0, 1, 5, 0]], ["Nage en eau glacée", "Russie", "Vie et endurance (monde)", null, [0, 0, 1, 3, 0]], ["Endurance du Sumo", "Japon", "Vie et endurance (monde)", null, [1, -1, 2, 2, 1]], ["Sauna", "Finlande", "Santé et récupération (monde)", null, [0, 0, 1, 1, 0]], ["Banya", "Russie", "Santé et récupération (monde)", null, [0, 0, 1, 1, 0]], ["Hammam", "Turquie", "Santé et récupération (monde)", null, [0, 0, 1, 1, 0]], ["Onsen", "Japon", "Santé et récupération (monde)", null, [0, 0, 1, 1, 0]], ["Temazcal", "Mexique", "Santé et récupération (monde)", null, [0, 0, 1, 1, 0]], ["Massage thaï", "Thaïlande", "Santé et récupération (monde)", null, [0, 1, 1, 0, 0]], ["Massage ayurvédique", "Inde", "Santé et récupération (monde)", null, [0, 0, 1, 1, 0]], ["Tai chi du matin", "Chine", "Santé et récupération (monde)", null, [0, 0, 2, 1, 0]], ["Yoga", "Inde", "Santé et récupération (monde)", null, [0, 1, 1, 1, 0]], ["Sieste", "Espagne", "Santé et récupération (monde)", null, [0, 1, 0, 1, 0]], ["Régime méditerranéen", "Grèce / Italie", "Santé et récupération (monde)", null, [0, 0, 1, 2, 0]], ["Régime d'Okinawa", "Japon", "Santé et récupération (monde)", null, [0, 0, 1, 2, 0]], ["Kimchi et fermentés", "Corée", "Santé et récupération (monde)", null, [0, 0, 1, 1, 0]], ["Thé vert", "Chine / Japon", "Santé et récupération (monde)", null, [0, 1, 0, 1, 0]], ["Bains froids", "Scandinavie", "Santé et récupération (monde)", null, [0, 0, 1, 2, 0]], ["Sommeil long", "Science du sport", "Santé et récupération (monde)", null, [0, 1, 1, 1, 0]], ["Hydratation", "Science du sport", "Santé et récupération (monde)", null, [0, 0, 0, 2, 0]], ["Étirements quotidiens", "Monde", "Santé et récupération (monde)", null, [0, 1, 1, 0, 0]], ["Highland Games (tronc, pierre)", "Écosse", "Muscles (monde)", null, [4, -1, 0, 1, 1]], ["Strongman", "Islande", "Muscles (monde)", null, [5, -2, 0, 1, 2]], ["Haltérophilie bulgare", "Bulgarie", "Muscles (monde)", null, [4, 1, 0, 0, 0]], ["Kettlebell russe", "Russie", "Muscles (monde)", null, [3, 0, 0, 2, 0]], ["Zurkhaneh (massues)", "Iran", "Muscles (monde)", null, [3, 0, 0, 1, 1]], ["Gada (masse indienne)", "Inde", "Muscles (monde)", null, [3, 0, 0, 1, 1]], ["Pierres de levée (Lifting stones)", "Pays basque", "Muscles (monde)", null, [4, -1, 0, 1, 1]], ["Calisthenics de rue", "USA", "Muscles (monde)", null, [2, 2, 0, 1, 0]], ["Gymnastique soviétique", "URSS", "Muscles (monde)", null, [2, 2, 1, 0, 0]], ["Musculation culturisme", "USA", "Muscles (monde)", null, [4, -1, 0, 0, 0]], ["Lutte à la corde (tir à la corde)", "Monde", "Muscles (monde)", null, [2, 0, 0, 2, 2]], ["Portage de charges", "Sherpas (Népal)", "Muscles (monde)", null, [2, -1, 0, 3, 1]], ["Arbre et bûches", "Canada", "Muscles (monde)", null, [3, 0, 0, 1, 1]], ["Pompes Hindu", "Inde", "Muscles (monde)", null, [2, 0, 0, 2, 0]], ["Mallakhamb (poteau)", "Inde", "Muscles (monde)", null, [2, 2, 0, 0, 2]], ["Sled et traîneau", "Alaska", "Muscles (monde)", null, [3, 0, 0, 2, 0]]]);
-const EXTRA = {"Aura de combat": {"life": 40, "res": 0.04}, "Entraînement en gravité x10": {"life": 50, "res": 0.05}, "Méditation sous la cascade": {"heal": 0.1, "res": 0.03}, "Cri de guerre": {"res": 0.04}, "Bouclier d'aura": {"res": 0.08}, "Endurance sans fin": {"life": 30, "heal": 0.06}, "Éveil intérieur": {"life": 25}, "Course en altitude": {"life": 30}, "Vie en haute montagne": {"life": 40}, "Plongée en apnée": {"life": 25}, "Marche du désert": {"life": 30}, "Ultra-trail": {"life": 35}, "Résistance au froid": {"life": 30}, "Pêche en mer froide": {"life": 25}, "Course de fond": {"life": 30}, "Chasse à l'endurance": {"life": 35}, "Marathon des moines": {"life": 45}, "Nage en eau glacée": {"life": 25}, "Endurance du Sumo": {"life": 30}, "Sauna": {"heal": 0.08}, "Banya": {"heal": 0.08}, "Hammam": {"heal": 0.07}, "Onsen": {"heal": 0.08}, "Temazcal": {"heal": 0.06}, "Massage thaï": {"heal": 0.08}, "Massage ayurvédique": {"heal": 0.07}, "Tai chi du matin": {"heal": 0.08}, "Yoga": {"heal": 0.08}, "Sieste": {"heal": 0.05}, "Régime méditerranéen": {"heal": 0.06}, "Régime d'Okinawa": {"heal": 0.07}, "Kimchi et fermentés": {"heal": 0.05}, "Thé vert": {"heal": 0.05}, "Bains froids": {"heal": 0.07}, "Sommeil long": {"heal": 0.1}, "Hydratation": {"heal": 0.05}, "Étirements quotidiens": {"heal": 0.05}};
+const EXTRA = {"Gilet pare-balles": {"res": 0.06}, "Armure médiévale": {"res": 0.07, "life": 20}, "Cotte de mailles": {"res": 0.05}, "Bouclier anti-émeute": {"res": 0.05}, "Armure de samouraï": {"res": 0.06, "life": 15}, "Casque militaire": {"res": 0.03}, "Aura de combat": {"life": 40, "res": 0.04}, "Entraînement en gravité x10": {"life": 50, "res": 0.05}, "Méditation sous la cascade": {"heal": 0.1, "res": 0.03}, "Cri de guerre": {"res": 0.04}, "Bouclier d'aura": {"res": 0.08}, "Endurance sans fin": {"life": 30, "heal": 0.06}, "Éveil intérieur": {"life": 25}, "Course en altitude": {"life": 30}, "Vie en haute montagne": {"life": 40}, "Plongée en apnée": {"life": 25}, "Marche du désert": {"life": 30}, "Ultra-trail": {"life": 35}, "Résistance au froid": {"life": 30}, "Pêche en mer froide": {"life": 25}, "Course de fond": {"life": 30}, "Chasse à l'endurance": {"life": 35}, "Marathon des moines": {"life": 45}, "Nage en eau glacée": {"life": 25}, "Endurance du Sumo": {"life": 30}, "Sauna": {"heal": 0.08}, "Banya": {"heal": 0.08}, "Hammam": {"heal": 0.07}, "Onsen": {"heal": 0.08}, "Temazcal": {"heal": 0.06}, "Massage thaï": {"heal": 0.08}, "Massage ayurvédique": {"heal": 0.07}, "Tai chi du matin": {"heal": 0.08}, "Yoga": {"heal": 0.08}, "Sieste": {"heal": 0.05}, "Régime méditerranéen": {"heal": 0.06}, "Régime d'Okinawa": {"heal": 0.07}, "Kimchi et fermentés": {"heal": 0.05}, "Thé vert": {"heal": 0.05}, "Bains froids": {"heal": 0.07}, "Sommeil long": {"heal": 0.1}, "Hydratation": {"heal": 0.05}, "Étirements quotidiens": {"heal": 0.05}};
 CAT.push(...[["Méditation Zen", "Japon", "Mental et esprit (monde)", null, [0, 0, 2, 1, 0]], ["Vipassana", "Birmanie / Inde", "Mental et esprit (monde)", null, [0, 0, 1, 2, 0]], ["Pranayama (respiration)", "Inde", "Mental et esprit (monde)", null, [0, 0, 1, 2, 0]], ["Tummo (chaleur intérieure)", "Tibet", "Mental et esprit (monde)", null, [0, 0, 1, 2, 0]], ["Esprit du Bushido", "Japon", "Mental et esprit (monde)", null, [1, 0, 1, 1, 0]], ["Haka", "Nouvelle-Zélande", "Mental et esprit (monde)", null, [2, 0, 0, 1, 0]], ["Sisu (ténacité)", "Finlande", "Mental et esprit (monde)", null, [0, 0, 1, 3, 0]], ["Stoïcisme", "Grèce antique", "Mental et esprit (monde)", null, [0, 0, 2, 1, 0]], ["Visualisation", "Sport de haut niveau", "Mental et esprit (monde)", null, [1, 1, 1, 0, 0]], ["Mental de guerrier (Lethwei)", "Birmanie", "Mental et esprit (monde)", null, [1, 0, 1, 1, 0]], ["Ubuntu (esprit d'équipe)", "Afrique australe", "Mental et esprit (monde)", null, [0, 0, 1, 2, 0]], ["Ikigai (raison de se battre)", "Japon", "Mental et esprit (monde)", null, [1, 0, 0, 2, 0]]]);
 Object.assign(EXTRA, {"Méditation Zen": {"res": 0.03, "heal": 0.03}, "Vipassana": {"res": 0.03, "heal": 0.04}, "Pranayama (respiration)": {"res": 0.02, "life": 15}, "Tummo (chaleur intérieure)": {"res": 0.03, "life": 15}, "Esprit du Bushido": {"res": 0.04}, "Haka": {"res": 0.03, "life": 10}, "Sisu (ténacité)": {"res": 0.05, "life": 20}, "Stoïcisme": {"res": 0.04}, "Visualisation": {"res": 0.02}, "Mental de guerrier (Lethwei)": {"res": 0.05}, "Ubuntu (esprit d'équipe)": {"res": 0.02, "life": 10}, "Ikigai (raison de se battre)": {"res": 0.02, "life": 15}});
 for (const [n,v] of Object.entries({"Corps de fer": 0.08, "Tibias d'acier": 0.05, "Ma Bu (cavalier)": 0.03, "Sanchin kata": 0.05, "Misogi (eau froide)": 0.02, "Résistance au froid": 0.03, "Hell Week": 0.04, "Combat fatigué": 0.03, "Inoculation au stress": 0.03, "Ponts de lutte": 0.03, "Shiko": 0.03, "Endurance du Sumo": 0.05, "Pont de fer": 0.04, "Relâchement": 0.05, "Blocage tibia": 0.04, "Garde haute": 0.03, "Gainage": 0.02, "Sparring": 0.02, "Sac lourd": 0.02, "Bains froids": 0.02, "Strongman": 0.03, "Highland Games (tronc, pierre)": 0.02, "Sanchin-dachi": 0.03})) EXTRA[n] = Object.assign({}, EXTRA[n]||{}, {res:v});
 CAT.push(...[["Frappe Teukgong", "Teukgong Moosul (Corée)", "Poings", "cross", [3, 0, 0, 0, 1]], ["Projection Teukgong", "Teukgong Moosul (Corée)", "Projections", "throw", [1, 1, 1, 0, 4]], ["Coup de pied Teukgong", "Teukgong Moosul (Corée)", "Pieds", "high", [4, -1, -1, 0, 0]], ["Frappe Jieitai", "Jieitai kakutōjutsu (Japon)", "Poings", "palm", [4, 0, 2, -1, 0]], ["Projection Jieitai", "Jieitai kakutōjutsu (Japon)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Clinch Combatives", "Combatives (US Army)", "Coudes et genoux", "knee", [4, 0, 0, 1, 1]], ["Takedown Combatives", "Combatives (US Army)", "Projections", "grab", [0, -1, 0, 2, 5]], ["Frappe Combatives", "Combatives (US Army)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Frappe du légionnaire", "Légion étrangère (France)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Amenée au sol légionnaire", "Légion étrangère (France)", "Projections", "grab", [0, -1, 1, 2, 5]], ["Clé d'intervention GIGN", "GIGN (France)", "Projections", "throw", [1, 1, 1, 0, 4]], ["Frappe de dégagement GIGN", "GIGN (France)", "Poings", "palm", [4, 0, 1, -1, 1]], ["Coup de genou commando", "Commandos Marine (France)", "Coudes et genoux", "knee", [3, 0, 0, 1, 1]], ["Coude commando", "Commandos Marine (France)", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Frappe SAS", "SAS (Royaume-Uni)", "Poings", "cross", [4, 0, 0, 0, 0]], ["Projection SAS", "SAS (Royaume-Uni)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Frappe Gurkha", "Gurkhas (Népal)", "Poings", "hook", [3, 1, -1, 0, 0]], ["Coude Gurkha", "Gurkhas (Népal)", "Coudes et genoux", "elbow", [3, 1, 0, 1, 0]], ["Frappe BOPE", "BOPE (Brésil)", "Poings", "cross", [3, 0, 0, 0, 0]], ["Contrôle BOPE", "BOPE (Brésil)", "Projections", "grab", [0, -1, 1, 2, 5]], ["Riposte Shayetet", "Shayetet 13 (Israël)", "Poings", "chain", [-1, 4, 0, -1, 1]], ["Défense Shayetet", "Shayetet 13 (Israël)", "Défense", "slip", [0, 3, 3, 0, 0]], ["Frappe Spetsnaz", "Spetsnaz (Russie)", "Poings", "palm", [4, 0, 1, -1, 1]], ["Projection Spetsnaz", "Spetsnaz (Russie)", "Projections", "throw", [1, 0, 1, 0, 5]], ["Coup de pied Spetsnaz", "Spetsnaz (Russie)", "Pieds", "kick", [3, 0, 0, 1, 0]], ["Combo militaire chinois", "Armée chinoise (Chine)", "Poings", "chain", [-1, 4, 0, 0, 0]], ["Saisie militaire chinoise", "Armée chinoise (Chine)", "Projections", "throw", [1, 0, 1, 0, 4]], ["Coude des Marines thaï", "Marines thaïlandais", "Coudes et genoux", "elbow", [3, 1, 0, 0, 0]], ["Genou des Marines thaï", "Marines thaïlandais", "Coudes et genoux", "knee", [3, 0, 0, 1, 2]], ["Sélection de la Légion étrangère", "France", "Militaire", null, [1, 1, 1, 3, 0]], ["Stage commando (Commandos Marine)", "France", "Militaire", null, [1, 1, 1, 3, 1]], ["Sélection GIGN", "France", "Militaire", null, [1, 1, 2, 2, 1]], ["Sélection SAS (Brecon Beacons)", "Royaume-Uni", "Militaire", null, [0, 0, 1, 4, 0]], ["Doko race (Gurkhas)", "Népal", "Militaire", null, [1, 0, 0, 4, 1]], ["BUD/S (Navy SEAL)", "USA", "Militaire", null, [0, 0, 1, 4, 0]], ["Ranger School", "USA", "Militaire", null, [0, 0, 1, 3, 0]], ["Sélection Spetsnaz", "Russie", "Militaire", null, [1, 0, 1, 3, 1]], ["Sélection Shayetet 13", "Israël", "Militaire", null, [0, 1, 1, 3, 0]], ["Entraînement Teukgong", "Corée", "Militaire", null, [1, 1, 1, 2, 1]], ["Entraînement BOPE", "Brésil", "Militaire", null, [1, 0, 1, 3, 0]], ["Survie en milieu hostile", "Monde", "Militaire", null, [0, 0, 1, 3, 0]], ["Combat en armure (lesté)", "Monde", "Militaire", null, [2, -1, 1, 2, 0]], ["Résistance à la douleur", "Forces spéciales", "Militaire", null, [0, 0, 2, 1, 0]]]);
 Object.assign(EXTRA, {"Sélection de la Légion étrangère": {"res": 0.03, "life": 15}, "Stage commando (Commandos Marine)": {"res": 0.03, "life": 15}, "Sélection GIGN": {"res": 0.03}, "Sélection SAS (Brecon Beacons)": {"life": 20}, "Doko race (Gurkhas)": {"life": 25}, "BUD/S (Navy SEAL)": {"res": 0.03, "life": 20}, "Ranger School": {"res": 0.02, "life": 15}, "Sélection Spetsnaz": {"res": 0.04}, "Sélection Shayetet 13": {"res": 0.03}, "Entraînement Teukgong": {"res": 0.02}, "Entraînement BOPE": {"res": 0.02, "life": 10}, "Survie en milieu hostile": {"life": 15}, "Combat en armure (lesté)": {"res": 0.02}, "Résistance à la douleur": {"res": 0.04}});
-const ANIM = {beam:['beam','beam','kdBeam'],jab:['jab','jab',null],cross:['cross','cross','kdCross'],hook:['hook','hook','kdHook'],chain:['chain','chain',null],palm:['palm','palm','kdPalm'],
+const ANIM = {beam:['beam','beam','kdBeam'],shot:['shot','shot','kdShot'],swing:['swing','swing','kdSwing'],jab:['jab','jab',null],cross:['cross','cross','kdCross'],hook:['hook','hook','kdHook'],chain:['chain','chain',null],palm:['palm','palm','kdPalm'],
   kick:['kick','low',null],teep:['teep','teep',null],high:['high','high','kdHigh'],spin:['spin','spin',null],elbow:['elbow','elbow','kdElbow'],knee:['knee','knee','kdKnee'],
   grab:['grab',null,'titan'],throw:['throw',null,'ippon'],slip:['slip','slip',null]};
 // TECHS rows: [id, label, category, AI move, step, KO step, mods, art]
@@ -826,6 +866,19 @@ CAT.push(...[
   ["Cri de guerre", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [2,0,1,1,0]], ["Bouclier d'aura", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [0,0,5,1,0]],
   ["Endurance sans fin", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', null, [0,0,1,5,0]], ["Coup final de l'étoile", 'Animé japonais', 'Dessins animés : énergie et arts martiaux', 'palm', [5,1,-1,-1,0]],
 ]);
+// Accessories of cartoon heroes and everything in the world (weapons, objects, sports, jobs, nature)
+{ const C = (cat, art, list) => list.forEach(([n, a, m]) => CAT.push([n, art, cat, a, m]));
+  C('Dessins animés : accessoires', 'Accessoires de héros', [["Cape de héros", null, [0,1,2,1,0]], ["Bâton magique", 'swing', [3,1,1,0,0]], ["Anneau de pouvoir", null, [3,1,1,1,0]], ["Bottes de vitesse", 'slip', [0,5,1,1,0]], ["Ceinture de champion", null, [1,0,2,2,0]], ["Gants d'énergie", 'beam', [4,1,0,0,0]], ["Masque de héros", null, [0,1,3,0,0]], ["Épée lumineuse", 'swing', [4,2,0,0,0]], ["Bouclier du héros", null, [0,0,5,0,0]], ["Bandeau de combattant", null, [1,1,1,2,0]], ["Nuage volant", 'slip', [0,4,2,1,0]], ["Bâton qui s'allonge", 'swing', [3,2,1,0,0]], ["Haricot de force", null, [1,0,1,5,0]], ["Fusée dorsale", 'slip', [1,4,1,0,0]]]);
+  C('Tout le monde : armes blanches', 'Armes du monde', [["Couteau", 'swing', [3,3,0,0,0]], ["Épée", 'swing', [4,2,1,0,0]], ["Katana", 'swing', [4,3,0,0,0]], ["Sabre", 'swing', [4,2,0,0,0]], ["Lance", 'swing', [3,2,1,0,0]], ["Hache", 'swing', [5,-1,0,0,0]], ["Bâton (bo)", 'swing', [2,2,2,0,0]], ["Nunchaku", 'swing', [3,4,0,0,0]], ["Tonfa", 'swing', [2,2,3,0,0]], ["Kama (faucille)", 'swing', [3,3,0,0,0]], ["Saï", 'swing', [2,3,2,0,0]], ["Fouet", 'swing', [2,4,0,0,0]], ["Masse d'armes", 'swing', [5,-1,0,0,0]], ["Machette", 'swing', [4,2,0,0,0]], ["Kukri", 'swing', [4,2,0,0,0]], ["Escrima (bâtons)", 'swing', [2,4,1,0,0]], ["Chaîne", 'swing', [3,2,0,0,1]], ["Bouclier", null, [0,-1,5,0,0]]]);
+  C('Tout le monde : armes à distance', 'Armes du monde', [["Pistolet", 'shot', [4,3,0,0,0]], ["Revolver", 'shot', [5,1,0,0,0]], ["Fusil", 'shot', [5,0,0,0,0]], ["Arc et flèches", 'shot', [3,2,0,0,0]], ["Arbalète", 'shot', [4,0,0,0,0]], ["Fronde", 'shot', [2,3,0,0,0]], ["Shuriken", 'shot', [2,4,0,0,0]], ["Couteaux de lancer", 'shot', [3,3,0,0,0]], ["Boomerang", 'shot', [2,3,1,0,0]], ["Sarbacane", 'shot', [1,4,0,0,0]], ["Lance-pierre", 'shot', [2,3,0,0,0]], ["Pistolet à eau", 'shot', [0,4,1,0,0]], ["Paintball", 'shot', [1,4,0,0,0]], ["Lasso", 'grab', [0,2,0,0,4]]]);
+  C('Tout le monde : objets', 'Objets du quotidien', [["Chaise", 'swing', [4,-1,1,0,0]], ["Poêle à frire", 'swing', [4,0,1,0,0]], ["Balai", 'swing', [2,2,1,0,0]], ["Parapluie", 'swing', [2,2,2,0,0]], ["Rouleau à pâtisserie", 'swing', [3,1,0,0,0]], ["Casserole", 'swing', [3,0,1,0,0]], ["Pelle", 'swing', [4,0,0,0,0]], ["Râteau", 'swing', [3,1,0,0,0]], ["Clé à molette", 'swing', [4,1,0,0,0]], ["Sac à main", 'swing', [2,2,0,0,0]], ["Oreiller", 'swing', [0,3,1,0,0]], ["Livre très lourd", 'swing', [3,0,0,0,0]], ["Casque de moto", null, [0,-1,4,0,0]], ["Gilet pare-balles", null, [0,-2,5,1,0]], ["Corde", 'grab', [0,1,0,1,4]], ["Échelle", 'swing', [4,-1,1,0,0]]]);
+  C('Tout le monde : sports', 'Sports du monde', [["Batte de baseball", 'swing', [5,0,0,0,0]], ["Crosse de hockey", 'swing', [4,1,0,0,0]], ["Raquette de tennis", 'swing', [3,2,0,0,0]], ["Club de golf", 'swing', [4,1,0,0,0]], ["Lancer de ballon", 'shot', [2,3,0,0,0]], ["Placage de rugby", 'grab', [3,1,0,1,4]], ["Tir de footballeur", 'kick', [4,2,0,0,0]], ["Dunk de basket", 'palm', [4,2,0,0,0]], ["Skateboard", 'swing', [3,3,0,0,0]], ["Haltère", 'swing', [5,-1,0,1,0]], ["Kettlebell", 'swing', [5,-1,0,1,0]], ["Lancer de poids", 'shot', [4,-1,0,0,0]]]);
+  C('Tout le monde : métiers', 'Métiers du monde', [["Lance à incendie (pompier)", 'shot', [2,1,2,0,0]], ["Matraque (police)", 'swing', [3,2,2,0,0]], ["Menottes", 'grab', [0,2,1,0,4]], ["Marteau du forgeron", 'swing', [5,-1,0,1,0]], ["Clé de mécanicien", 'swing', [4,1,0,0,0]], ["Sifflet de l'arbitre", null, [0,1,2,0,0]], ["Force du bûcheron", null, [3,0,1,3,0]], ["Endurance du mineur", null, [0,0,2,4,0]], ["Agilité du couvreur", 'slip', [0,4,2,0,0]], ["Poigne du déménageur", 'grab', [3,0,0,1,4]]]);
+  C("Tout le monde : films d'action", "Films d'action du monde", [["Gun-fu (pistolets et kung-fu)", 'shot', [4,4,0,0,0]], ["Deux pistolets à la fois", 'shot', [5,3,-1,0,0]], ["Tir du tireur d'élite", 'shot', [5,0,0,0,0]], ["Couteau de l'assassin silencieux", 'swing', [4,4,0,0,0]], ["Combat au couteau des films", 'swing', [4,3,1,0,0]], ["Lancer de couteau précis", 'shot', [3,4,0,0,0]], ["Course sur les murs", 'slip', [0,5,3,0,0]], ["Glissade sous les balles", 'slip', [0,4,4,0,0]], ["Esquive au ralenti", 'slip', [0,3,5,0,0]], ["Combat dans le couloir", 'chain', [3,4,0,1,0]], ["Saut au ralenti", 'high', [3,3,0,0,0]], ["Coup de pied retourné du héros", 'spin', [4,3,0,0,0]], ["Coup de tête du bagarreur", 'cross', [4,1,0,0,0]], ["Prise du garde du corps", 'grab', [2,1,2,0,4]], ["Clé de bras de l'agent secret", 'grab', [2,2,1,0,4]], ["Désarmement éclair", 'grab', [1,3,2,0,3]], ["Combat avec les objets du décor", 'swing', [3,2,1,0,0]], ["Nunchaku du film de kung-fu", 'swing', [3,5,0,0,0]], ["Bâton du vieux maître", 'swing', [3,2,3,0,0]], ["Coup de poing final du champion", 'cross', [5,1,0,1,0]], ["Grenade fumigène", 'slip', [0,2,4,0,0]], ["Gilet tactique", null, [0,-1,5,1,0]], ["Entraînement d'agent secret", null, [2,2,2,2,1]], ["Survie du commando", null, [1,0,2,4,0]], ["Sang-froid du tueur à gages", null, [1,1,3,1,0]], ["Cascadeur (chutes sans mal)", null, [0,1,3,3,0]]]);
+  C('Tout le monde : objets', 'Objets de la rue', [["Brique", 'shot', [4,0,0,0,0]], ["Pavé", 'shot', [4,-1,0,0,0]], ["Bouteille", 'swing', [3,1,0,0,0]], ["Tuyau en métal", 'swing', [4,1,0,0,0]], ["Barre de fer", 'swing', [5,0,0,0,0]], ["Planche en bois", 'swing', [3,1,1,0,0]], ["Extincteur", 'shot', [2,1,2,0,0]], ["Poubelle", 'swing', [4,-1,2,0,0]], ["Panneau de signalisation", 'swing', [4,0,1,0,0]], ["Pistolet à décharge", 'shot', [3,3,0,0,0]], ["Bombe au poivre", 'shot', [2,3,1,0,0]], ["Bâton télescopique", 'swing', [3,3,1,0,0]], ["Poing américain", 'jab', [4,2,0,0,0]]]);
+  C('Tout le monde : protections', 'Protections du monde', [["Gilet pare-balles", null, [0,-2,5,1,0]], ["Armure médiévale", null, [0,-3,5,0,0]], ["Cotte de mailles", null, [0,-1,4,0,0]], ["Bouclier anti-émeute", null, [0,-1,5,0,0]], ["Bouclier romain", null, [1,-1,5,0,0]], ["Casque de chevalier", null, [0,-1,4,0,0]], ["Casque militaire", null, [0,0,3,0,0]], ["Genouillères de police", null, [0,0,2,1,0]], ["Combinaison de motard", null, [0,0,3,1,0]], ["Armure de samouraï", null, [1,-1,4,1,0]], ["Gants de protection", null, [1,0,2,0,0]], ["Lunettes de protection", null, [0,1,1,0,0]]]);
+  C('Tout le monde : nature', 'Nature', [["Lancer de pierre", 'shot', [3,1,0,0,0]], ["Bâton de bois", 'swing', [3,1,1,0,0]], ["Noix de coco", 'shot', [3,1,0,0,0]], ["Boule de neige", 'shot', [1,3,0,0,0]], ["Force du gorille", null, [5,0,1,1,0]], ["Vitesse du guépard", 'slip', [0,5,1,0,0]], ["Peau de l'éléphant", null, [0,-1,4,3,0]]]);
+}
 // Powers in the style of cartoons from all over the world (original names, no existing character)
 { const C = (cat, art, list) => list.forEach(([n, a, m]) => CAT.push([n, art, 'Dessins animés : ' + cat, a, m]));
   C('énergie et arts martiaux', 'Animé japonais', [["Transformation de puissance", null, [5,3,1,1,0]], ["Explosion d'aura", 'beam', [5,0,0,-2,0]], ["Rayon des deux mains", 'beam', [5,0,-1,-2,0]], ["Disque d'énergie tranchant", 'beam', [4,2,-1,-1,0]], ["Coup de la comète", 'cross', [5,1,-1,0,0]], ["Vol supersonique", 'slip', [1,5,2,0,0]]]);
@@ -844,7 +897,7 @@ CAT.push(...[
 const TECHS = CAT.map((c,i) => { const a = c[3] ? ANIM[c[3]] : [null,null,null]; return ['t'+i, c[0]+' ('+c[1]+')', c[2], a[0], a[1], a[2], c[4], c[1], c[0]]; });
 const BASIC = ['Jab','Direct','Crochet','Low kick','Teep','High kick','Ushiro-geri','Coude horizontal','Genou droit','Double-leg','O-goshi','Esquive rotative','Paume de fer','Rafale en chaîne'];
 const TT = id => TECHS.find(t => t[0]===id);
-function bonusOf(ids){ let life = 0, heal = 0, res = 0; ids.forEach(id => { const t = TT(id); const e = t && EXTRA[t[8]]; if (e){ life += e.life||0; heal += e.heal||0; res += e.res||0; } }); return {life: Math.min(400, life), heal: Math.min(.8, heal), res}; }
+function bonusOf(ids){ let life = 0, heal = 0, res = 0; ids.forEach(id => { const t = TT(id); const e = t && EXTRA[t[8]]; if (e){ life += e.life||0; heal += e.heal||0; res += e.res||0; } if (t && /^Dessins animés/.test(t[2])){ life += 3; res += .004; } if (t && /^Tout le monde/.test(t[2]) && !t[3]){ res += .003; } }); return {life: Math.min(400, life), heal: Math.min(.8, heal), res}; }
 const HEALTH_LIFE = {'Pleine forme':20,'En forme':0,'Fatigué':-10,'Blessé':-20,'Malade':-30};
 const HEALTH_RES = {'Pleine forme':.05,'En forme':0,'Fatigué':-.05,'Blessé':-.1,'Malade':-.1};
 // Total life and hit resistance from everything: base, practices, health, muscles, weight
@@ -962,7 +1015,7 @@ function invSpecial(inv){
 }
 
 // ---- ONE technique: every chosen technique melted into a single strike ----
-const FAM_GROUP = {beam:'punch',jab:'punch',cross:'punch',hook:'punch',chain:'punch',palm:'punch',slip:'punch',kick:'kick',teep:'kick',high:'kick',spin:'kick',elbow:'elbow',knee:'knee',grab:'proj',throw:'proj'};
+const FAM_GROUP = {beam:'punch',shot:'punch',swing:'punch',jab:'punch',cross:'punch',hook:'punch',chain:'punch',palm:'punch',slip:'punch',kick:'kick',teep:'kick',high:'kick',spin:'kick',elbow:'elbow',knee:'knee',grab:'proj',throw:'proj'};
 const GROUP_NOUN = {punch:'La Paume',kick:'Le Fouet',elbow:'La Lame',knee:'Le Bélier',proj:"L'Avalanche"};
 const GROUP_STEP = {punch:'palm',kick:'high',elbow:'elbow',knee:'knee',proj:'titan'};
 const SUFFIX = ['du Dragon','de la Tempête','du Phénix','de la Foudre','du Séisme','du Tonnerre','du Cyclone','de la Comète','du Volcan','de l\'Orage'];
@@ -1038,8 +1091,23 @@ function fusedMove(ids, nameHint, prof){
   if (grp==='punch' && B.mains < 40) why.push(`Mains fragiles (${B.mains}) : le coup se fait avec la paume pour protéger la main`);
   if (B.os >= 75) why.push(`Os très solides (${B.os}) : il peut encaisser pour placer son coup`);
   if (B.poumons >= 75) why.push(`Grands poumons (${B.poumons}) : il garde du souffle pour enchaîner`);
-  return {name, grp, n, mul, arts, why, seq: strike(false), sseq: pre.map(x=>({...x})).concat(strike(true)), step: GROUP_STEP[grp],
-    desc: `La meilleure technique pour lui : ${GN[grp]} qui fusionne ${n} technique${n>1?'s':''}`};
+  // Total fusion: weapons, shots, energy and acrobatics he owns are woven into his own technique,
+  // in the order that suits his body (fast/light: acrobatics first; heavy/strong: weapon first; far: shot/energy first).
+  const own = ids.map(TT).filter(Boolean), has = re => own.filter(t => re(t));
+  const wpn = has(t => t[3] === 'swing'), gun = has(t => t[3] === 'shot'), nrg = has(t => t[3] === 'beam');
+  const acro = has(t => /capoeira|lucha|parkour|gymn|540|tornade|saut|volant|mur/i.test(t[7] + ' ' + t[8]));
+  const parts = [];
+  if (acro.length) parts.push({k:'acro', w: spd/20 + Math.max(0, 85-w)/10, label:`acrobatie (${acro[0][8]})`, steps: () => [ST('highCh',T(120)), ST('spinHit',T(140),H(8,{range:1.2,react:'rHead'}))]});
+  if (wpn.length) parts.push({k:'wpn', w: pow/20 + Math.max(0, w-75)/15, label:`arme (${wpn[0][8]})`, steps: () => [ST('fz1',T(120)), ST('fz4',T(130),H(9,{range:1.5,react:'rHead',stun:260}))]});
+  if (gun.length) parts.push({k:'gun', w: 3 + (tr.patience||50)/40, label:`tir (${gun[0][8]})`, steps: () => [FXS('jab',T(150),null,'aim'), FXS('jab',T(110),H(6,{range:9,target:'body',react:'rBody'}),'shot',0xffd34a)]});
+  if (nrg.length) parts.push({k:'nrg', w: 3.5 + (tr.calme||50)/40, label:`énergie (${nrg[0][8]})`, steps: () => [FXS('fz2',T(220),null,'charge'), FXS('fz4',T(250),H(9,{range:9,target:'body',react:'rBody'}),'beam')]});
+  parts.sort((a,b) => b.w - a.w);
+  const flat = list => list.flatMap(p => p.steps());
+  if (parts.length) why.push(`Fusion totale : sa technique mélange aussi ${parts.map(p => p.label).join(', ')}, dans l'ordre qui convient à son physique (${hcm} cm, ${w} kg)`);
+  const seqOut = parts.length ? flat(parts.slice(0, 2)).concat(strike(false)) : strike(false);
+  const sseqOut = pre.map(x=>({...x})).concat(flat(parts)).concat(strike(true));
+  return {name, grp, n, mul: mul * (1 + parts.length*.05), arts, why, seq: seqOut, sseq: sseqOut, step: GROUP_STEP[grp], parts: parts.map(p => p.k),
+    desc: `La meilleure technique pour lui : ${GN[grp]} qui fusionne ${n} technique${n>1?'s':''}` + (parts.length ? ` + ${parts.map(p => p.label.split(' (')[0]).join(' + ')}` : '')};
 }
 
 // ---- Several personal fighting techniques, fused from his own techniques ----
@@ -1059,6 +1127,8 @@ function personalMoves(ids){
   if (en){ const names = enL.map(t => t[8]).join(' ');
     const col = /feu|soleil|phénix|dynamite|comète/i.test(names) ? 0xff6a2a : /glac|hiver|neige|eau/i.test(names) ? 0x8fe8ff : /foudre|éclair|laser/i.test(names) ? 0xffe14a : /jade|étoile/i.test(names) ? 0x6dff9a : 0x6ad8ff;
     out.pm_beam = Object.assign(en, {name:'Énergie · ' + en.top, short:'⚡ VAGUE', seq:[FXS('fz2',280,null,'charge',col), FXS('fz4',320,H(10,{range:9,target:'body',react:'rBody',stun:300}),'beam',col), ST('guard',240)]}); }
+  const shL = pick(t => t[3]==='shot'), sh = fuse(shL); if (sh) out.pm_shot = Object.assign(sh, {name:'Tir · ' + sh.top, short:'🔫 TIR', seq:[FXS('jab',200,null,'aim'), FXS('jab',130,H(9,{range:9,target:'body',react:'rBody',stun:260}),'shot',0xffd34a), ST('guard',220)]});
+  const swL = pick(t => t[3]==='swing'), sw = fuse(swL); if (sw) out.pm_swing = Object.assign(sw, {name:'Arme · ' + sw.top, short:'🗡 ARME', weapon: swL[0][8], seq:[ST('fz1',140), ST('fz4',140,H(11,{range:1.5,react:'rHead',stun:320})), ST('guard',220)]});
   const e = fuse(pick(t => t[3]==='elbow')); if (e) out.pm_elbow = Object.assign(e, {name:'Coude · ' + e.top, short:'COUDE', seq:[ST('elbow',120,H(9,{range:.98})),ST('guard',200)]});
   const projL = pick(t => t[3]==='grab' || t[3]==='throw');
   const p = fuse(projL); if (p) out.pm_proj = Object.assign(p, {name:'Projection · ' + p.top, short:'PROJECTION', seq:[ST('grab',150,{grab: projL.filter(t=>t[3]==='throw').length >= projL.length/2 ? 'ippon' : 'plaquage', range:.98})]});
@@ -1139,17 +1209,17 @@ function preset(kind){
     for (let h=160; h<=215; h+=5) for (let w=60; w<=130; w+=5) for (let m=40; m<=100; m+=10){ const t = {...c, h:h/100, w, m}; const sc = scoreOf(t) - (Math.abs(h-188)+Math.abs(w-95)+Math.abs(m-85))/1000; if (sc > bestS){ bestS = sc; bp = t; } }
     c = bp; c.spec = []; c.inv = inventTechnique(c.techs, 'La Technique Ultime');
   } else if (kind==='worst'){
-    c = {...base, name:'Le Pire', level:30, techs:['Coup de pied 540','Tomoe-nage'].map(byName), tn:''};
+    c = {...base, name:'Le Pire', level:30, techs:['Coup de pied 540','Tomoe-nage','Oreiller','Tarte à la crème','Pistolet à eau','Peau de banane','Gonfler comme un ballon'].map(byName).filter(Boolean), tn:''};
     c.spec = ['Coup de pied 540'].map(byName);
     let worstS = 999, wp = null;
     for (let h=150; h<=220; h+=10) for (let w=50; w<=160; w+=10) for (let m=0; m<=100; m+=25){ const t = {...c, h:h/100, w, m}; const sc = scoreOf(t); if (sc < worstS){ worstS = sc; wp = t; } }
     c = wp;
   } else {
-    c = {...base, name:'Monsieur Moyen', level:62, h:1.77, w:78, m:45, techs:['Jab','Direct','Crochet','Low kick','Esquive rotative','Single-leg','Sparring'].map(byName), tn:''};
+    c = {...base, name:'Monsieur Moyen', level:62, h:1.77, w:78, m:45, techs:['Jab','Direct','Crochet','Low kick','Esquive rotative','Single-leg','Sparring','Bâton (bo)','Lancer de pierre','Casque militaire','Cape de héros','Poing de feu'].map(byName).filter(Boolean), tn:''};
     c.spec = ['Jab','Direct','Crochet'].map(byName);
   }
   const LH = {worst:[50,'Malade'], avg:[100,'En forme'], best:[1000,'Pleine forme']}[kind];
-  cGear = kind==='best' ? [...BEST_GEAR] : kind==='avg' ? ['mma','dents'] : ['nues']; cMood = kind==='worst' ? 'Triste' : kind==='best' ? 'Confiant' : 'Calme';
+  cGear = kind==='best' ? [...BEST_GEAR] : kind==='avg' ? ['mma','dents','casque'] : ['nues']; cMood = kind==='worst' ? 'Triste' : kind==='best' ? 'Confiant' : 'Calme';
   cBody = kind==='worst' ? {age:68, os:10, mains:10, poumons:10} : kind==='best' ? {age:28, os:99, mains:99, poumons:99} : {...BODY0};
   cTr = kind==='worst' ? {agr:10, iq:10, calme:10, patience:10, ruse:10, courage:10} : kind==='best' ? {agr:80, iq:99, calme:99, patience:85, ruse:99, courage:99} : {...T50}; $('cLife').value = LH[0]; cLook.health = LH[1];
   $('cName').value = c.name; $('cH').value = Math.round(c.h*100); $('cW').value = c.w; $('cM').value = c.m; $('cL').value = c.level; $('cTN').value = c.tn;
@@ -1272,8 +1342,14 @@ $('bFuse').onclick = () => { const rc = readCustom(); const f = fusedMove(cT, ''
 function fillAll(ids, tn, nm){ cT = ids; cSp = []; cInv = inventTechnique(ids, tn); $('cTN').value = tn; if (!$('cName').value.trim() || ["L'Ultime","Le Vert","Le Rouge"].includes($('cName').value)) $('cName').value = nm; createUI(); }
 $('pGreen').onclick = () => fillAll(TECHS.filter(t => t[6].every(v => v >= 0)).map(t => t[0]), 'Technique Verte', 'Le Vert');
 $('pRed').onclick = () => fillAll(TECHS.filter(t => t[6].some(v => v < 0)).map(t => t[0]), 'Technique Rouge', 'Le Rouge');
+const catOf = re => TECHS.filter(t => re.test(t[2])).map(t => t[0]);
+const NORMAL_RE = /^(?!Dessins animés|Tout le monde)/;
+const bigPreset = (ids, name, tech) => { $('pAll').onclick(); cT = ids; cInv = inventTechnique(cT, tech); $('cTN').value = tech; $('cName').value = name; cPers = []; cPersDone = false; if (typeof persUI === 'function') persUI(); createUI(); };
+$('pMix').onclick = () => bigPreset(catOf(/^(?!Tout le monde)/), 'Le Combattant des Dessins Animés', 'Technique Combat-Animé');
+$('pWorld').onclick = () => bigPreset(catOf(/^(?!Dessins animés)/), 'Le Guerrier du Monde', 'Technique du Monde');
+$('pNormal').onclick = () => bigPreset(catOf(NORMAL_RE), 'La Fusion de Tous', 'Technique Ultime');
 $('pAnime').onclick = () => { $('pAll').onclick(); cT = TECHS.filter(t => /^Dessins animés/.test(t[2])).map(t => t[0]); cInv = inventTechnique(cT, 'Technique Dessin Animé'); $('cTN').value = 'Technique Dessin Animé'; $('cName').value = 'Le Héros des Dessins Animés'; cPers = []; cPersDone = false; if (typeof persUI === 'function') persUI(); createUI(); };
-$('pAll').onclick = () => { cGear = [...ALL_GEAR]; cMood = 'Confiant'; cBody = {age:28, os:99, mains:99, poumons:99}; cTr = {agr:99, iq:99, calme:99, patience:99, ruse:99, courage:99}; $('cLife').value = 1000; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique Ultime'); $('cTN').value = 'Technique Ultime'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); cPers = candidates().map(x => x.id); cPersDone = true; if (typeof persUI === 'function') persUI(); if ($('cName').value === "L'Ultime") $('cName').value = 'La Fusion de Tous'; createUI(); };
+$('pAll').onclick = () => { cGear = [...ALL_GEAR]; cMood = 'Confiant'; cBody = {age:28, os:99, mains:99, poumons:99}; cTr = {agr:99, iq:99, calme:99, patience:99, ruse:99, courage:99}; $('cLife').value = 1000; cLook.health = 'Pleine forme'; $('cH').value = 220; $('cW').value = 160; $('cM').value = 100; $('cL').value = 99; cT = TECHS.map(t => t[0]); cSp = []; cInv = inventTechnique(cT, 'Technique de Tout'); $('cTN').value = 'Technique de Tout'; if (!$('cName').value.trim() || ['Le Vert','Le Rouge'].includes($('cName').value)) $('cName').value = "L'Ultime"; $('cL').value = Math.max(+$('cL').value, 99); cPers = candidates().map(x => x.id); cPersDone = true; if (typeof persUI === 'function') persUI(); if (["L'Ultime", 'La Fusion de Tous', 'Le Guerrier du Monde', 'Le Combattant des Dessins Animés', 'Le Héros des Dessins Animés', 'Le Tout des Trois'].includes($('cName').value)) $('cName').value = 'Le Tout'; createUI(); };
 $('bSaveMe').onclick = () => { if (!cT.length) return;
   if (!cSp.length && !cInv) $('bFuse').onclick();
   const c = readCustom(); save.customs = (save.customs||[]).filter(x=>x.techs).concat([c]); save.myChar = 'c'+c.id; persist(); menu(); go('sOpp'); bannerLocal('TU JOUES ' + c.name.toUpperCase() + ' · CHOISIS TON ADVERSAIRE', 2500); };
@@ -1285,7 +1361,20 @@ $('bSaveOpp').onclick = () => { if (!cT.length) return;
 
 // ===================== 3D =====================
 let cageG, ringG;
-function setArena(t){ save.arena = t; persist(); if (cageG){ cageG.visible = t==='cage'; ringG.visible = t==='ring'; } document.querySelectorAll('[data-arena]').forEach(b => b.classList.toggle('on', b.dataset.arena===t)); }
+// 3D arena models replace the simple cage / ring once loaded (only the chosen arena is downloaded)
+const ARENA_LOADED = {};
+function loadArena(t){
+  if (ARENA_LOADED[t] || !cageG) return; ARENA_LOADED[t] = true;
+  const G = t === 'cage' ? cageG : ringG;
+  loadGLB('a_' + t, root => {
+    root.traverse(o => { if (!o.isMesh) return; o.receiveShadow = true; const m = o.material; m.metalness = 0; m.metalnessMap = null; m.roughnessMap = null; m.roughness = Math.max(.7, m.roughness);
+      if (m.transparent){ m.transparent = false; m.alphaTest = .5; m.depthWrite = true; m.side = THREE.DoubleSide; }   // wire fence
+      if (t === 'ring') m.color.multiplyScalar(.8); });   // the white canvas is too bright under the lights
+    while (G.children.length) G.remove(G.children[0]);
+    root.position.y = .004; G.add(root); if (save.anime) setTimeout(refreshToon, 0);
+  });
+}
+function setArena(t){ save.arena = t; persist(); if (cageG){ cageG.visible = t==='cage'; ringG.visible = t==='ring'; loadArena(t); } document.querySelectorAll('[data-arena]').forEach(b => b.classList.toggle('on', b.dataset.arena===t)); }
 let renderer, scene, camera, MA, MB, flashM, flashMat, flashT = 9;
 const SC = 0.0118, UP = new THREE.Vector3(0,1,0);
 const ZD = {head:0,neck:0,hip:0,le:-0.21,lh:-0.08,re:0.21,rh:0.08,lk:-0.11,lf:-0.14,rk:0.11,rf:0.15};
@@ -1304,7 +1393,7 @@ function init3D(){
   const floor = new THREE.Mesh(new THREE.CylinderGeometry(6.5,6.5,.06,8), new THREE.MeshStandardMaterial({color:0x1d1d24,roughness:.9}));
   floor.position.y = -.03; floor.receiveShadow = true; scene.add(floor);
   const ring = new THREE.Mesh(new THREE.RingGeometry(3.4,3.46,64), new THREE.MeshBasicMaterial({color:0xe63946,transparent:true,opacity:.35,side:THREE.DoubleSide}));
-  ring.rotation.x = -Math.PI/2; ring.position.y = .005; scene.add(ring);
+  ring.rotation.x = -Math.PI/2; ring.position.y = .012; scene.add(ring);
   // Arenas: MMA cage (octagon, radius 3.7) and boxing ring (3 ropes, half-size 3.6)
   cageG = new THREE.Group(); ringG = new THREE.Group(); scene.add(cageG); scene.add(ringG);
   const R = 3.7, fencePts = [];
@@ -1356,7 +1445,11 @@ function to3(p, x, face, sc=1, lift=0){
   o.mid = o.hip.clone().lerp(o.neck,.45); o.headB = o.neck.clone().addScaledVector(new THREE.Vector3().subVectors(o.head,o.neck),.45);
   return o;
 }
-function pose3(f,o){
+function pose3(f,o,ft){
+  if (ft){ let c = ft.mine ? myChar3D() : charOf(ft.data);
+    // the fighter on the right never takes the same character as the one on the left: it moves to the next one in the list
+    if (ft === B && A){ const ca = A.mine ? myChar3D() : charOf(A.data); if (c === ca) c = CHARS[(CHARS.findIndex(x => x[0] === c) + 1) % CHARS.length][0]; } if (f.rigWant !== c){ f.rigWant = c; loadRig(f, c); } }
+  if (f.rig && ft){ rigPose(f, o, ft); return; }
   f.bones.forEach(b => place(b.mesh,o[b.a],o[b.b],b.r,b.r)); f.joints.forEach(j => j.mesh.position.copy(o[j.k])); f.gloves.forEach(g => g.mesh.position.copy(o[g.k]));
   f.head.position.copy(o.head); place(f.chest,o.mid,o.neck.clone().add(new THREE.Vector3(0,-.02,0)),.11,.2); place(f.belly,o.hip,o.mid,.1,.155);
   f.pelvis.position.copy(o.hip); f.pelvis.scale.set(.1,.09,.17); f.pelvis.quaternion.copy(f.belly.quaternion);
@@ -1367,8 +1460,242 @@ function paint(M, L, isA){
   M.skinMat.color.set(L.skin || (isA ? '#d8d4cf' : '#8f9aab'));
   M.gloveMat.color.set(L.bare ? (L.skin || '#d8d4cf') : M.accent);
   M.gloves.forEach(g => g.mesh.scale.set(L.bare ? .05 : .075, L.bare ? .045 : .068, L.bare ? .05 : .068));
-  M.nailMat.color.set(L.nails || '#f1c9b8'); M.nails.forEach(n => n.mesh.visible = !!L.bare);
+  M.nailMat.color.set(L.nails || '#f1c9b8'); M.nails.forEach(n => n.mesh.visible = !!L.bare && !M.rig);
   if (save.anime) setTimeout(refreshToon, 0);
+}
+
+// ===================== 3D CHARACTER MODELS =====================
+// A skinned GLB (Mixamo skeleton) replaces the primitive mannequin. The 2D pose engine still drives everything:
+// torso/head are oriented from the pose, arms and legs are solved with 2-bone IK toward the pose's hands and feet.
+// If the model cannot be loaded, the primitive mannequin stays visible.
+const RIG_HEIGHT = 1.93;
+const CHARS = [['ninja','Ninja'],['james','James'],['leonar','Leonar'],['racer','Racer'],['swatman','SwatMan'],['megan','Megan'],['louise','Louise']];
+const RIG_NEED = ['Hips','Spine','Spine1','Spine2','Neck','Head','HeadTop_End','LeftShoulder','RightShoulder','LeftArm','LeftForeArm','LeftHand','RightArm','RightForeArm','RightHand','LeftUpLeg','LeftLeg','LeftFoot','RightUpLeg','RightLeg','RightFoot'];
+const RIG_BUF = {};
+// the player picks a character in the menu; each opponent always gets the same one (from its name)
+function charOf(d){
+  if (d.char) return d.char;
+  if (!d.person) return CHARS.some(c => c[0] === save.char) ? save.char : 'ninja';
+  let h = 0; for (const ch of d.person) h = (h*31 + ch.charCodeAt(0)) >>> 0;
+  return CHARS[h % CHARS.length][0];
+}
+// fetch a GLB once (cached by name) and parse a fresh copy for each user
+function loadGLB(name, done){
+  const go = () => { RIG_BUF[name] = RIG_BUF[name] || fetch('models/' + name + '.glb').then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); });
+    RIG_BUF[name].then(buf => new THREE.GLTFLoader().parse(buf.slice(0), '', g => done(g.scene, g), e => console.warn('Model parse failed', name, e)))
+      .catch(e => { delete RIG_BUF[name]; console.warn('Model load failed', name, e); }); };
+  if (THREE.GLTFLoader) go(); else loadScript2(['https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js', 'https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js'], go);
+}
+function loadRig(M, name){ loadGLB(name, root => attachRig(M, root, name)); }
+// ---- Weapons: families (3D model, damage, light blood) picked from the fighter's own techniques ----
+const WMELEE = {
+  knife: {n:'Couteau', model:'knife', mul:1.15, blood:1, re:/couteau|kukri|saï|kama/i},
+  blade: {n:'Katana / épée', model:'katana', mul:1.35, blood:1, re:/épée|katana|sabre|machette|hache/i},
+  staff: {n:'Bâton', model:'bokken', mul:1, re:/bâton|\bbo\b|lance|balai|pelle|râteau|parapluie|échelle|escrima|tonfa|planche|panneau/i},
+  blunt: {n:'Batte / objet lourd', model:'bat', mul:1.1, re:/./}
+};
+const WRANGED = {
+  thrown: {n:'Projectile lancé', model:null, mul:1, re:/à eau|paintball|décharge/i},
+  rifle: {n:'Fusil', model:'rifle', mul:2.5, blood:1, re:/fusil|tireur|arbalète/i},
+  pistol: {n:'Pistolet', model:'gun', mul:2, blood:1, re:/pistolet|revolver|gun-fu/i}
+};
+const wFam = (T, name, dflt) => Object.keys(T).find(k => T[k].re.test(name || '')) || dflt;
+// weapon families a fighter may use: one per kind of weapon technique he owns (first technique first)
+function weaponsOf(d){
+  if (d.all) return {melee:['blade','knife','staff','blunt'], ranged:['pistol','rifle','thrown']};
+  const L = (d.techIds || []).map(TT).filter(Boolean), uniq = a => [...new Set(a)];
+  const melee = uniq(L.filter(t => t[3] === 'swing').map(t => wFam(WMELEE, t[8], 'blunt'))), ranged = uniq(L.filter(t => t[3] === 'shot').map(t => wFam(WRANGED, t[8], 'thrown')));
+  const pm = d.pmoves || {};
+  if (!melee.length && pm.pm_swing) melee.push(wFam(WMELEE, pm.pm_swing.weapon, 'blunt'));
+  if (!ranged.length && pm.pm_shot) ranged.push('pistol');
+  return {melee, ranged};
+}
+const wPick = (L, wanted) => !L.length ? null : L.includes(wanted) ? wanted : L[0];
+const meleeOf = f => wPick(weaponsOf(f.data).melee, f.mine ? save.wpn : null);
+const rangedOf = f => wPick(weaponsOf(f.data).ranged, f.mine ? save.gun : null);
+// ---- 3D weapons held in the right hand (models: tip along +Y, edge / pistol grip along +X, origin at the hand) ----
+function weaponShow(X, type, o, f){
+  X.wm = X.wm || {};
+  for (const k in X.wm) if (X.wm[k].obj) X.wm[k].obj.visible = k === type;
+  if (!type){ X.weapon.visible = false; return; }
+  if (!X.wm[type]){ const slot = X.wm[type] = {obj: null};
+    loadGLB('w_' + type, root => { root.traverse(m => { if (m.isMesh) m.castShadow = true; }); root.visible = false; scene.add(root); slot.obj = root; if (save.anime) setTimeout(refreshToon, 0); }); }
+  const obj = X.wm[type].obj; if (!obj) return;   // the simple stick stays visible while the model loads
+  X.weapon.visible = false;
+  // grip frame: h = direction of the hand, w = axis of the closed fist (thumb side). Blades and sticks are cocked up from the forearm, guns point along it.
+  const gun = type === 'gun' || type === 'rifle', yf = o.rh.clone().sub(o.re).normalize();
+  // u = thumb side of the fist: always the forearm turned a quarter turn in the fight plane, so the palm never flips outward
+  const u = new THREE.Vector3(-yf.y*f.face, yf.x*f.face, 0); u.addScaledVector(yf, -u.dot(yf));
+  if (u.lengthSq() < 1e-4) u.set(0, 1, 0); u.normalize();
+  // a raised forearm (guard) keeps the weapon almost upright instead of tipping it far behind the head
+  const th = gun ? Math.PI/2 : 1.05 - .65*Math.max(0, yf.y), w = yf.clone().multiplyScalar(Math.cos(th)).addScaledVector(u, Math.sin(th)).normalize();
+  const h = yf.clone().addScaledVector(w, -yf.dot(w)).normalize(), pn = h.clone().cross(w);
+  const M = f === A ? MA : MB, R = M && M.rig; let grip = o.rh;
+  if (R && R.wristR){   // turn the hand so the fist closes around the handle, and put the weapon in the palm
+    const sc = R.k0 * f.sc, Qm = _rq().setFromRotationMatrix(_rm.makeBasis(h.clone().negate(), pn, w));
+    R.B.RightHand.quaternion.copy(R.W.RightForeArm).invert().multiply(Qm.multiply(R.q.RightHand));
+    grip = R.wristR.clone().addScaledVector(h, .085*sc).addScaledVector(pn, -.022*sc);
+  }
+  const x = gun ? w.clone().negate() : h, y = gun ? h : w;
+  obj.quaternion.setFromRotationMatrix(_rm.makeBasis(x, y, x.clone().cross(y))); obj.position.copy(grip); obj.scale.setScalar(f.sc);
+}
+// ---- light blood drops for blades and guns ----
+const BLOOD = []; let bloodMat = null;
+function bloodBurst(p, dir){
+  if (!bloodMat){ bloodMat = new THREE.MeshBasicMaterial({color:0x9b0f12}); bloodMat.userData.outlineParameters = NO_OUTLINE; }
+  for (let i = 0; i < 7; i++){
+    let b = BLOOD.find(x => x.t <= 0);
+    if (!b){ if (BLOOD.length >= 28) break; b = {m: new THREE.Mesh(US, bloodMat), v: new THREE.Vector3(), t: 0}; scene.add(b.m); BLOOD.push(b); }
+    b.m.position.copy(p); b.m.position.z += .14; b.v.set(dir*(.5 + Math.random()*1.3), .5 + Math.random()*1.5, (Math.random() - .5)*1.2);
+    b.t = .4 + Math.random()*.25; b.m.scale.setScalar(.011 + Math.random()*.013); b.m.visible = true;
+  }
+}
+function bloodUpdate(dt){ for (const b of BLOOD){ if (b.t <= 0) continue; b.t -= dt; b.v.y -= 6*dt; b.m.position.addScaledVector(b.v, dt); if (b.t <= 0 || b.m.position.y < .03){ b.t = 0; b.m.visible = false; } } }
+// when both fighters use the same character, the second one is tinted red
+function rigTint(){
+  if (!MB || !MB.rig) return;
+  const same = MA.rigWant === MB.rigWant;
+  MB.rig.root.traverse(o => { if (!o.isMesh) return; const m = o.material.userData.std || o.material, b = m.userData.base; if (!b) return;
+    m.color.setHex(same ? 0xff7466 : b.color); m.emissive.setHex(same ? 0x5a1410 : b.emissive); m.emissiveMap = same ? m.map : b.emissiveMap; m.needsUpdate = true; delete m.userData.toon; o.material = m; });
+  if (save.anime) setTimeout(refreshToon, 0);
+}
+function attachRig(M, root, name){
+  if (M.rigWant !== name) return;   // the player changed character while this one was loading
+  const B = {};
+  root.traverse(o => { if (o.isBone) B[o.name.replace(/^mixamorig\d*:?/, '')] = o;
+    if (o.isMesh){ o.castShadow = true; o.frustumCulled = false; const m = o.material = o.material.clone();
+      m.metalness = 0; m.metalnessMap = null; m.roughnessMap = null; m.roughness = .8;
+      if (m.transparent || /hair|lash/i.test(m.name)){ m.transparent = false; m.alphaTest = .45; m.depthWrite = true; m.side = THREE.DoubleSide; }   // hair cards
+      m.userData.base = {color: m.color.getHex(), emissive: m.emissive.getHex(), emissiveMap: m.emissiveMap}; } });
+  const miss = RIG_NEED.filter(k => !B[k]);
+  if (miss.length){ console.warn('Character model is missing bones', miss); return; }
+  if (M.rig) scene.remove(M.rig.root);
+  scene.add(root); root.updateMatrixWorld(true);
+  const R = {root, B, q:{}, p:{}, W:{}, hand0: B.RightHand.quaternion.clone(), hip0: B.Hips.position.clone(), hipUp: B.Hips.position.clone().normalize()};
+  for (const k in B){ R.q[k] = B[k].getWorldQuaternion(new THREE.Quaternion()); R.p[k] = B[k].getWorldPosition(new THREE.Vector3()); }
+  R.k0 = RIG_HEIGHT / (R.p.HeadTop_End.y + .02); R.ankle = R.p.LeftFoot.y;
+  const d = (a, b) => R.p[a].distanceTo(R.p[b]), dir = (a, b) => R.p[b].clone().sub(R.p[a]).normalize();
+  R.len = {ua: d('LeftArm','LeftForeArm'), fa: d('LeftForeArm','LeftHand'), ul: d('LeftUpLeg','LeftLeg'), ll: d('LeftLeg','LeftFoot')};
+  R.dir = {}; for (const S of ['Left','Right']){ R.dir[S+'Arm'] = dir(S+'Arm', S+'ForeArm'); R.dir[S+'ForeArm'] = dir(S+'ForeArm', S+'Hand'); R.dir[S+'UpLeg'] = dir(S+'UpLeg', S+'Leg'); R.dir[S+'Leg'] = dir(S+'Leg', S+'Foot'); }
+  // close the hands into fists (fingers curl around the depth axis of the T-pose)
+  const curl = (k, axis, ang) => { const bn = B[k]; if (!bn) return; const D = _rq().setFromAxisAngle(axis, ang); bn.quaternion.multiply(R.q[k].clone().invert().multiply(D).multiply(R.q[k])); };
+  const AZ = new THREE.Vector3(0, 0, 1), AX = new THREE.Vector3(1, 0, 0);
+  for (const [S, sg] of [['Left', -1], ['Right', 1]]){
+    for (const fg of ['Index','Middle','Ring','Pinky']) for (const i of [1,2,3]) curl(S+'Hand'+fg+i, AZ, sg*1.25);
+    curl(S+'HandThumb1', AX, .9); curl(S+'HandThumb2', AX, .45); curl(S+'HandThumb3', AX, .35);   // thumb folds down over the fingers
+  }
+  M.rig = R; rigTint();
+  [...M.bones, ...M.joints, ...M.gloves, ...M.nails].forEach(x => x.mesh.visible = false); [M.head, M.chest, M.belly, M.pelvis].forEach(x => x.visible = false);
+  if (save.anime) setTimeout(refreshToon, 0);
+}
+const _rm = new THREE.Matrix4(), _rv = () => new THREE.Vector3(), _rq = () => new THREE.Quaternion();
+// 2-bone IK: returns the joint (elbow/knee) and the reachable end position
+function ik2(root, target, hint, l1, l2, fallback){
+  const n = target.clone().sub(root); let d = n.length(); if (d < 1e-5){ n.set(0,-1,0); d = 1e-5; } n.divideScalar(d);
+  d = Math.max(Math.abs(l1 - l2) + 1e-3, Math.min((l1 + l2) * .999, d));
+  const a = (l1*l1 - l2*l2 + d*d) / (2*d), h = Math.sqrt(Math.max(0, l1*l1 - a*a));
+  let pole = hint.clone().sub(root); pole.addScaledVector(n, -pole.dot(n));
+  if (pole.lengthSq() < 1e-6){ pole = fallback.clone(); pole.addScaledVector(n, -pole.dot(n)); }
+  if (pole.lengthSq() < 1e-6) pole.set(0, 0, 1);
+  pole.normalize();
+  return [root.clone().addScaledVector(n, a).addScaledVector(pole, h), root.clone().addScaledVector(n, d)];
+}
+function rigPose(M, o, f){
+  const R = M.rig, B = R.B, W = R.W, face = f.face, s = R.k0 * f.sc;
+  const setW = (k, q, parentQ) => { W[k] = q; B[k].quaternion.copy(parentQ).invert().multiply(q); };
+  R.root.scale.setScalar(s); B.Hips.parent.updateWorldMatrix(true, false);
+  const P0 = B.Hips.parent.getWorldQuaternion(_rq());
+  // torso frame: left is always the depth axis (the engine is 2D), up follows hip -> neck
+  const left = new THREE.Vector3(0, 0, -face), up = o.neck.clone().sub(o.hip).normalize();
+  const Qt = _rq().setFromRotationMatrix(_rm.makeBasis(left, up, left.clone().cross(up)));
+  const Qy = _rq().setFromRotationMatrix(_rm.makeBasis(left, UP, left.clone().cross(UP)));
+  const w = Math.max(0, Math.min(1, (Math.acos(Math.max(-1, Math.min(1, up.y))) - .6) / .6));
+  const Qh = Qy.clone().slerp(Qt, .55 + .45*w), Qs = Qy.clone().slerp(Qt, .8 + .2*w);
+  setW('Hips', Qh.clone().multiply(R.q.Hips), P0);
+  setW('Spine', Qs.clone().multiply(R.q.Spine), W.Hips);
+  setW('Spine1', Qt.clone().multiply(R.q.Spine1), W.Spine);
+  setW('Spine2', Qt.clone().multiply(R.q.Spine2), W.Spine1);
+  const hd = o.head.clone().sub(o.neck).normalize(), Qhd = _rq().setFromUnitVectors(up, hd).multiply(Qt);
+  setW('Neck', Qt.clone().slerp(Qhd, .5).multiply(R.q.Neck), W.Spine2);
+  setW('Head', Qhd.clone().multiply(R.q.Head), W.Neck);
+  B.Hips.position.copy(B.Hips.parent.worldToLocal(o.hip.clone()));
+  B.Hips.updateMatrixWorld(true);
+  const inv = k => R.q[k].clone().invert();
+  const limb = (S, up1, low1, end1, kMid, kEnd, Qref0, l1, l2, target, fallback, parentQ) => {
+    const root = B[S+up1].getWorldPosition(_rv());
+    const [mid, end] = ik2(root, target, o[kMid], l1*s, l2*s, fallback);
+    const d1 = mid.clone().sub(root).normalize(), d2 = end.clone().sub(mid).normalize();
+    const Qa = _rq().setFromUnitVectors(R.dir[S+up1].clone().applyQuaternion(Qref0), d1).multiply(Qref0);   // rotation applied to the rest pose
+    setW(S+up1, Qa.clone().multiply(R.q[S+up1]), parentQ);
+    const Qb = _rq().setFromUnitVectors(R.dir[S+low1].clone().applyQuaternion(Qa), d2).multiply(Qa);
+    setW(S+low1, Qb.clone().multiply(R.q[S+low1]), W[S+up1]);
+    return {mid, end, d2, Qb};
+  };
+  for (const [S, kE, kH] of [['Left','le','lh'], ['Right','re','rh']]){
+    const fd = o[kH].clone().sub(o[kE]).normalize(), wrist = o[kH].clone().addScaledVector(fd, -.07*s);
+    const shQ = W.Spine2.clone().multiply(B[S+'Shoulder'].quaternion);
+    const r = limb(S, 'Arm', 'ForeArm', 'Hand', kE, kH, Qt, R.len.ua, R.len.fa, wrist, new THREE.Vector3(0, -1, 0), shQ);
+    if (S === 'Right'){ R.wristR = r.end; B.RightHand.quaternion.copy(R.hand0); }
+    o[kE].copy(r.mid); o[kH].copy(r.end).addScaledVector(r.d2, .07*s);   // effects and weapons follow the real hands
+  }
+  for (const [S, kK, kF] of [['Left','lk','lf'], ['Right','rk','rf']]){
+    const ankle = o[kF].clone(); ankle.y = Math.max(R.ankle*s, ankle.y - .09 + R.ankle*s);
+    const r = limb(S, 'UpLeg', 'Leg', 'Foot', kK, kF, Qy, R.len.ul, R.len.ll, ankle, new THREE.Vector3(face, 0, 0), W.Hips);
+    // keep the foot flat when it is near the ground and the shin is roughly vertical
+    const flat = Math.max(0, Math.min(1, 1 - (r.end.y - R.ankle*s) / .25)) * Math.max(0, -r.d2.y);
+    setW(S+'Foot', r.Qb.clone().slerp(Qy, flat).multiply(R.q[S+'Foot']), W[S+'Leg']);
+  }
+  clipApply(M, o, f, Qy, P0, s);
+}
+
+// ===================== MOTION CLIPS =====================
+// Mixamo animations blended over the pose-driven skeleton for a few moments: ready stance, K.O. fall, winner, loser.
+// The fight logic still runs on the 2D poses; clips only change what the body looks like.
+const CLIP_DEF = {stance:{hold:1}, ko:{once:1, speed:2.2}, victory:{loop:1}, defeated:{loop:1}};   // the K.O. fall is sped up to finish before the next round
+const CLIPS = {}, CLIP_SKIP = /Hand(Thumb|Index|Middle|Ring|Pinky)|_End|ToeBase/, CLIP_HIP = .99;   // hip height (m) of the skeleton the clips were made on
+function loadClip(name){
+  if (CLIPS[name]) return; const C = CLIPS[name] = {ready:false, q:{}};
+  loadGLB('an_' + name, (root, g) => { const a = g.animations && g.animations[0]; if (!a) return; C.dur = a.duration;
+    for (const t of a.tracks){ const m = t.name.match(/^(.*)\.(quaternion|position)$/); if (!m) continue; const b = m[1].replace(/^mixamorig\d*:?/, '');
+      if (m[2] === 'quaternion' && !CLIP_SKIP.test(b)) C.q[b] = t.createInterpolant();
+      if (m[2] === 'position' && b === 'Hips'){ C.hp = t.createInterpolant(); C.hp0 = Array.from(C.hp.evaluate(0)); C.unit = Math.hypot(...C.hp0) > 10 ? .01 : 1; } }
+    C.ready = !!(C.q.Hips && C.hp); });
+}
+function clipFor(f){
+  if (!F) return null;
+  if (f.state === 'ko') return 'ko';
+  if (f.cur || f.acro || !['idle','walk'].includes(f.state)) return null;
+  if (F.phase === 'roundEnd') return f.won ? 'victory' : 'defeated';
+  return 'stance';
+}
+const _cq = new THREE.Quaternion(), _cv = new THREE.Vector3();
+function clipApply(M, o, f, Qy, P0, s){
+  const R = M.rig, B = R.B, now = performance.now(), dt = Math.min(.05, (now - (R.clipNow || now)) / 1000); R.clipNow = now;
+  let want = clipFor(f); if (want){ loadClip(want); if (!CLIPS[want].ready) want = null; }
+  if (R.clip && R.clip === want) R.clipW = Math.min(1, R.clipW + dt/.22);
+  else { R.clipW = Math.max(0, (R.clipW || 0) - dt/.1); if (R.clipW <= 0){ R.clip = want; R.clipT = 0; } }
+  if (!R.clip || R.clipW <= 0) return;
+  const C = CLIPS[R.clip], D = CLIP_DEF[R.clip], w = R.clipW*R.clipW*(3 - 2*R.clipW);
+  R.clipT += dt * (D.speed || 1); const t = D.hold ? C.dur : D.loop ? R.clipT % C.dur : Math.min(R.clipT, C.dur - .001);
+  const mir = f.face < 0, P0i = P0.clone().invert();   // the fighter on the right plays the mirrored clip so both open their chest to the camera
+  for (const k in C.q){ const b = B[k], I = C.q[mir ? k.replace(/^(Left|Right)/, x => x === 'Left' ? 'Right' : 'Left') : k]; if (!b || !I) continue;
+    const v = I.evaluate(t); _cq.set(v[0], mir ? -v[1] : v[1], mir ? -v[2] : v[2], v[3]);
+    if (k === 'Hips') _cq.premultiply(P0).premultiply(Qy).premultiply(P0i);   // turn the whole body to face the opponent
+    b.quaternion.slerp(_cq, w); }
+  // hips position: height along the skeleton's own up axis, plus the clip's sideways travel (none for a held stance), scaled to this body
+  const v = C.hp.evaluate(t), up = R.hipUp, r = R.hip0.length() * C.unit / CLIP_HIP, par = B.Hips.parent;
+  const hgt = (v[0]*up.x + v[1]*up.y + v[2]*up.z) * r;
+  _cv.set(v[0] - C.hp0[0], v[1] - C.hp0[1], v[2] - C.hp0[2]).multiplyScalar(D.hold ? 0 : r); _cv.addScaledVector(up, -_cv.dot(up)); if (mir) _cv.x = -_cv.x;
+  _cv.addScaledVector(up, hgt);
+  par.localToWorld(_cv).applyQuaternion(Qy); _cv.x += f.x; _cv.y += f.lift || 0;
+  B.Hips.position.copy(par.worldToLocal(o.hip.clone().lerp(_cv, w)));
+  // weapons and effects follow the real hands
+  B.Hips.updateMatrixWorld(true);
+  for (const [S, kE, kH] of [['Left','le','lh'], ['Right','re','rh']]){
+    B[S+'ForeArm'].getWorldPosition(o[kE]); const wr = B[S+'Hand'].getWorldPosition(_rv());
+    o[kH].copy(wr).addScaledVector(wr.clone().sub(o[kE]).normalize(), .07*s);
+    if (S === 'Right'){ R.wristR = wr; B.RightForeArm.getWorldQuaternion(R.W.RightForeArm); }
+  }
 }
 const lerp2 = (a,b,t) => { const o={}; for (const k of KEYS) o[k] = [a[k][0]+(b[k][0]-a[k][0])*t, a[k][1]+(b[k][1]-a[k][1])*t]; return o; };
 const ease = t => t<.5 ? 4*t*t*t : 1-Math.pow(-2*t+2,3)/2;
@@ -1384,11 +1711,21 @@ function fxUpdate(f, o, other, dt){
   if (!f.fx) f.fx = {ball: fxMesh(0x6ad8ff), core: fxMesh(0xffffff), trail: new THREE.Mesh(UC, new THREE.MeshBasicMaterial({color:0x6ad8ff, transparent:true, opacity:.55, blending:THREE.AdditiveBlending, depthWrite:false})), aura: fxMesh(0xffd23f)};
   f.fx.trail.material.userData.outlineParameters = NO_OUTLINE;
   const X = f.fx; if (!X.trail.parent) scene.add(X.trail);
+  if (!X.weapon){ X.weapon = new THREE.Mesh(UC, new THREE.MeshStandardMaterial({color:0x9aa3ad, metalness:.6, roughness:.35})); X.weapon.castShadow = true; scene.add(X.weapon); }
+  const wpn = (f.data.pmoves && f.data.pmoves.pm_swing) || (f.data.all ? {weapon:'Katana'} : null), gun = (f.data.pmoves && f.data.pmoves.pm_shot) || f.data.all;
+  X.weapon.visible = !!(wpn || gun);
+  if (X.weapon.visible){ const dir = o.rh.clone().sub(o.re).normalize(), len = wpn ? (/couteau|kukri|saï|kama/i.test(wpn.weapon || '') ? .3 : /lance|bâton|bo|échelle|crosse|club|batte|pelle|râteau|balai/i.test(wpn.weapon || '') ? .95 : .65) : .16;
+    place(X.weapon, o.rh, o.rh.clone().addScaledVector(dir, len), wpn ? .022 : .035, wpn ? .022 : .05); X.weapon.material.color.set(wpn ? (/bâton|bo|batte|balai|bois|crosse|chaise|échelle/i.test(wpn.weapon || '') ? 0x8a5a2b : 0xb8c2cc) : 0x2b2f36); }
+  { const mk = meleeOf(f), rk = rangedOf(f), shooting = f.cur && (f.cur.fx === 'aim' || f.cur.fx === 'shot');
+    weaponShow(X, shooting && rk ? WRANGED[rk].model : mk ? WMELEE[mk].model : rk ? WRANGED[rk].model : null, o, f); }
   const st = f.cur, kind = st && st.fx, k = st && f.curDur ? Math.min(1, f.t / f.curDur) : 0;
   const hand = o.lh.clone().lerp(o.rh, .5).addScaledVector(new THREE.Vector3(f.face, 0, 0), .08);
   if (kind){ const c = st.col || 0x6ad8ff; X.ball.material.color.set(c); X.trail.material.color.set(c); }
-  X.ball.visible = X.core.visible = !!kind; X.trail.visible = kind === "beam";
+  X.ball.visible = X.core.visible = !!kind && kind !== 'aim'; X.trail.visible = kind === 'beam' || kind === 'shot';
   if (kind === 'charge'){ const r = .05 + .13*k + Math.sin(performance.now()/40)*.01; X.ball.position.copy(hand); X.ball.scale.setScalar(r); X.core.position.copy(hand); X.core.scale.setScalar(r*.45); }
+  if (kind === 'aim'){ X.ball.visible = X.core.visible = false; }
+  if (kind === 'shot'){ const tx = other.x - f.face*.25, p = hand.clone(); p.x += (tx - hand.x) * k; p.y = hand.y + (1.15*other.sc - hand.y) * k * .5;
+    X.ball.position.copy(p); X.ball.scale.setScalar(.05); X.core.position.copy(p); X.core.scale.setScalar(.025); X.trail.visible = true; place(X.trail, p.clone().addScaledVector(new THREE.Vector3(-f.face, 0, 0), .35), p, .012, .012); }
   if (kind === 'beam'){
     const tx = other.x - f.face*.25, p = hand.clone(); p.x += (tx - hand.x) * k; p.y = hand.y + (1.15*other.sc - hand.y) * k * .6;
     X.ball.position.copy(p); X.ball.scale.setScalar(.19); X.core.position.copy(p); X.core.scale.setScalar(.09);
@@ -1407,7 +1744,7 @@ function speedLines(ms){ const el = $('speed'); if (!el) return; el.style.transi
 function toonMat(m){
   if (!m || !m.isMeshStandardMaterial || m.transparent || m.opacity < 1 || !m.visible) return m;
   if (!m.userData.toon){ if (!TOON_GRAD){ const d = new Uint8Array([70, 70, 70, 150, 150, 150, 255, 255, 255]); TOON_GRAD = new THREE.DataTexture(d, 3, 1, THREE.RGBFormat); TOON_GRAD.minFilter = TOON_GRAD.magFilter = THREE.NearestFilter; TOON_GRAD.needsUpdate = true; }
-    const t = new THREE.MeshToonMaterial({gradientMap: TOON_GRAD, map: m.map || null, side: m.side, emissive: m.emissive ? m.emissive.clone() : 0x000000, emissiveIntensity: m.emissiveIntensity || 1}); t.color = m.color; t.userData.std = m; m.userData.toon = t; }
+    const t = new THREE.MeshToonMaterial({gradientMap: TOON_GRAD, map: m.map || null, emissiveMap: m.emissiveMap || null, skinning: !!m.skinning, alphaTest: m.alphaTest || 0, side: m.side, emissive: m.emissive ? m.emissive.clone() : 0x000000, emissiveIntensity: m.emissiveIntensity || 1}); t.color = m.color; t.userData.std = m; m.userData.toon = t; }
   return m.userData.toon;
 }
 // swap every figure/arena material between standard and toon
@@ -1442,7 +1779,7 @@ function startFight(test){
   lastTest = !!test; twoSel = null; $('pad2').style.display = 'none'; document.querySelector('.pad').style.display = ''; $('ctl').style.display = '';
   $('fight').classList.add('on'); resize();
   const M = myData();
-  A = makeFighter(M, -1.4, 1, false); B = makeFighter(curOpp, 1.4, -1, true);
+  A = makeFighter(M, -1.4, 1, false); B = makeFighter(curOpp, 1.4, -1, true); A.mine = true;
   if (isTourb(M)) A.aiMoves = ['tjab','vrille','fouet','faux','vent'].concat(M.all ? ['fused'] : []);
   paint(MA, A.data.look, true); paint(MB, B.data.look, false);
   F = {round:1, time:60, phase:'intro', phaseT:1.6, test:!!test};
@@ -1461,7 +1798,7 @@ function setControl(f){
   $('ctlR').classList.toggle('on', P===A); $('ctlL').classList.toggle('on', P===B);
   $('nA').innerHTML = (P===A?'🎮 ':'') + nameOf(A.data); $('nB').innerHTML = (P===B?'🎮 ':'') + (curOpp.rank?`#${curOpp.rank} `:'') + curOpp.person;
   const famBtns = f => [...new Set(f.data.moves ? f.data.moves.filter(m => m!=='slip') : [])].slice(0,13).map(m => { return [m, m==='fused' ? '🥊 ' + f.data.fusedMove.name.toUpperCase() : MOVE_FR[m].toUpperCase()]; });
-  const moves = (P===A && isTourb(A.data) ? TOURB_MOVES.concat(A.data.all ? famBtns(A) : []) : P===A ? movesOf(A.data) : [...new Set(B.data.moves.filter(m => m!=='slip'))].slice(0,7).map(m => { return [m, B.data.pmoves && B.data.pmoves[m] ? B.data.pmoves[m].short + ' (' + B.data.pmoves[m].n + ')' : m==='fused' ? '🥊 ' + B.data.fusedMove.name.toUpperCase() : (MOVE_FR[m]||m).toUpperCase()]; })).concat([['acro','🤸 ACRO']]).concat(save.anime && !(P.data.pmoves && P.data.pmoves.pm_beam) ? [['beam','⚡ VAGUE']] : []);
+  const moves = (P===A && isTourb(A.data) ? TOURB_MOVES.concat(A.data.all ? famBtns(A).concat([['beam','⚡ VAGUE'],['shot','🔫 TIR'],['swing','🗡 ARME']]) : []) : P===A ? movesOf(A.data) : [...new Set(B.data.moves.filter(m => m!=='slip'))].slice(0,7).map(m => { return [m, B.data.pmoves && B.data.pmoves[m] ? B.data.pmoves[m].short + ' (' + B.data.pmoves[m].n + ')' : m==='fused' ? '🥊 ' + B.data.fusedMove.name.toUpperCase() : (MOVE_FR[m]||m).toUpperCase()]; })).concat([['acro','🤸 ACRO']]).concat(save.anime && !(P.data.pmoves && P.data.pmoves.pm_beam) && !(isTourb(P.data) && P.data.all) ? [['beam','⚡ VAGUE']] : []);
   const spName = SPECIALS[P.data.sps[0]].name;
   $('padR').style.gridTemplateColumns = `repeat(${moves.length > 12 ? 5 : moves.length > 9 ? 4 : moves.length > 4 ? 3 : Math.max(2, moves.length)},minmax(0,1fr))`;
   $('padR').innerHTML = moves.map(([k,l]) => `<button class="b" data-k="${k}">${l}</button>`).join('') + `<div class="spRow">${P.data.sps.map((k,i) => `<button class="b spc" data-sp="${i}" style="font-size:14px">${i?'🌍':'⚡'} ${SPECIALS[k].name.toUpperCase()}</button>`).join('')}</div>`;
@@ -1470,7 +1807,7 @@ function setControl(f){
 }
 $('ctl').onclick = () => { if (F && !F.lesson) { setControl(P===A ? B : A); banner(P===A ? 'TU CONTRÔLES ' + nameOf(A.data).toUpperCase() : 'TU CONTRÔLES ' + curOpp.person.toUpperCase(), 1000); } };
 function newRound(){
-  A.x=-1.4; B.x=1.4; for (const f of [A,B]){ f.hp=Math.round(f.hpMax*healthOf(f.data.health)[2]); f.st=100; f.zone={head:100, body:100, leg:100}; f.bal=100; f.dazed=0; f.kds=0; f.ribs=false; f.handHurt=false; f.acro=null; f.lift=0; f.q=[]; f.cur=null; f.state='idle'; f.pose={...G}; f.from={...G}; f.armor=0; f.invuln=0; }
+  A.x=-1.4; B.x=1.4; for (const f of [A,B]){ f.hp=Math.round(f.hpMax*healthOf(f.data.health)[2]); f.st=100; f.zone={head:100, body:100, leg:100}; f.bal=100; f.dazed=0; f.kds=0; f.ribs=false; f.handHurt=false; f.acro=null; f.lift=0; f.won=false; f.q=[]; f.cur=null; f.state='idle'; f.pose={...G}; f.from={...G}; f.armor=0; f.invuln=0; }
   F.time = 60; F.phase='intro'; F.phaseT=1.4; banner('ROUND '+F.round);
 }
 function zoneHUD(id, f){ const c = v => v > 60 ? '#52b788' : v > 40 ? '#f4b942' : '#e63946'; $(id).innerHTML = [['🧠','head'],['🫁','body'],['🦵','leg']].map(([i,k]) => `<span>${i}<i style="width:${f.zone[k]*.22}px;background:${c(f.zone[k])}"></i></span>`).join(''); }
@@ -1501,6 +1838,9 @@ function act(f, name){
   f.st = Math.max(0, f.st - m.cost); play(f, m.seq, (name==='slip'||name==='vent') ? 'slip' : 'attack');
   f.vmul = 1; if (name==='fused'){ f.vmul = f.data.fusedMove.mul; pop(f, f.data.fusedMove.name, '#f4b942'); }
   if (PM){ f.vmul = PM.mul; }
+  f.wHit = null;   // weapon family of this move: scales the damage, blades and guns draw a little blood
+  if (name === 'pm_swing' || name === 'swing'){ const k = meleeOf(f); if (k){ f.vmul *= WMELEE[k].mul; f.wHit = k; } }
+  if (name === 'pm_shot' || name === 'shot'){ const k = rangedOf(f); if (k) f.vmul *= WRANGED[k].mul; }
   const vb = .8 + f.A.vue/250 + (f.A.timing-50)/400;
   if (name==='slip') f.slipT = .35*vb; if (m.parry) f.parry = m.parry*vb; if (m.evade) f.evade = m.evade*vb; if (m.angle) f.angle = m.angle; return true;
 }
@@ -1588,6 +1928,7 @@ function onEvent(f, ev){
     if (punch) mult *= (.8 + fb.mains/250) * (f.handHurt ? .8 : 1) * gearVal(f.data,'punch',1);
     if (['lowHit','highHit','spinHit','teepHit','faux'].includes(f.cur && f.cur.p)) mult *= gearVal(f.data,'kick',1);
     if ((f.cur && f.cur.p) === 'elbow') mult *= gearVal(o.data, 'elbow', 1);
+    if (f.cur && f.cur.fx === 'shot') mult *= gearVal(o.data, 'shot', 1);
     mult *= gearVal(o.data, {head:'head', body:'body', leg:'leg'}[Z], 1) * (moodOf(f.data).dmg || 1);
     mult *= 1.1 - ob.os/500;
     mult *= .9 + f.A.explosivite/500;
@@ -1611,6 +1952,7 @@ function onEvent(f, ev){
     if (Z==='head' && (d > o.hpMax*.1 || o.zone.head < 40) && o.dazed <= 0){ o.dazed = 2.2 * (1.3 - traitsOf(o.data).calme/100*.6); pop(o, '💫 SONNÉ', '#f4b942', true); }
     if (Z==='head') ev = Object.assign({}, ev, {stun: (ev.stun||300) * (1.2 - o.A.douleur/250) * (1.3 - o.A.menton/100*.6) * (o.zone.head < 40 ? 1.4 : 1)});
     flash(f3[f.cur.p && POSES[f.cur.p].hit || 'rh'] || o3.head);
+    { const wk = f.cur && f.cur.fx === 'shot' ? WRANGED[rangedOf(f)] : f.wHit && !f.special ? WMELEE[f.wHit] : null; if (wk && wk.blood) bloodBurst(({head:o3.head, body:o3.mid, leg:o3.lk})[Z], f.face); }
     if (ev.kdIfStun && wasStun) ev = Object.assign({}, ev, {kd:1});
     if (ev.count){ if (ev.count % 7 === 1) pop(f, ev.tag, '#f4b942'); $('banner').textContent = `${ev.count} / ${ev.total}`; $('banner').style.opacity = 1; clearTimeout($('banner')._t); $('banner')._t = setTimeout(()=>$('banner').style.opacity=0, 600); }
     else pop(o, (q >= .95 ? 'COUP PARFAIT ' : '') + (ev.kiai ? 'KIAI ! ' : '') + tag + vp + ' -'+Math.round(d) + ' (' + pct(q) + ')', ev.kd||tag||q >= .95 ? '#f4b942' : q < .35 ? '#9a9aa8' : '#e63946', ev.kd || q >= .95);
@@ -1638,12 +1980,12 @@ function onEvent(f, ev){
 }
 function roundOver(winner){
   if (F.phase !== 'fight') return;
-  F.phase = 'roundEnd'; F.phaseT = 2.4; winner.wins++; slowmo = .3;
+  F.phase = 'roundEnd'; F.phaseT = 2.4; winner.wins++; winner.won = true; slowmo = .3;
   banner(winner===A ? 'K.O. !' : 'K.O....', 1800);
 }
 function timeUp(){
   F.phase = 'roundEnd'; F.phaseT = 2.2;
-  const w = A.hp/A.hpMax >= B.hp/B.hpMax ? A : B; w.wins++; banner('TEMPS ! ' + (w===A ? 'ROUND GAGNÉ' : 'ROUND PERDU'), 1800);
+  const w = A.hp/A.hpMax >= B.hp/B.hpMax ? A : B; w.wins++; w.won = true; banner('TEMPS ! ' + (w===A ? 'ROUND GAGNÉ' : 'ROUND PERDU'), 1800);
 }
 function endMatch(){
   F.phase = 'over';
@@ -1874,6 +2216,11 @@ $('mpJoin').onclick = () => {
 $('mpAuto').onclick = mpAuto;
 $('mpBack').onclick = () => { mpClose(); go('sMenu'); };
 $('bMP').onclick = () => go('sMP');
+// One button: the Tourbillon gets everything, an opponent with everything is created, then the versus screen
+$('bEverything').onclick = () => {
+  save.playerAll = true; save.gear = [...ALL_GEAR]; save.myChar = null; persist();
+  $('bCreate').onclick(); $('pAll').onclick(); $('cName').value = 'Le Tout'; createUI(); $('bSaveOpp').onclick();
+};
 const animeUI = () => { $('bAnime').textContent = save.anime ? '🌸 MODE DESSIN ANIMÉ : OUI (toucher pour enlever)' : '🌸 MODE DESSIN ANIMÉ (tous les dessins animés du monde)'; };
 $('bAnime').onclick = () => { save.anime = !save.anime; persist(); animeUI(); refreshToon(); };
 animeUI(); setTimeout(() => { if (save.anime) refreshToon(); }, 300);
@@ -2139,7 +2486,7 @@ function loop(now){
     if (A.x > B.x - .3) A.x = B.x - .3;
     if (F.mp === 'host') mpSend(now);
     }
-    const oA = to3(A.pose, A.x, A.face, A.sc, A.lift||0), oB = to3(B.pose, B.x, B.face, B.sc, B.lift||0); pose3(MA, oA); pose3(MB, oB);
+    const oA = to3(A.pose, A.x, A.face, A.sc, A.lift||0), oB = to3(B.pose, B.x, B.face, B.sc, B.lift||0); pose3(MA, oA, A); pose3(MB, oB, B);
     fxUpdate(A, oA, B, dt); fxUpdate(B, oB, A, dt);
     // HUD
     $('hpA').style.width = (A.hp/A.hpMax*100)+'%'; $('hpB').style.width = (B.hp/B.hpMax*100)+'%'; $('lifeA').textContent = '❤ '+Math.ceil(A.hp)+'/'+A.hpMax; zoneHUD('zA', A); zoneHUD('zB', B); const sts = f => `⚖ ${Math.round(f.bal)} · 🔋 ${Math.round(f.st)}${f.dazed > 0 ? ' · 💫 SONNÉ' : ''}${f.bal < 40 ? ' · instable' : ''}`; $('stsA').textContent = sts(A); $('stsB').textContent = sts(B); $('lifeB').textContent = '❤ '+Math.ceil(B.hp)+'/'+B.hpMax; $('stA').style.width = A.st+'%'; $('stB').style.width = B.st+'%';
@@ -2153,6 +2500,7 @@ function loop(now){
     const asp = camera.aspect, dz = (asp < .9 ? 5.6 : 4.4) + spread*.7;
     camera.position.set(mid + (Math.random()-.5)*shake*.08, 1.5 + (Math.random()-.5)*shake*.08, dz);
     camera.lookAt(mid, .85, 0); shake *= .9;
+    bloodUpdate(rdt);
     if (flashT < 1){ flashT += rdt*4.5; flashM.scale.setScalar(.05+.22*Math.sin(Math.min(1,flashT)*Math.PI)); flashMat.opacity = 1-flashT; } else flashMat.opacity = 0;
     if (save.anime && OUTLINE){
       // never outline glows / transparent / hidden-by-opacity parts (flashes, auras, energy)
